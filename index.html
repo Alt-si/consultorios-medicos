@@ -338,6 +338,50 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .logo-ed label.btn{cursor:pointer}
 .login-top{gap:6px}
 .login-top svg{width:16px;height:16px}
+.acal{padding:12px}
+.calhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.calhead > b{font-family:var(--display);font-weight:500;font-size:21px;min-width:150px;text-align:center}
+.calhead [data-offform]{margin-left:auto}
+.seg2.sm button{padding:5px 11px;font-size:13px}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.mdow{font-size:12px;font-weight:700;color:var(--muted);text-align:center;text-transform:uppercase;padding-bottom:2px}
+.cday{border:1px solid var(--line);background:var(--surface);border-radius:9px;min-height:74px;padding:6px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer;text-align:left}
+.cday .dn{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.cday .cnt{background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:1px 7px;font-size:12.5px;font-weight:700}
+.cday .cnt i{font-style:normal;font-weight:500}
+.cday .tagoff{background:var(--bad-bg);color:var(--bad);border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700}
+.cday.today .dn{background:var(--accent);color:var(--accent-ink);border-radius:50%;width:26px;height:26px;display:grid;place-items:center;margin:-3px}
+.cday.sel{box-shadow:0 0 0 2px var(--accent) inset}
+.cday.past{opacity:.6}
+.cday.closed{background:var(--sunk)}
+.cday.off{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--bad) 14%,transparent) 6px 8px);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.cday.offp{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.lg-off{background-image:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--bad) 35%,transparent) 3px 5px);border:1px solid var(--bad)}
+.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.ymonth header{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:6px}
+.ymonth header .linkbtn{font-family:var(--display);font-size:17px;color:var(--ink);text-decoration:none;padding:0}
+.ymonth header small{font-size:12px;color:var(--muted)}
+.ymini{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.ymini span{font-size:10px;color:var(--muted);text-align:center;font-weight:700}
+.yd{--a:0;border:0;border-radius:5px;aspect-ratio:1;font-size:11px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;color:var(--ink);
+  background:color-mix(in srgb,var(--accent) calc(var(--a) * 100%),var(--surface));box-shadow:inset 0 0 0 1px var(--line)}
+.yd.hi{color:var(--accent-ink);font-weight:700}
+.yd.closed{background:var(--sunk);color:var(--muted)}
+.yd.off{background:var(--bad-bg);color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad);font-weight:700}
+.yd.today{outline:2px solid var(--ink);outline-offset:1px}
+.day em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.day[aria-pressed="true"] em{color:var(--accent-ink)}
+@media (max-width:520px){
+  .cday{min-height:58px;padding:4px;gap:2px}
+  .cday .dn{font-size:13.5px}
+  .cday .cnt{font-size:11.5px;padding:0 5px}
+  .cday .cnt i{display:none}
+  .cday .tagoff{font-size:9.5px;padding:0 4px}
+  .calhead > b{min-width:0;flex:1;font-size:18px}
+  .calhead [data-offform]{margin-left:0;width:100%}
+  .calhead .seg2{flex:1}
+  .ygrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -545,12 +589,14 @@ dd{margin:0;font-weight:500}
         <div class="seg2" role="group" aria-label="Vista de la agenda">
           <button type="button" data-aview="lista" aria-pressed="false">Lista</button>
           <button type="button" data-aview="grilla" aria-pressed="false">Grilla</button>
+          <button type="button" data-aview="calendario" aria-pressed="false">Calendario</button>
         </div>
       </div>
       <div class="wstrip" id="wstrip" role="group" aria-label="Días de la semana"></div>
       <div class="card agenda-card">
         <div class="agenda-scroll" id="agendaScroll"><div class="agenda" id="agenda"></div></div>
         <div class="alist" id="alist" hidden></div>
+        <div class="acal" id="acal" hidden></div>
       </div></div>
       <aside class="side">
         <div class="card"><h3>Pendientes de confirmar <span class="count" id="pendCount">0</span></h3><div id="pendList"></div></div>
@@ -880,7 +926,8 @@ const live = b => b.status !== "cancelado" && pro(b.pro);
 const onDay = (pid, date) => DB.bookings.filter(b => b.pro === pid && b.date === date && live(b));
 
 /* ---------- disponibilidad ---------- */
-function ranges(p, date){ return (p.hours[parse(date).getDay()] || []).map(([a,b]) => [toMin(a), toMin(b)]); }
+function offInfo(pid, date){ return (S.daysOff || []).find(o => o.d === date && (!o.pro || o.pro === pid)) || null; }
+function ranges(p, date){ if (offInfo(p.id, date)) return []; return (p.hours[parse(date).getDay()] || []).map(([a,b]) => [toMin(a), toMin(b)]); }
 function fits(p, date, m, dur, ignoreId){
   if (!ranges(p, date).some(([a,b]) => m >= a && m + dur <= b)) return false;
   return !onDay(p.id, date).some(b => { if (b.id === ignoreId) return false; const s = toMin(b.start); return s < m + dur && m < s + b.dur; });
@@ -1054,12 +1101,12 @@ function renderCal(){
   const days = [];
   for (let i = 0; i < C().daysAhead; i++){
     const d = addDays(TODAY(), i), av = availability(sel.pids, d, sel.dur);
-    days.push({d, free: av.filter(s => s.free).length, works: av.length > 0});
+    days.push({d, i, free: av.filter(s => s.free).length, works: av.length > 0});
   }
   if (!UI.date || !days.find(x => x.d === UI.date && x.free)){ const f = days.find(x => x.free); UI.date = f ? f.d : null; UI.time = null; }
   let h = `<div class="days" role="group" aria-label="Días">` + days.map(x =>
     `<button class="day" type="button" data-d="${x.d}" ${x.free?"":"disabled"} aria-pressed="${UI.date===x.d}" aria-label="${fmtLong(x.d)}, ${x.free} horarios libres">
-      <small>${fmtDow(x.d)}</small><b>${parse(x.d).getDate()}</b><span>${x.free ? x.free + " libres" : (x.works ? "Completo" : "—")}</span></button>`).join("") + `</div>`;
+      ${x.i === 0 || parse(x.d).getDate() === 1 ? `<em>${parse(x.d).toLocaleDateString("es", {month:"short"}).replace(".", "")}</em>` : ""}<small>${fmtDow(x.d)}</small><b>${parse(x.d).getDate()}</b><span>${x.free ? x.free + " libres" : (x.works ? "Completo" : "—")}</span></button>`).join("") + `</div>`;
   if (UI.date){
     const av = availability(sel.pids, UI.date, sel.dur);
     const grp = (t, arr) => arr.length ? `<div class="slot-group"><h3>${t}</h3><div class="slots">` + arr.map(s =>
@@ -1303,13 +1350,16 @@ function renderAgenda(){
   $("proSel").innerHTML = `<option value="">Todos los profesionales</option>` + S.pros.map(p => `<option value="${p.id}" ${PANEL.only===p.id?"selected":""}>${esc(p.name)} · ${esc(p.role)}</option>`).join("");
   renderWeek(list);
   document.querySelectorAll("[data-aview]").forEach(b => b.setAttribute("aria-pressed", b.dataset.aview === PANEL.view));
+  const cal = PANEL.view === "calendario";
+  $("wstrip").hidden = cal; $("acal").hidden = !cal;
+  if (cal){ $("agendaScroll").hidden = true; $("alist").hidden = true; renderCalendar(list); return; }
   const lista = PANEL.view === "lista";
   $("agendaScroll").hidden = lista; $("alist").hidden = !lista;
   if (lista){ renderList(list); return; }
   g.style.gridTemplateColumns = `${mobile() ? 46 : 58}px repeat(${list.length}, minmax(${mobile() && list.length > 1 ? 140 : 160}px, 1fr))`;
   let h = `<div class="corner"></div>` + list.map(p => {
     const n = onDay(p.id, d).filter(b => b.status !== "bloqueo").length, works = ranges(p, d).length;
-    return `<div class="ahead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos · " + esc(p.role) : "No atiende este día"}</small></div></div>`;
+    return `<div class="ahead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos · " + esc(p.role) : offInfo(p.id, d) ? "Día anulado · " + esc(offInfo(p.id, d).m || "") : "No atiende este día"}</small></div></div>`;
   }).join("");
   h += `<div class="tcol" style="height:${H}px">` + Array.from({length:rows}, (_, i) => i % 2 === 0 && i ? `<div style="top:${i*PX}px">${toT(DAY0 + i*ROW)}</div>` : "").join("") + `</div>`;
   const now = nowMin(), showNow = d === TODAY() && now > DAY0 && now < DAY1, past = d < TODAY();
@@ -1453,6 +1503,117 @@ function openFree(pid, m){
 }
 function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2800); }
 
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+function dayStats(list){
+  const ids = list.map(p => p.id), counts = {};
+  DB.bookings.forEach(b => { if (live(b) && b.status !== "bloqueo" && ids.includes(b.pro)) counts[b.date] = (counts[b.date] || 0) + 1; });
+  const off = d => {
+    const offs = (S.daysOff || []).filter(o => o.d === d && (!o.pro || ids.includes(o.pro)));
+    if (!offs.length) return null;
+    const all = offs.some(o => !o.pro) || list.every(p => offs.some(o => o.pro === p.id));
+    return {all, m: offs[0].m || ""};
+  };
+  const works = d => list.some(p => (p.hours[parse(d).getDay()] || []).length);
+  return {counts, off, works};
+}
+function renderCalendar(list){
+  if (!PANEL.calMonth) PANEL.calMonth = PANEL.date.slice(0, 7);
+  const mode = PANEL.calMode || "mes", st = dayStats(list), t = TODAY();
+  const [y, m] = PANEL.calMonth.split("-").map(Number);
+  const head = `<div class="calhead">
+    <button class="btn btn-soft btn-sm" type="button" data-cm="-1" aria-label="${mode === "mes" ? "Mes anterior" : "Año anterior"}">‹</button>
+    <b>${mode === "mes" ? MESES[m - 1] + " " + y : y}</b>
+    <button class="btn btn-soft btn-sm" type="button" data-cm="1" aria-label="${mode === "mes" ? "Mes siguiente" : "Año siguiente"}">›</button>
+    <div class="seg2 sm" role="group" aria-label="Mes o año"><button type="button" data-cmode="mes" aria-pressed="${mode === "mes"}">Mes</button><button type="button" data-cmode="anio" aria-pressed="${mode === "anio"}">12 meses</button></div>
+    <button class="btn btn-soft btn-sm" type="button" data-offform="${PANEL.date >= t ? PANEL.date : t}">Anular días</button>
+  </div>`;
+  let body = "";
+  if (mode === "mes"){
+    const first = new Date(y, m - 1, 1), lead = (first.getDay() + 6) % 7, days = new Date(y, m, 0).getDate();
+    body = `<div class="mgrid">` + ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(x => `<div class="mdow">${x}</div>`).join("") +
+      Array.from({length: lead}, () => `<div></div>`).join("") +
+      Array.from({length: days}, (_, i) => {
+        const d = `${y}-${pad(m)}-${pad(i + 1)}`, n = st.counts[d] || 0, o = st.off(d), w = st.works(d);
+        const cls = ["cday", d === t ? "today" : "", d < t ? "past" : "", !w && !o ? "closed" : "", o ? (o.all ? "off" : "offp") : "", d === PANEL.date ? "sel" : ""].join(" ");
+        return `<button class="${cls}" type="button" data-cd="${d}" aria-label="${fmtLong(d)}${o ? ", anulado" : ""}, ${n} turnos">
+          <span class="dn">${i + 1}</span>${o ? `<span class="tagoff">${o.all ? "Anulado" : "Parcial"}</span>` : n ? `<span class="cnt">${n}<i> turno${n === 1 ? "" : "s"}</i></span>` : ""}</button>`;
+      }).join("") + `</div>
+      <div class="legend"><span><i style="background:var(--accent-soft);border:1px solid var(--accent)"></i>Con turnos</span><span><i class="lg-off"></i>Anulado</span><span><i style="background:var(--sunk)"></i>No atiende</span></div>`;
+  } else {
+    const max = Math.max(1, ...Object.entries(st.counts).filter(([d]) => d.startsWith(y + "-")).map(([, v]) => v));
+    body = `<div class="ygrid">` + MESES.map((name, mi) => {
+      const first = new Date(y, mi, 1), lead = (first.getDay() + 6) % 7, days = new Date(y, mi + 1, 0).getDate();
+      let total = 0, offN = 0;
+      const cells = Array.from({length: days}, (_, i) => {
+        const d = `${y}-${pad(mi + 1)}-${pad(i + 1)}`, n = st.counts[d] || 0, o = st.off(d), w = st.works(d);
+        total += n; if (o) offN++;
+        const a = n ? (0.18 + 0.82 * n / max).toFixed(2) : 0;
+        return `<button class="yd ${o ? "off" : ""} ${!w && !o ? "closed" : ""} ${d === t ? "today" : ""} ${n && !o && a > 0.55 ? "hi" : ""}" type="button" data-yd="${d}" title="${fmtLong(d)}: ${o ? "anulado" : n + " turnos"}" aria-label="${fmtLong(d)}: ${o ? "anulado" : n + " turnos"}" ${n && !o ? `style="--a:${a}"` : ""}>${i + 1}</button>`;
+      }).join("");
+      return `<section class="ymonth"><header><button class="linkbtn" type="button" data-ym="${y}-${pad(mi + 1)}">${name}</button><small>${total} turno${total === 1 ? "" : "s"}${offN ? " · " + offN + " anulado" + (offN === 1 ? "" : "s") : ""}</small></header>
+        <div class="ymini">${["L","M","M","J","V","S","D"].map(x => `<span>${x}</span>`).join("")}${Array.from({length: lead}, () => "<i></i>").join("")}${cells}</div></section>`;
+    }).join("") + `</div><p class="muted" style="font-size:12.5px;margin:10px 0 0">Más oscuro = más turnos. Tocá un día para verlo o anularlo.</p>`;
+  }
+  $("acal").innerHTML = head + body;
+}
+function openDayDrawer(d){
+  const list = PANEL.only ? [pro(PANEL.only)] : S.pros;
+  const offs = (S.daysOff || []).filter(o => o.d === d);
+  const bs = DB.bookings.filter(b => b.date === d && live(b) && b.status !== "bloqueo");
+  const per = S.pros.map(p => ({p, n: bs.filter(b => b.pro === p.id).length, works: (p.hours[parse(d).getDay()] || []).length > 0})).filter(x => x.n || x.works);
+  openDrawer("Calendario", fmtLong(d), `
+    ${offs.length ? `<div class="notice warn"><b>Día anulado</b>${offs.map(o => `${o.pro ? esc((pro(o.pro) || {name:"Profesional borrado"}).name) : "Todo el consultorio"}${o.m ? " · " + esc(o.m) : ""} <button class="linkbtn" type="button" data-unoff="${d}|${o.pro || ""}">Habilitar</button>`).join("<br>")}</div>` : ""}
+    <div><p class="sec-t" style="margin-bottom:6px">Turnos de este día</p>
+      ${per.length ? per.map(x => `<div class="li"><span><b>${esc(x.p.name)}</b><span class="muted">${offInfo(x.p.id, d) ? "Anulado" : x.works ? "Atiende" : "No atiende"}</span></span><span class="num">${x.n} turno${x.n === 1 ? "" : "s"}</span></div>`).join("") : `<p class="muted" style="margin:0">Nadie atiende este día.</p>`}
+    </div>
+    <div class="actions"><button class="btn btn-primary" type="button" data-goday="${d}">Ver la agenda de este día</button></div>
+    ${offForm(d, d, PANEL.only || "")}`);
+  updOffWarn();
+}
+function offForm(from, to, pid){
+  return `<p class="sec-t">Anular días</p>
+    <form id="offForm" novalidate>
+      <label for="of-pro">¿Quién no atiende?<select id="of-pro"><option value="">Todo el consultorio</option>${S.pros.map(p => `<option value="${p.id}" ${pid === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select></label>
+      <div class="row2"><label for="of-from">Desde<input type="date" id="of-from" value="${from}"></label><label for="of-to">Hasta<input type="date" id="of-to" value="${to}"></label></div>
+      <label for="of-m">Motivo<input id="of-m" list="of-ms" placeholder="Ej. Vacaciones"><datalist id="of-ms"><option>Feriado</option><option>Vacaciones</option><option>Congreso</option><option>Licencia</option><option>Capacitación</option></datalist></label>
+      <div id="of-warn"></div>
+      <p class="err" id="of-err" role="alert"></p>
+      <button class="btn btn-danger" type="submit">Anular estos días</button>
+      <p class="muted" style="font-size:13px;margin:0">Esos días dejan de aparecer para reservar. Los turnos ya dados no se borran: te mostramos cuáles son para que les avises.</p>
+    </form>`;
+}
+function offDates(from, to){ const out = []; for (let d = from; d <= to && out.length < 366; d = addDays(d, 1)) out.push(d); return out; }
+function updOffWarn(){
+  if (!$("of-from")) return;
+  const pid = $("of-pro").value, from = $("of-from").value, to = $("of-to").value || from;
+  if (!from || to < from){ $("of-warn").innerHTML = ""; return; }
+  const ds = offDates(from, to);
+  const bs = DB.bookings.filter(b => ds.includes(b.date) && live(b) && b.status !== "bloqueo" && b.status !== "asistio" && b.status !== "ausente" && (!pid || b.pro === pid))
+    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  $("of-warn").innerHTML = bs.length ? `<div class="notice warn"><b>Hay ${bs.length} turno${bs.length === 1 ? "" : "s"} dado${bs.length === 1 ? "" : "s"} en esos días</b>${bs.slice(0, 8).map(b => `${fmtDow(b.date)} ${parse(b.date).getDate()} · ${b.start} · ${esc(b.name || "")} <a href="${wa(b.phone, "Hola " + (b.name || "").split(" ")[0] + ", te escribimos de " + C().name + ": por un inconveniente no vamos a poder atenderte el " + fmtLong(b.date) + " a las " + b.start + " h. ¿Te parece si reprogramamos el turno?")}" target="_blank" rel="noopener">Avisar por WhatsApp</a>`).join("<br>")}${bs.length > 8 ? "<br>y " + (bs.length - 8) + " más" : ""}</div>` : "";
+}
+function submitOff(){
+  const pid = $("of-pro").value || null, from = $("of-from").value, to = $("of-to").value || from, m = $("of-m").value.trim();
+  if (!from) return $("of-err").textContent = "Elegí desde qué día.";
+  if (to < from) return $("of-err").textContent = "La fecha «hasta» tiene que ser igual o posterior a «desde».";
+  const ds = offDates(from, to);
+  if (addDays(from, 366) < to) return $("of-err").textContent = "Se puede anular hasta un año por vez.";
+  S.daysOff = S.daysOff || [];
+  let n = 0;
+  ds.forEach(d => { if (!S.daysOff.some(o => o.d === d && (o.pro || null) === pid)){ S.daysOff.push({d, pro: pid, m}); n++; } });
+  S.daysOff.sort((a, b) => a.d.localeCompare(b.d));
+  saveCfg(); closeDrawer(); refreshAll();
+  toast(n ? `Se ${n === 1 ? "anuló 1 día" : "anularon " + n + " días"}${pid ? " para " + pro(pid).name : ""}.` : "Esos días ya estaban anulados.");
+}
+function offGroups(){
+  const g = [];
+  (S.daysOff || []).slice().sort((a, b) => ((a.pro || "") + a.d).localeCompare((b.pro || "") + b.d)).forEach(o => {
+    const last = g[g.length - 1];
+    if (last && last.pro === (o.pro || null) && last.m === (o.m || "") && addDays(last.to, 1) === o.d) last.to = o.d;
+    else g.push({pro: o.pro || null, m: o.m || "", from: o.d, to: o.d});
+  });
+  return g.sort((a, b) => a.from.localeCompare(b.from));
+}
 function renderWeek(list){
   const d = PANEL.date, mon = addDays(d, -((parse(d).getDay() + 6) % 7)), ids = list.map(p => p.id), t = TODAY();
   let h = "";
@@ -1474,7 +1635,8 @@ function renderList(list){
     if (list.length > 1 && !rs.length && !bs.length) return;
     h += `<section class="lgroup">`;
     if (list.length > 1) h += `<header class="lhead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div><b>${esc(p.name)}</b><small>${esc(p.role)} · ${n} turno${n === 1 ? "" : "s"}</small></div></header>`;
-    if (!rs.length && !bs.length){ h += `<div class="empty">${esc(p.name)} no atiende este día.</div></section>`; return; }
+    if (!rs.length && !bs.length){ const o = offInfo(p.id, d); h += `<div class="empty">${o ? "Día anulado" + (o.m ? " · " + esc(o.m) : "") : esc(p.name) + " no atiende este día."}</div></section>`; return; }
+    if (offInfo(p.id, d)) h += `<div class="notice warn" style="margin-top:6px"><b>Día anulado${offInfo(p.id, d).m ? " · " + esc(offInfo(p.id, d).m) : ""}</b>Estos turnos ya estaban dados: avisales a los pacientes.</div>`;
     const entries = bs.map(b => ({m: toMin(b.start), b}));
     if (!past) starts(p, d, p.step).forEach(m => { if (d === TODAY() && m + p.step <= now) return; if (fits(p, d, m, p.step)) entries.push({m, free:true}); });
     entries.sort((a, b) => a.m - b.m || (a.free ? 1 : -1));
@@ -1507,6 +1669,16 @@ document.querySelector(".seg2").addEventListener("click", e => {
   renderAgenda(); if (PANEL.view === "grilla") scrollToNow();
 });
 $("wstrip").addEventListener("click", e => { const w = e.target.closest("[data-wd]"); if (!w) return; PANEL.date = w.dataset.wd; renderPanel(); ensureRange(PANEL.date); if (PANEL.view === "grilla") scrollToNow(); });
+$("acal").addEventListener("click", e => {
+  const cm = e.target.closest("[data-cm]");
+  if (cm){ const [y, m] = PANEL.calMonth.split("-").map(Number), k = Number(cm.dataset.cm);
+    const dt = (PANEL.calMode || "mes") === "mes" ? new Date(y, m - 1 + k, 1) : new Date(y + k, m - 1, 1);
+    PANEL.calMonth = dt.getFullYear() + "-" + pad(dt.getMonth() + 1); renderAgenda(); ensureRange(PANEL.calMonth + "-15"); return; }
+  const md = e.target.closest("[data-cmode]"); if (md){ PANEL.calMode = md.dataset.cmode; renderAgenda(); return; }
+  const ym = e.target.closest("[data-ym]"); if (ym){ PANEL.calMonth = ym.dataset.ym; PANEL.calMode = "mes"; renderAgenda(); return; }
+  const cd = e.target.closest("[data-cd],[data-yd]"); if (cd){ const d = cd.dataset.cd || cd.dataset.yd; PANEL.date = d; PANEL.calMonth = d.slice(0, 7); renderAgenda(); openDayDrawer(d); return; }
+  const of = e.target.closest("[data-offform]"); if (of){ openDrawer("Calendario", "Anular días", offForm(of.dataset.offform, of.dataset.offform, PANEL.only || "")); updOffWarn(); }
+});
 $("alist").addEventListener("click", e => {
   const r = e.target.closest(".lrow"); if (r){ openBooking(Number(r.dataset.id)); return; }
   const f = e.target.closest(".fchip"); if (f) openFree(f.dataset.pro, Number(f.dataset.m));
@@ -1520,6 +1692,7 @@ $("dBody").addEventListener("submit", e => {
   if (e.target.id === "manualForm") return submitManual(e.target);
   if (e.target.id === "proForm") return submitPro(e.target);
   if (e.target.id === "svcForm") return submitSvc(e.target);
+  if (e.target.id === "offForm") return submitOff();
 });
 function submitManual(f){
   const p = pro(f.dataset.pro), m = Number(f.dataset.m);
@@ -1591,6 +1764,14 @@ function renderConfig(){
   </section>
 
   <section class="card">
+    <div class="cfg-head"><div><h2>Días no laborables</h2><p class="hint">Feriados, vacaciones o días en que un profesional no atiende. Esos días no aparecen para reservar. También podés anularlos desde Panel → Calendario.</p></div>
+      <button class="btn btn-primary" type="button" data-cfg="off-new">+ Anular días</button></div>
+    <div class="rows">${offGroups().filter(g => g.to >= addDays(TODAY(), -30)).map(g => `<div class="rowi" style="grid-template-columns:1fr auto">
+      <div><b>${g.from === g.to ? fmtLong(g.from) : "Del " + fmtLong(g.from) + " al " + fmtLong(g.to)}</b><span class="meta">${g.pro ? esc((pro(g.pro) || {name:"Profesional borrado"}).name) : "Todo el consultorio"}${g.m ? " · " + esc(g.m) : ""}</span></div>
+      <button class="btn btn-soft btn-sm" type="button" data-offdel="${g.pro || ""}|${g.from}|${g.to}">Habilitar</button></div>`).join("") || `<p class="muted" style="margin:0">No hay días anulados.</p>`}</div>
+  </section>
+
+  <section class="card">
     <h2>Obras sociales y prepagas</h2>
     <p class="hint">Marcá las que piden orden autorizada para estudios. Con cuáles trabaja cada profesional se elige en su ficha.</p>
     <div class="covs">${S.coverage.map((cv, i) => `<span class="cov">${esc(cv.n)}<label for="cv-${i}"><input type="checkbox" id="cv-${i}" data-cov-auth="${i}" ${cv.auth?"checked":""}> autorización</label><button type="button" data-cov-del="${i}" aria-label="Quitar ${esc(cv.n)}">×</button></span>`).join("")}</div>
@@ -1610,7 +1791,7 @@ function renderConfig(){
       <div class="row2"><label for="c-name">Nombre<input id="c-name" data-c="name" value="${esc(c.name)}"></label><label for="c-sub">Descripción corta<input id="c-sub" data-c="sub" value="${esc(c.sub)}"></label></div>
       <div class="row2"><label for="c-addr">Dirección<input id="c-addr" data-c="address" value="${esc(c.address)}"></label><label for="c-wa">WhatsApp del consultorio<input id="c-wa" data-c="whatsapp" value="${esc(c.whatsapp)}" inputmode="tel"></label></div>
       <div class="row3"><label for="c-lead">Anticipación mínima (min)<input id="c-lead" data-c="leadMinutes" type="number" min="0" step="15" value="${esc(c.leadMinutes)}"></label>
-      <label for="c-days">Días a mostrar<input id="c-days" data-c="daysAhead" type="number" min="1" max="60" value="${esc(c.daysAhead)}"></label>
+      <label for="c-days">Días a mostrar<input id="c-days" data-c="daysAhead" type="number" min="1" max="365" value="${esc(c.daysAhead)}"></label>
       <label for="c-cur">Moneda<input id="c-cur" data-c="currency" value="${esc(c.currency)}"></label></div>
     </form>
   </section>
@@ -1832,6 +2013,14 @@ document.addEventListener("click", e => {
       saveCfg(); closeDrawer(); refreshAll(); return;
     }
   }
+  const uo = e.target.closest("[data-unoff]");
+  if (uo){ const [d, pid] = uo.dataset.unoff.split("|"); S.daysOff = (S.daysOff || []).filter(o => !(o.d === d && (o.pro || "") === pid)); saveCfg(); refreshAll(); if ($("drawer").classList.contains("show") && $("dTitle").textContent === fmtLong(d)) openDayDrawer(d); toast("Día habilitado de nuevo."); return; }
+  const og = e.target.closest("[data-offdel]");
+  if (og){ const [pid, from, to] = og.dataset.offdel.split("|"); S.daysOff = (S.daysOff || []).filter(o => !((o.pro || "") === pid && o.d >= from && o.d <= to)); saveCfg(); renderConfig(); toast("Días habilitados de nuevo."); return; }
+  const gd = e.target.closest("[data-goday]");
+  if (gd){ PANEL.date = gd.dataset.goday; PANEL.view = mobile() ? "lista" : "grilla"; closeDrawer(); renderPanel(); scrollToNow(); ensureRange(PANEL.date); return; }
+  const ofc = e.target.closest("[data-cfg='off-new']");
+  if (ofc){ openDrawer("Configuración", "Anular días", offForm(TODAY(), TODAY(), "")); updOffWarn(); return; }
   const a = e.target.closest("[data-act]"); if (!a) return;
   const act = a.dataset.act;
   if (act === "block"){
@@ -1906,8 +2095,10 @@ $("dBody").addEventListener("keydown", e => {
   if (e.target.classList.contains("madd-name") || e.target.classList.contains("madd-price")){ e.preventDefault(); addFromRow(e.target.closest("fieldset")); }
   if (e.target.closest(".mrow.editing")){ e.preventDefault(); e.target.closest(".mrow").querySelector("[data-msave]").click(); }
 });
+$("dBody").addEventListener("input", e => { if (["of-pro","of-from","of-to"].includes(e.target.id)){ if (e.target.id === "of-from" && $("of-to").value < e.target.value) $("of-to").value = e.target.value; updOffWarn(); } });
 $("dBody").addEventListener("change", e => {
   const t = e.target;
+  if (["of-pro","of-from","of-to"].includes(t.id)) updOffWarn();
   if (t.id === "s-order") $("s-ophoto").closest("label").hidden = !t.checked;
   if (t.id && t.id.startsWith("h-on-")) t.closest(".hrow").classList.toggle("off", !t.checked);
   if (t.name === "pacc") $("paList").hidden = t.value !== "some";
@@ -1933,7 +2124,7 @@ function show(v){
   if (needLogin){ LOGIN_NEXT = v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
   if (v === "panel"){
     ensureRange(PANEL.date);
-    if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = v === "lista" || v === "grilla" ? v : (mobile() ? "lista" : "grilla"); }
+    if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = ["lista","grilla","calendario"].includes(v) ? v : (mobile() ? "lista" : "grilla"); }
     renderPanel(); scrollToNow();
   } else if (v === "config"){ renderConfig(); } else { renderBook(); }
   try { history.replaceState(null, "", "#" + (v === "book" ? "reservar" : v)); } catch(_){}

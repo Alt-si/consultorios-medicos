@@ -95,7 +95,7 @@ language sql stable security definer set search_path = public as $$
   select t.pro, t.fecha, t.inicio, t.dur
   from public.turnos t
   where t.estado <> 'cancelado'
-    and t.fecha between desde and least(hasta, desde + 62)
+    and t.fecha between desde and least(hasta, desde + 400)
 $$;
 revoke all on function public.ocupados(date, date) from public;
 grant execute on function public.ocupados(date, date) to anon, authenticated;
@@ -130,13 +130,21 @@ begin
      or coalesce(v_inicio, '') !~ '^[0-2][0-9]:[0-5][0-9]$' or v_dur < 5 or v_dur > 240 then
     raise exception 'datos_invalidos';
   end if;
-  if v_fecha < v_hoy or v_fecha > v_hoy + 90 then raise exception 'fecha_invalida'; end if;
+  if v_fecha < v_hoy or v_fecha > v_hoy + 400 then raise exception 'fecha_invalida'; end if;
   if coalesce(trim(v_datos->>'name'), '') = '' then raise exception 'falta_nombre'; end if;
   if length(v_datos::text) > 20000 then raise exception 'datos_muy_grandes'; end if;
 
   select data into v_cfg from public.config where id = 1;
   select p into v_prof from jsonb_array_elements(coalesce(v_cfg->'pros', '[]'::jsonb)) p where p->>'id' = v_pro;
   if v_prof is null then raise exception 'profesional_inexistente'; end if;
+
+  -- días anulados (feriados, vacaciones)
+  if exists (
+    select 1 from jsonb_array_elements(coalesce(v_cfg->'daysOff', '[]'::jsonb)) o
+    where o->>'d' = v_fecha::text and (o->>'pro' is null or o->>'pro' = v_pro)
+  ) then
+    raise exception 'dia_anulado';
+  end if;
 
   -- dentro del horario de atención de ese día
   if not exists (

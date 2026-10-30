@@ -1,6 +1,6 @@
 // Service worker: permite instalar la app y abrirla aunque falle la conexión.
 // Cambiá VERSION cuando subas cambios grandes para forzar la actualización.
-const VERSION = "turnos-v6";
+const VERSION = "turnos-v7";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./config.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png"];
 
