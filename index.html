@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda de turnos para consultorios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Plan: software clínico sereno. Vista paciente en 3 pasos + panel con agenda por profesional. Estado codificado por color y forma. */
+:root{
+  --bg:#f2f4f3; --surface:#ffffff; --sunk:#e9eeec; --ink:#14212a; --muted:#5a6770; --line:#d8dfdc;
+  --accent:#2c5fb8; --accent-ink:#ffffff; --accent-soft:#e6eefb;
+  --wa:#1e8e57;
+  --pend:#a86a00; --pend-bg:#fff3d6; --ok:#1d7a4a; --ok-bg:#dff3e7; --done:#4b5a66; --done-bg:#e6eaee; --bad:#b3261e; --bad-bg:#fbe3e1;
+  --display:"Fraunces", Georgia, serif; --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1519; --surface:#161f25; --sunk:#1c272e; --ink:#e6edf0; --muted:#97a6ae; --line:#28363e;
+    --accent:#7aa2f0; --accent-ink:#0f1519; --accent-soft:#1d2a42; --wa:#35b376;
+    --pend:#f0bb55; --pend-bg:#3a2d10; --ok:#6fd39c; --ok-bg:#16352a; --done:#aab6bf; --done-bg:#253038; --bad:#f28b82; --bad-bg:#3d1c1a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1519; --surface:#161f25; --sunk:#1c272e; --ink:#e6edf0; --muted:#97a6ae; --line:#28363e;
+  --accent:#7aa2f0; --accent-ink:#0f1519; --accent-soft:#1d2a42; --wa:#35b376;
+  --pend:#f0bb55; --pend-bg:#3a2d10; --ok:#6fd39c; --ok-bg:#16352a; --done:#aab6bf; --done-bg:#253038; --bad:#f28b82; --bad-bg:#3d1c1a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:var(--display);font-weight:500;margin:0;line-height:1.2;text-wrap:balance}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 18px}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* top */
+.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:600;font-size:18px}
+.brand b{font-family:var(--display);font-weight:500;font-size:19px;display:block;line-height:1.1}
+.brand small{color:var(--muted);font-size:12.5px}
+.tabs{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
+.tab{border:0;background:transparent;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.linkbtn{border:0;background:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;border-radius:9px;padding:10px 15px;font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;line-height:1.2}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-wa{background:var(--wa);color:#fff}
+.btn-soft{background:var(--sunk);color:var(--ink);border-color:var(--line)}
+.btn-danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn-sm{padding:6px 10px;font-size:13.5px;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:17px;height:17px;flex:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.step-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none;transform:translateY(-2px)}
+.step-h h2{font-size:22px}
+
+/* ===== Vista paciente ===== */
+.hero{padding:26px 0 18px}
+.hero h1{font-size:clamp(26px,3.6vw,36px)}
+.hero p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.book{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.45fr);gap:18px;padding-bottom:40px;align-items:start}
+.pane{padding:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:99px;cursor:pointer;font-size:13.5px;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pros{display:grid;gap:8px}
+.pro{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px;cursor:pointer}
+.pro[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;background:var(--accent-soft)}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;flex:none}
+.pro b{display:block;font-size:15.5px}
+.pro .sp{font-size:13px;color:var(--muted)}
+.pro .next{font-size:12.5px;color:var(--ok);font-weight:600;margin-top:2px}
+.pro .next.none{color:var(--muted);font-weight:500}
+.pro .price{font-size:13px;text-align:right;color:var(--muted);white-space:nowrap}
+.pro .price b{color:var(--ink);font-size:15px}
+
+.days{display:grid;grid-auto-flow:column;grid-auto-columns:72px;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;display:grid;gap:1px}
+.day small{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.day b{font-size:20px;font-family:var(--display);font-weight:500}
+.day span{font-size:11.5px;color:var(--ok);font-weight:600}
+.day:disabled{cursor:not-allowed;background:var(--sunk)}
+.day:disabled b{color:var(--muted)}
+.day:disabled span{color:var(--muted);font-weight:400}
+.day[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.day[aria-pressed="true"] small,.day[aria-pressed="true"] span{color:var(--accent-ink)}
+.slot-group{margin-top:14px}
+.slot-group h3{font-family:var(--body);font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}
+.slot{border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:8px;padding:8px 0;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums;font-size:14.5px}
+.slot:disabled{border-color:var(--line);color:var(--muted);background:var(--sunk);text-decoration:line-through;cursor:not-allowed;font-weight:400}
+.slot[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.empty{padding:26px 16px;text-align:center;color:var(--muted);background:var(--sunk);border-radius:10px;font-size:14.5px}
+
+.form-wrap{margin-top:18px;border-top:1px solid var(--line);padding-top:18px}
+.sel-sum{display:flex;gap:12px;align-items:center;background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:14.5px}
+.sel-sum b{display:block}
+form{display:grid;gap:11px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+label{display:grid;gap:4px;font-size:13.5px;font-weight:600}
+input,select,textarea{font:inherit;font-size:15.5px;font-weight:400;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
+textarea{min-height:56px;resize:vertical}
+.check{display:flex;gap:8px;align-items:center;font-weight:500}
+.check input{width:auto}
+.err{color:var(--bad);font-size:13.5px;margin:0}
+.success{display:grid;gap:12px}
+.notice{padding:10px 12px;border-radius:8px;font-size:14px;line-height:1.45;border-left:4px solid var(--accent);background:var(--accent-soft)}
+.notice b{display:block;font-size:13px;margin-bottom:2px}
+.notice.warn{border-color:var(--pend);background:var(--pend-bg)}
+.notice.bad{border-color:var(--bad);background:var(--bad-bg)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:5px;background:var(--sunk);color:var(--muted);margin-left:4px;vertical-align:1px}
+.success .tick{width:44px;height:44px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center}
+.bubble{background:#dcf8c6;color:#111b21;border-radius:10px 10px 2px 10px;padding:11px 13px;white-space:pre-wrap;font-size:14.5px;line-height:1.45}
+.code{font-family:ui-monospace,Menlo,monospace;background:var(--sunk);padding:2px 7px;border-radius:5px;font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ===== Panel ===== */
+.ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:22px 0 14px}
+.ph h1{font-size:28px;margin-right:auto}
+.datenav{display:flex;align-items:center;gap:6px}
+.datenav .cur{min-width:210px;text-align:center;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{padding:13px 15px}
+.kpi small{color:var(--muted);font-size:13px;display:block}
+.kpi b{font-family:var(--display);font-weight:500;font-size:30px;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .bar{height:5px;background:var(--sunk);border-radius:3px;margin-top:7px;overflow:hidden}
+.kpi .bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.kpi.warn b{color:var(--pend)}
+.panel{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;padding-bottom:40px;align-items:start}
+.agenda-card{overflow:hidden}
+.agenda-scroll{overflow:auto;max-height:calc(100vh - 160px);min-height:420px}
+.agenda{display:grid;position:relative}
+.ahead{position:sticky;top:0;z-index:3;background:var(--surface);border-bottom:1px solid var(--line);padding:9px 8px;display:flex;gap:8px;align-items:center;min-width:0}
+.ahead .av{width:30px;height:30px;font-size:12px}
+.ahead b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ahead small{font-size:12px;color:var(--muted);display:block;white-space:nowrap}
+.corner{position:sticky;left:0;top:0;z-index:4;background:var(--surface);border-bottom:1px solid var(--line)}
+.tcol{position:sticky;left:0;z-index:2;background:var(--surface);border-right:1px solid var(--line)}
+.tcol div{position:absolute;right:6px;font-size:11.5px;color:var(--muted);transform:translateY(-7px);font-variant-numeric:tabular-nums}
+.col{position:relative;border-right:1px solid var(--line);
+  background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--line) 70%,transparent) 6px 7px)}
+.col .gl{position:absolute;left:0;right:0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.col .work{position:absolute;left:0;right:0;background:var(--surface)}
+.free{position:absolute;left:4px;right:4px;border:1px dashed transparent;border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:transparent;text-align:left;padding:2px 7px}
+.free:hover,.free:focus-visible{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.ev{position:absolute;left:4px;right:4px;border-radius:7px;padding:4px 7px 4px 9px;cursor:pointer;text-align:left;border:0;overflow:hidden;font-size:12.5px;line-height:1.3;border-left:4px solid}
+.ev b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev > span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+.st-pendiente{background:var(--pend-bg);border-color:var(--pend);color:var(--ink)}
+.st-confirmado{background:var(--ok-bg);border-color:var(--ok);color:var(--ink)}
+.st-asistio{background:var(--done-bg);border-color:var(--done);color:var(--ink)}
+.st-ausente{background:var(--bad-bg);border-color:var(--bad);color:var(--ink)}
+.st-bloqueo{background:var(--sunk);border-color:var(--muted);color:var(--muted);background-image:repeating-linear-gradient(45deg,transparent 0 5px,color-mix(in srgb,var(--line) 80%,transparent) 5px 6px)}
+.now{position:absolute;left:0;right:0;border-top:2px solid var(--bad);z-index:1;pointer-events:none}
+.now::before{content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+
+.side{display:grid;gap:14px}
+.side .card{padding:14px}
+.side h3{font-family:var(--body);font-size:14.5px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.count{background:var(--pend-bg);color:var(--pend);border-radius:99px;font-size:12px;padding:1px 8px}
+.count.ok{background:var(--ok-bg);color:var(--ok)}
+.li{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.li:first-of-type{border-top:0}
+.li b{display:block;font-size:14px}
+.li button.open{all:unset;cursor:pointer;display:block}
+.li button.open:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.pendiente{background:var(--pend-bg);color:var(--pend)}
+.pill.confirmado{background:var(--ok-bg);color:var(--ok)}
+.pill.asistio{background:var(--done-bg);color:var(--done)}
+.pill.ausente{background:var(--bad-bg);color:var(--bad)}
+.pill.bloqueo{background:var(--sunk);color:var(--muted)}
+.sent{font-size:12.5px;color:var(--ok);font-weight:600}
+.keys{display:grid;gap:6px;font-size:13px}
+.keys div{display:flex;gap:8px;align-items:center}
+.keys i{width:14px;height:14px;border-radius:3px;border-left:4px solid;flex:none}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
+.scrim.show{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--surface);z-index:51;transform:translateX(105%);display:flex;flex-direction:column;border-left:1px solid var(--line)}
+.drawer.show{transform:none}
+@media (prefers-reduced-motion:no-preference){.drawer{transition:transform .22s ease}}
+.dh{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:start}
+.dh h2{font-size:22px}
+.db{padding:16px 18px;overflow:auto;display:grid;gap:14px;align-content:start}
+.close{border:0;background:var(--sunk);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;flex:none}
+dl{display:grid;grid-template-columns:110px 1fr;gap:7px 10px;margin:0;font-size:14.5px}
+dt{color:var(--muted)}
+dd{margin:0;font-weight:500}
+.sec-t{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:0}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:9px;font-size:14px;z-index:60;display:none;max-width:calc(100% - 32px)}
+.toast.show{display:block}
+
+@media (max-width:980px){
+  .book{grid-template-columns:1fr}
+  .panel{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:520px){
+  .row2{grid-template-columns:1fr}
+  .datenav .cur{min-width:0;font-size:14px}
+  .brand small{display:none}
+  .tab{padding:7px 10px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" id="logo">A</div>
+      <div><b id="clinicName"></b><small id="clinicSub"></small></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Vista">
+      <button class="tab" role="tab" id="tab-book" aria-selected="true" data-view="book">Reservar turno</button>
+      <button class="tab" role="tab" id="tab-panel" aria-selected="false" data-view="panel">Panel del consultorio</button>
+    </div>
+    <button class="linkbtn" id="resetBtn" type="button">Restablecer demo</button>
+  </div>
+</header>
+
+<!-- ===================== VISTA PACIENTE ===================== -->
+<main id="view-book">
+  <div class="wrap hero">
+    <h1>Reservá tu turno online</h1>
+    <p>Consultas médicas y estudios por imágenes. Elegí día y horario disponible y te confirmamos por WhatsApp.</p>
+  </div>
+  <div class="wrap book">
+    <section class="card pane" aria-labelledby="s1">
+      <div class="step-h"><span class="step-n">1</span><h2 id="s1">Elegí consulta o estudio</h2></div>
+      <div class="chips" id="specChips" role="group" aria-label="Especialidad"></div>
+      <div class="pros" id="proList"></div>
+    </section>
+
+    <section class="card pane" aria-labelledby="s2">
+      <div class="step-h"><span class="step-n">2</span><h2 id="s2">Día y horario</h2></div>
+      <div id="calArea"></div>
+      <div id="formArea"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ===================== PANEL ===================== -->
+<main id="view-panel" hidden>
+  <div class="wrap">
+    <div class="ph">
+      <h1>Agenda</h1>
+      <div class="datenav">
+        <button class="btn btn-soft btn-sm" id="prevDay" aria-label="Día anterior">‹</button>
+        <button class="btn btn-soft btn-sm" id="todayBtn">Hoy</button>
+        <div class="cur" id="curDate" aria-live="polite"></div>
+        <button class="btn btn-soft btn-sm" id="nextDay" aria-label="Día siguiente">›</button>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel">
+      <div class="card agenda-card">
+        <div class="agenda-scroll" id="agendaScroll"><div class="agenda" id="agenda"></div></div>
+      </div>
+      <aside class="side">
+        <div class="card"><h3>Pendientes de confirmar <span class="count" id="pendCount">0</span></h3><div id="pendList"></div></div>
+        <div class="card"><h3>Recordatorios para mañana <span class="count ok" id="remCount">0</span></h3><div id="remList"></div></div>
+        <div class="card"><h3>Referencias</h3>
+          <div class="keys">
+            <div><i class="st-pendiente"></i>Pendiente de confirmar</div>
+            <div><i class="st-confirmado"></i>Confirmado</div>
+            <div><i class="st-asistio"></i>Asistió</div>
+            <div><i class="st-ausente"></i>No asistió</div>
+            <div><i class="st-bloqueo"></i>Horario bloqueado</div>
+          </div>
+          <p class="muted" style="font-size:12.5px;margin:10px 0 0">Hacé clic en un horario libre para agendar un turno manual o bloquearlo.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="dh"><div><p class="sec-t" id="dKicker"></p><h2 id="dTitle"></h2></div><button class="close" id="dClose" aria-label="Cerrar">×</button></div>
+  <div class="db" id="dBody"></div>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =================================================================
+   CONFIGURACIÓN DEL CONSULTORIO — lo único que se edita por cliente
+   ================================================================= */
+const CLINIC = {
+  name: "Centro Médico Alameda",
+  sub: "Consultorios y diagnóstico por imágenes",
+  address: "Av. Alameda 1240, piso 2",
+  whatsapp: "5491100000000",          // número del consultorio, solo dígitos con código de país
+  whatsappLabel: "+54 9 11 0000-0000",
+  currency: "$",
+  leadMinutes: 60,                    // no se puede reservar con menos de 60 min de anticipación
+  daysAhead: 14                       // cuántos días hacia adelante se muestran
+};
+// Coberturas. auth:true = los estudios necesitan orden autorizada por la obra social.
+const COVERAGE = [
+  {n:"Particular"},
+  {n:"OSDE"}, {n:"Swiss Medical"}, {n:"Galeno"}, {n:"Medifé"}, {n:"Sancor Salud"}, {n:"Omint"},
+  {n:"OSECAC", auth:true}, {n:"IOMA", auth:true}, {n:"PAMI", auth:true}
+];
+// Agendas: médicos (consulta) y equipos (estudio).
+// hours: clave = día de la semana (0 domingo … 6 sábado) → franjas [inicio, fin]
+// accepts: "all" o la lista de coberturas con las que trabaja. price: valor particular.
+// types: motivos o tipos de estudio, cada uno con su preparación.
+const NO_PREP = "No requiere preparación.";
+const PROS = [
+  {id:"herrera", kind:"consulta", group:"Consultas", name:"Dr. Pablo Herrera", role:"Clínica médica", dur:30, price:35000, color:"#3b6fb6", accepts:"all",
+   hours:{2:[["09:00","13:00"],["15:00","18:00"]],4:[["09:00","13:00"],["15:00","18:00"]]},
+   types:[{n:"Primera consulta"},{n:"Control"},{n:"Lectura de estudios"},{n:"Apto físico"}]},
+  {id:"romero", kind:"consulta", group:"Consultas", name:"Dra. Silvia Romero", role:"Ginecología y obstetricia", dur:30, price:40000, color:"#a3456a",
+   accepts:["OSDE","Swiss Medical","Galeno","Medifé","Sancor Salud","Omint","OSECAC"],
+   hours:{1:[["09:00","13:00"]],3:[["09:00","13:00"],["15:00","18:00"]],5:[["09:00","13:00"]]},
+   types:[{n:"Control ginecológico anual"},{n:"Consulta"},{n:"Control de embarazo"}]},
+  {id:"mamo", kind:"estudio", group:"Estudios", name:"Mamografía", abbr:"MG", role:"Mamógrafo digital", dur:20, price:45000, color:"#b0506f", needsOrder:true, accepts:"all",
+   hours:{1:[["08:00","12:00"]],2:[["08:00","12:00"]],3:[["08:00","12:00"]],4:[["08:00","12:00"]],5:[["08:00","12:00"]]},
+   types:[{n:"Mamografía bilateral",prep:"El día del estudio no uses desodorante, talco ni cremas en axilas y mamas. Traé tus mamografías anteriores."},
+          {n:"Mamografía con proyecciones adicionales",prep:"El día del estudio no uses desodorante, talco ni cremas en axilas y mamas. Traé tus mamografías anteriores."}]},
+  {id:"eco", kind:"estudio", group:"Estudios", name:"Ecografía", abbr:"ECO", role:"Ecógrafo Doppler color", dur:20, price:40000, color:"#2c7a7b", needsOrder:true, accepts:"all",
+   hours:{1:[["08:00","13:00"],["15:00","18:00"]],2:[["08:00","13:00"],["15:00","18:00"]],3:[["08:00","13:00"],["15:00","18:00"]],4:[["08:00","13:00"],["15:00","18:00"]],5:[["08:00","13:00"]]},
+   types:[{n:"Ecografía abdominal",prep:"Ayuno de 6 horas. El día anterior evitá bebidas gaseosas y chicles."},
+          {n:"Ecografía ginecológica transvaginal",prep:"Vení con la vejiga vacía."},
+          {n:"Ecografía pelviana",prep:"Tomá 1 litro de agua una hora antes y no orines hasta terminar el estudio."},
+          {n:"Ecografía renal y vesical",prep:"Tomá 1 litro de agua una hora antes y no orines hasta terminar el estudio."},
+          {n:"Ecografía tiroidea",prep:NO_PREP},
+          {n:"Ecografía mamaria",prep:"No requiere preparación. Traé tus estudios mamarios anteriores."}]},
+  {id:"dmo", kind:"estudio", group:"Estudios", name:"Densitometría ósea", abbr:"DMO", role:"Columna lumbar y cadera", dur:20, price:50000, color:"#6a5acd", needsOrder:true,
+   accepts:["OSDE","Swiss Medical","Galeno","Medifé","Sancor Salud","Omint","OSECAC","PAMI"],
+   hours:{2:[["08:00","12:00"]],4:[["08:00","12:00"]]},
+   types:[{n:"Densitometría de columna y cadera",prep:"No tomes suplementos de calcio 24 horas antes. No tenés que haberte hecho estudios con contraste (bario o yodo) en los últimos 7 días. Vení con ropa sin partes metálicas."}]}
+];
+/* ================================================================= */
+
+const DAY0 = 8*60, DAY1 = 20*60, ROW = 30, PX = 48; // agenda 08:00–20:00, filas de 30 min
+const STATUS = {pendiente:"Pendiente", confirmado:"Confirmado", asistio:"Asistió", ausente:"No asistió", bloqueo:"Bloqueado", cancelado:"Cancelado"};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+const toMin = t => { const [h,m] = t.split(":").map(Number); return h*60+m; };
+const toT = m => pad(Math.floor(m/60))+":"+pad(m%60);
+const TODAY = () => ymd(new Date());
+const nowMin = () => { const d = new Date(); return d.getHours()*60+d.getMinutes(); };
+const fmtLong = s => { const t = parse(s).toLocaleDateString("es", {weekday:"long", day:"numeric", month:"long"}); return t.charAt(0).toUpperCase() + t.slice(1); };
+const fmtDow = s => parse(s).toLocaleDateString("es", {weekday:"short"}).replace(".","");
+const initials = n => n.replace(/^(Dra?\.|Lic\.)\s*/,"").split(" ").map(w=>w[0]).slice(0,2).join("");
+const pro = id => PROS.find(p => p.id === id);
+const abbr = p => p.abbr || initials(p.name);
+const isStudy = p => p.kind === "estudio";
+const typeOf = b => (pro(b.pro).types.find(t => t.n === b.reason) || {});
+const covers = (p, os) => os === "Particular" || p.accepts === "all" || p.accepts.includes(os);
+const cov = os => COVERAGE.find(c => c.n === os) || {};
+const covLine = b => b.os === "Particular" || !b.os ? "Particular" : b.os + (b.plan ? " " + b.plan : "") + (b.aff ? " · Nº " + b.aff : "");
+const digits = s => String(s).replace(/\D/g,"");
+// Normaliza números argentinos: agrega 549 si falta y quita 0 y 15 locales
+const normPhone = n => { let d = digits(n); if (d.startsWith("54")) return d; d = d.replace(/^0/, ""); if (d.length === 12 && d.slice(2,4) === "15") d = d.slice(0,2) + d.slice(4); return "549" + d; };
+const wa = (num, text) => "https://wa.me/" + normPhone(num) + "?text=" + encodeURIComponent(text);
+const money = n => CLINIC.currency + " " + Number(n).toLocaleString("es-AR");
+
+/* ---------- datos ---------- */
+const KEY = "agenda-demo-v2";
+let DB;
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function code(r){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<5;i++) s+=a[Math.floor((r?r():Math.random())*a.length)]; return s; }
+function rawSlots(p, date){
+  const ranges = p.hours[parse(date).getDay()] || [];
+  const out = [];
+  ranges.forEach(([a,b]) => { for (let m = toMin(a); m + p.dur <= toMin(b); m += p.dur) out.push(m); });
+  return out;
+}
+function seed(){
+  const names = ["Lucía Fernández","Martín Gómez","Sofía Herrera","Diego Castro","Valentina Ríos","Mateo Navarro","Camila Ortiz","Joaquín Silva","Paula Medina","Nicolás Vega","Florencia Paz","Andrés Molina","Julieta Romero","Tomás Aguirre","Carolina Díaz","Gabriel Rojas","Natalia Suárez","Federico Luna","Mariana Ibáñez","Pablo Cabrera","Agustina Ponce","Sebastián Muñoz"];
+  const t = TODAY(); const r = rng(Number(digits(t)));
+  const bookings = []; let id = 1;
+  for (let off = -2; off <= 9; off++){
+    const date = addDays(t, off);
+    PROS.forEach(p => {
+      const sl = rawSlots(p, date);
+      const fill = off <= 0 ? 0.7 : off <= 3 ? 0.55 : 0.3;
+      sl.forEach((m, i) => {
+        if (off >= 0 && i === 3 && r() < 0.35){ bookings.push({id:id++, pro:p.id, date, start:toT(m), dur:p.dur, status:"bloqueo", name:"Reunión de equipo", phone:"", reason:"", note:"", source:"manual"}); return; }
+        if (r() > fill) return;
+        const past = off < 0 || (off === 0 && m + p.dur <= nowMin());
+        let status;
+        if (past) status = r() < 0.88 ? "asistio" : "ausente";
+        else if (off <= 1) status = r() < 0.85 ? "confirmado" : "pendiente";
+        else status = r() < 0.7 ? "confirmado" : "pendiente";
+        const nm = names[Math.floor(r()*names.length)];
+        let os = "Particular";
+        for (let k = 0; k < 4; k++){ const c = COVERAGE[Math.floor(r()*COVERAGE.length)].n; if (covers(p, c)){ os = c; break; } }
+        bookings.push({id:id++, pro:p.id, date, start:toT(m), dur:p.dur, status, name:nm,
+          phone:"54911" + String(Math.floor(r()*90000000)+10000000), reason:p.types[Math.floor(r()*p.types.length)].n,
+          dni:String(Math.floor(r()*30000000)+20000000), os, plan:"", aff: os === "Particular" ? "" : String(Math.floor(r()*9e9)+1e9),
+          order: isStudy(p) ? r() < 0.9 : false,
+          first: r() < 0.25, note:"", source: r() < 0.6 ? "web" : "manual", code:code(r), reminded:false});
+      });
+    });
+  }
+  return {seededOn:t, nextId:id, bookings};
+}
+function load(){
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.seededOn === TODAY()) { DB = s; return; } } catch(_){}
+  DB = seed(); save();
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(_){} }
+const live = b => b.status !== "cancelado";
+const onDay = (pid, date) => DB.bookings.filter(b => b.pro === pid && b.date === date && live(b));
+function isTaken(pid, date, m, dur){
+  return onDay(pid, date).some(b => { const s = toMin(b.start); return s < m + dur && m < s + b.dur; });
+}
+function slotsFor(p, date){
+  const t = TODAY(), cut = nowMin() + CLINIC.leadMinutes;
+  return rawSlots(p, date).map(m => ({m, free: !isTaken(p.id, date, m, p.dur) && !(date === t && m < cut) && date >= t}));
+}
+function nextFree(p){
+  for (let i = 0; i < CLINIC.daysAhead; i++){
+    const d = addDays(TODAY(), i); const s = slotsFor(p, d).find(x => x.free);
+    if (s) return {date:d, m:s.m, off:i};
+  }
+  return null;
+}
+
+/* ---------- vista paciente ---------- */
+const UI = {spec:"Todas", pro:null, date:null, time:null, done:null};
+function renderSpecs(){
+  const specs = ["Todas", ...new Set(PROS.map(p => p.group))];
+  $("specChips").innerHTML = specs.map(s => `<button class="chip" type="button" data-s="${esc(s)}" aria-pressed="${s===UI.spec}">${esc(s)}</button>`).join("");
+}
+function relDay(off, date){ return off === 0 ? "hoy" : off === 1 ? "mañana" : fmtDow(date) + " " + parse(date).getDate(); }
+function renderPros(){
+  const list = PROS.filter(p => UI.spec === "Todas" || p.group === UI.spec);
+  $("proList").innerHTML = list.map(p => {
+    const n = nextFree(p);
+    return `<button class="pro" type="button" data-p="${p.id}" aria-pressed="${UI.pro===p.id}">
+      <span class="av" style="background:${p.color}">${esc(abbr(p))}</span>
+      <span><b>${esc(p.name)}</b><span class="sp">${esc(p.role)} · ${p.dur} min${p.needsOrder ? " · con orden médica" : ""}</span>
+      <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en 2 semanas"}</span></span>
+      <span class="price"><b>${money(p.price)}</b><br>particular</span></button>`;
+  }).join("");
+}
+function renderCal(){
+  const area = $("calArea");
+  if (!UI.pro){ area.innerHTML = `<div class="empty">Elegí una consulta o un estudio para ver los días y horarios disponibles.</div>`; $("formArea").innerHTML = ""; return; }
+  const p = pro(UI.pro);
+  const days = [];
+  for (let i = 0; i < CLINIC.daysAhead; i++){
+    const d = addDays(TODAY(), i); const free = slotsFor(p, d).filter(s => s.free).length;
+    days.push({d, free, works: rawSlots(p, d).length > 0});
+  }
+  if (!UI.date || !days.find(x => x.d === UI.date && x.free)){ const f = days.find(x => x.free); UI.date = f ? f.d : null; UI.time = null; }
+  let h = `<div class="days" role="group" aria-label="Días">` + days.map(x =>
+    `<button class="day" type="button" data-d="${x.d}" ${x.free?"":"disabled"} aria-pressed="${UI.date===x.d}" aria-label="${fmtLong(x.d)}, ${x.free} horarios libres">
+      <small>${fmtDow(x.d)}</small><b>${parse(x.d).getDate()}</b><span>${x.free ? x.free + " libres" : (x.works ? "Completo" : "—")}</span></button>`).join("") + `</div>`;
+  if (UI.date){
+    const sl = slotsFor(p, UI.date);
+    const grp = (t, arr) => arr.length ? `<div class="slot-group"><h3>${t}</h3><div class="slots">` + arr.map(s =>
+      `<button class="slot" type="button" data-t="${s.m}" ${s.free?"":"disabled"} aria-pressed="${UI.time===s.m}" aria-label="${toT(s.m)}${s.free?"":" ocupado"}">${toT(s.m)}</button>`).join("") + `</div></div>` : "";
+    h += `<p style="margin:14px 0 0;font-weight:600">${fmtLong(UI.date)}</p>`;
+    h += grp("Mañana", sl.filter(s => s.m < 13*60)) + grp("Tarde", sl.filter(s => s.m >= 13*60));
+    h += `<div class="legend"><span><i style="border:1px solid var(--accent)"></i>Disponible</span><span><i style="background:var(--sunk);border:1px solid var(--line)"></i>Ocupado</span></div>`;
+  } else {
+    h += `<div class="empty" style="margin-top:12px">No hay turnos libres en las próximas 2 semanas. Escribinos por WhatsApp y te avisamos si se libera uno.</div>`;
+  }
+  area.innerHTML = h;
+  renderForm();
+}
+function renderForm(){
+  const fa = $("formArea");
+  if (UI.done){ fa.innerHTML = doneHtml(UI.done); return; }
+  if (UI.time == null){ fa.innerHTML = ""; return; }
+  const p = pro(UI.pro), st = isStudy(p);
+  fa.innerHTML = `<div class="form-wrap">
+    <div class="step-h"><span class="step-n">3</span><h2>Tus datos</h2></div>
+    <div class="sel-sum"><span class="av" style="background:${p.color};width:38px;height:38px;font-size:12px">${esc(abbr(p))}</span>
+      <div><b>${esc(p.name)}</b><span>${fmtLong(UI.date)}</span> · <span class="num">${toT(UI.time)} h</span></div></div>
+    <form id="bookForm" novalidate>
+      <div class="row2">
+        <label for="b-name">Nombre y apellido<input id="b-name" autocomplete="name" placeholder="Ej. Laura Gómez"></label>
+        <label for="b-dni">DNI<input id="b-dni" inputmode="numeric" placeholder="Ej. 30123456"></label>
+      </div>
+      <label for="b-phone">WhatsApp<input id="b-phone" type="tel" autocomplete="tel" placeholder="Ej. 11 5555-1234"></label>
+      <label for="b-reason">${st ? "Estudio" : "Motivo de consulta"}<select id="b-reason">${p.types.map(t => `<option>${esc(t.n)}</option>`).join("")}</select></label>
+      <div id="prepBox"></div>
+      <label for="b-os">Cobertura<select id="b-os">${COVERAGE.map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
+      <div class="row2" id="osExtra">
+        <label for="b-plan">Plan (opcional)<input id="b-plan" placeholder="Ej. 210"></label>
+        <label for="b-aff">Nº de afiliado<input id="b-aff" inputmode="numeric" placeholder="Como figura en la credencial"></label>
+      </div>
+      <div id="osNote"></div>
+      ${st ? `<label class="check" for="b-order"><input type="checkbox" id="b-order"> Tengo la orden médica y la llevo el día del turno</label>` : ""}
+      <label class="check" for="b-first"><input type="checkbox" id="b-first"> Es mi primera vez en el centro</label>
+      <label for="b-note">Comentario (opcional)<textarea id="b-note" placeholder="Síntomas, estudios anteriores, preferencias…"></textarea></label>
+      <p class="err" id="b-err" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Reservar turno</button>
+    </form></div>`;
+  updateFormBits();
+}
+function prepHtml(p, typeName, title){
+  const t = p.types.find(x => x.n === typeName) || {};
+  if (!t.prep) return "";
+  return `<div class="notice"><b>${title || "Preparación"}</b>${esc(t.prep)}</div>`;
+}
+function osNoteHtml(p, os){
+  if (!covers(p, os)) return `<div class="notice bad"><b>No trabajamos con ${esc(os)} para ${isStudy(p) ? "este estudio" : "este profesional"}</b>Podés atenderte como particular por ${money(p.price)}, o elegir otra cobertura.</div>`;
+  if (os === "Particular") return `<div class="notice warn"><b>Valor particular: ${money(p.price)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`;
+  if (isStudy(p) && cov(os).auth) return `<div class="notice warn"><b>${esc(os)} pide orden autorizada</b>Antes del turno gestioná la autorización de la orden y llevala impresa o en el celular.</div>`;
+  return "";
+}
+function updateFormBits(){
+  const p = pro(UI.pro); if (!$("b-os")) return;
+  const os = $("b-os").value;
+  $("prepBox").innerHTML = isStudy(p) ? prepHtml(p, $("b-reason").value) : "";
+  $("osExtra").style.display = os === "Particular" ? "none" : "";
+  $("osNote").innerHTML = osNoteHtml(p, os);
+}
+function patientMsg(b){
+  const p = pro(b.pro), st = isStudy(p);
+  return `Hola, reservé un turno en ${CLINIC.name}:\n\n` +
+    (st ? `• Estudio: ${b.reason}\n` : `• Profesional: ${p.name} (${p.role})\n• Motivo: ${b.reason}\n`) +
+    `• Día: ${fmtLong(b.date)}\n• Hora: ${b.start} h\n• Paciente: ${b.name} · DNI ${b.dni}\n• Cobertura: ${covLine(b)}` +
+    (st ? `\n• Orden médica: ${b.order ? "sí, la llevo" : "no la tengo todavía"}` : "") +
+    (b.first ? "\n• Primera vez en el centro" : "") + (b.note ? "\n• Comentario: " + b.note : "") +
+    `\n\nCódigo de reserva: ${b.code}`;
+}
+function doneHtml(b){
+  const msg = patientMsg(b);
+  return `<div class="form-wrap success">
+    <div class="tick"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Turno reservado</h2>
+    <p style="margin:0">Tu horario quedó apartado. Enviá este mensaje por WhatsApp y el consultorio te lo confirma. Código <span class="code">${b.code}</span></p>
+    ${isStudy(pro(b.pro)) ? prepHtml(pro(b.pro), b.reason, "Cómo prepararte para el estudio") : ""}
+    <div class="notice warn"><b>El día del turno traé</b>DNI${b.os !== "Particular" ? ", credencial de " + esc(b.os) : ""}${isStudy(pro(b.pro)) ? " y la orden médica" + (cov(b.os).auth ? " autorizada" : "") : ""}.</div>
+    <p class="sec-t">Mensaje para el consultorio</p>
+    <div class="bubble">${esc(msg)}</div>
+    <div class="actions">
+      <a class="btn btn-wa" href="${wa(CLINIC.whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a>
+      <button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button>
+    </div>
+    <p class="muted" style="font-size:13px;margin:0">WhatsApp del consultorio: ${esc(CLINIC.whatsappLabel)} · <button class="linkbtn" type="button" id="another">Reservar otro turno</button></p>
+  </div>`;
+}
+const WA_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4a.5.5 0 0 0 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z"/></svg>`;
+function renderBook(){ renderSpecs(); renderPros(); renderCal(); }
+
+$("specChips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; UI.spec = b.dataset.s; renderSpecs(); renderPros(); });
+$("proList").addEventListener("click", e => {
+  const b = e.target.closest(".pro"); if (!b) return;
+  UI.pro = b.dataset.p; UI.date = null; UI.time = null; UI.done = null; renderPros(); renderCal();
+  if (matchMedia("(max-width:980px)").matches) $("calArea").scrollIntoView({block:"start"});
+});
+$("calArea").addEventListener("click", e => {
+  const d = e.target.closest(".day"); if (d && !d.disabled){ UI.date = d.dataset.d; UI.time = null; UI.done = null; renderCal(); return; }
+  const s = e.target.closest(".slot"); if (s && !s.disabled){ UI.time = Number(s.dataset.t); UI.done = null; renderCal(); $("b-name") && $("b-name").focus(); }
+});
+$("formArea").addEventListener("change", e => { if (e.target.id === "b-os" || e.target.id === "b-reason") updateFormBits(); });
+$("formArea").addEventListener("submit", e => {
+  e.preventDefault();
+  const p = pro(UI.pro);
+  const name = $("b-name").value.trim(), phone = $("b-phone").value.trim();
+  const dni = digits($("b-dni").value), os = $("b-os").value, aff = $("b-aff").value.trim();
+  const err = (t, el) => { $("b-err").textContent = t; if (el) $(el).focus(); };
+  if (!name) return err("Escribí tu nombre y apellido.", "b-name");
+  if (dni.length < 7 || dni.length > 8) return err("Escribí tu DNI, solo números.", "b-dni");
+  if (digits(phone).length < 8) return err("Escribí un WhatsApp válido, con código de área.", "b-phone");
+  if (!covers(p, os)) return err("Elegí «Particular» o una cobertura con la que trabajemos para este turno.", "b-os");
+  if (os !== "Particular" && !aff) return err("Escribí tu número de afiliado de " + os + ".", "b-aff");
+  if (isStudy(p) && !$("b-order").checked) return err("Para los estudios necesitás orden médica. Marcá la casilla si ya la tenés.", "b-order");
+  if (isTaken(p.id, UI.date, UI.time, p.dur)){ err("Ese horario se acaba de ocupar. Elegí otro."); UI.time = null; renderCal(); return; }
+  const b = {id:DB.nextId++, pro:p.id, date:UI.date, start:toT(UI.time), dur:p.dur, status:"pendiente", name, phone, dni, os,
+    plan: os === "Particular" ? "" : $("b-plan").value.trim(), aff: os === "Particular" ? "" : aff, order: isStudy(p) ? $("b-order").checked : false,
+    reason:$("b-reason").value, first:$("b-first").checked, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
+  DB.bookings.push(b); save();
+  UI.done = b; UI.time = null; renderPros(); renderCal();
+  $("formArea").scrollIntoView({block:"nearest"});
+});
+$("formArea").addEventListener("click", e => {
+  if (e.target.id === "another"){ UI.done = null; renderCal(); }
+  if (e.target.closest("#seePanel")){ const id = Number(e.target.closest("#seePanel").dataset.id); const b = DB.bookings.find(x => x.id === id); PANEL.date = b.date; show("panel"); openBooking(id); }
+});
+
+/* ---------- panel ---------- */
+const PANEL = {date: TODAY()};
+function weekStats(){
+  const t = TODAY(); let cap = 0, used = 0, money = 0, studies = 0, noOrder = 0;
+  for (let i = 0; i < 7; i++){
+    const d = addDays(t, i);
+    PROS.forEach(p => {
+      cap += rawSlots(p, d).length * p.dur;
+      onDay(p.id, d).forEach(b => { if (b.status !== "bloqueo"){ used += b.dur; if (b.status !== "ausente") money += p.price; if (isStudy(p)){ studies++; if (!b.order) noOrder++; } } else cap -= b.dur; });
+    });
+  }
+  return {occ: cap ? Math.round(used / cap * 100) : 0, money, studies, noOrder};
+}
+function renderKpis(){
+  const d = PANEL.date;
+  const day = DB.bookings.filter(b => b.date === d && live(b) && b.status !== "bloqueo");
+  const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= TODAY());
+  const w = weekStats();
+  const isToday = d === TODAY();
+  $("kpis").innerHTML = `
+    <div class="card kpi"><small>Turnos ${isToday ? "hoy" : "este día"}</small><b>${day.length}</b><div class="muted" style="font-size:12.5px">${day.filter(b=>b.status==="confirmado").length} confirmados · ${day.filter(b=>b.status==="pendiente").length} pendientes</div></div>
+    <div class="card kpi ${pend.length ? "warn" : ""}"><small>Pendientes de confirmar</small><b>${pend.length}</b><div class="muted" style="font-size:12.5px">en los próximos días</div></div>
+    <div class="card kpi"><small>Ocupación próximos 7 días</small><b>${w.occ}%</b><div class="bar"><i style="width:${w.occ}%"></i></div></div>
+    <div class="card kpi"><small>Estudios próximos 7 días</small><b>${w.studies}</b><div class="muted" style="font-size:12.5px">${w.noOrder ? w.noOrder + " sin orden médica confirmada" : "todos con orden médica"}</div></div>`;
+}
+function renderAgenda(){
+  const d = PANEL.date, rows = (DAY1 - DAY0) / ROW, H = rows * PX;
+  $("curDate").textContent = fmtLong(d) + (d === TODAY() ? " · hoy" : "");
+  const g = $("agenda");
+  g.style.gridTemplateColumns = `58px repeat(${PROS.length}, minmax(150px, 1fr))`;
+  let h = `<div class="corner"></div>` + PROS.map(p => {
+    const n = onDay(p.id, d).filter(b => b.status !== "bloqueo").length, works = rawSlots(p, d).length;
+    return `<div class="ahead"><span class="av" style="background:${p.color}">${esc(abbr(p))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos" : (isStudy(p) ? "Sin agenda hoy" : "No atiende")}</small></div></div>`;
+  }).join("");
+  // columna de horas
+  h += `<div class="tcol" style="height:${H}px">` + Array.from({length:rows}, (_, i) => i % 2 === 0 && i ? `<div style="top:${i*PX}px">${toT(DAY0 + i*ROW)}</div>` : "").join("") + `</div>`;
+  const now = nowMin(), showNow = d === TODAY() && now > DAY0 && now < DAY1;
+  PROS.forEach(p => {
+    let c = `<div class="col" style="height:${H}px">`;
+    const ranges = p.hours[parse(d).getDay()] || [];
+    ranges.forEach(([a,b]) => { c += `<div class="work" style="top:${(toMin(a)-DAY0)/ROW*PX}px;height:${(toMin(b)-toMin(a))/ROW*PX}px"></div>`; });
+    for (let i = 2; i < rows; i += 2) c += `<div class="gl" style="top:${i*PX}px"></div>`;
+    const past = d < TODAY();
+    rawSlots(p, d).forEach(m => {
+      if (isTaken(p.id, d, m, p.dur)) return;
+      if (past || (d === TODAY() && m + p.dur <= now)) return;
+      c += `<button class="free" type="button" data-pro="${p.id}" data-m="${m}" style="top:${(m-DAY0)/ROW*PX+2}px;height:${p.dur/ROW*PX-4}px" aria-label="Libre ${toT(m)} con ${esc(p.name)}">+ ${toT(m)} libre</button>`;
+    });
+    onDay(p.id, d).forEach(b => {
+      const top = (toMin(b.start) - DAY0) / ROW * PX + 2, ht = b.dur / ROW * PX - 4;
+      const title = b.status === "bloqueo" ? "Bloqueado" : b.name;
+      const sub = b.status === "bloqueo" ? (b.name || "") : (b.os || "Particular") + " · " + b.reason;
+      c += `<button class="ev st-${b.status}" type="button" data-id="${b.id}" style="top:${top}px;height:${ht}px" aria-label="${esc(b.start + " " + title + ", " + STATUS[b.status])}">
+        <b><span class="num">${b.start}</span> ${esc(title)}${b.isNew ? " ●" : ""}${isStudy(p) && !b.order && b.status !== "bloqueo" ? " ⚠" : ""}</b>${ht > 30 ? `<span>${esc(sub)}</span>` : ""}</button>`;
+    });
+    if (showNow) c += `<div class="now" style="top:${(now-DAY0)/ROW*PX}px"></div>`;
+    c += `</div>`;
+    h += c;
+  });
+  g.innerHTML = h;
+}
+function renderSide(){
+  const t = TODAY();
+  const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= t).sort((a,b) => (a.date+a.start).localeCompare(b.date+b.start));
+  $("pendCount").textContent = pend.length;
+  $("pendList").innerHTML = pend.length ? pend.slice(0, 6).map(b => `<div class="li"><button class="open" data-id="${b.id}"><b>${esc(b.name)}${b.isNew ? ' <span class="pill pendiente">Nuevo</span>' : ""}</b><span class="muted">${esc(pro(b.pro).name)} · ${relDay(Math.round((parse(b.date)-parse(t))/864e5), b.date)} ${b.start}</span></button>
+    <a class="btn btn-wa btn-sm" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">Confirmar</a></div>`).join("")
+    + (pend.length > 6 ? `<p class="muted" style="font-size:13px;margin:8px 0 0">y ${pend.length - 6} más</p>` : "")
+    : `<p class="muted" style="font-size:13.5px;margin:0">Todo confirmado.</p>`;
+  const tm = addDays(t, 1);
+  const rem = DB.bookings.filter(b => b.date === tm && b.status === "confirmado").sort((a,b) => a.start.localeCompare(b.start));
+  $("remCount").textContent = rem.filter(b => !b.reminded).length;
+  $("remList").innerHTML = rem.length ? rem.slice(0, 8).map(b => `<div class="li"><button class="open" data-id="${b.id}"><b>${esc(b.name)}</b><span class="muted num">${b.start} · ${esc(pro(b.pro).name)}</span></button>
+    ${b.reminded ? `<span class="sent">Enviado ✓</span>` : `<a class="btn btn-soft btn-sm" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">Recordar</a>`}</div>`).join("")
+    + (rem.length > 8 ? `<p class="muted" style="font-size:13px;margin:8px 0 0">y ${rem.length - 8} más</p>` : "")
+    : `<p class="muted" style="font-size:13.5px;margin:0">No hay turnos confirmados para mañana.</p>`;
+}
+function bringLine(b){ const p = pro(b.pro); return "DNI" + (b.os && b.os !== "Particular" ? ", credencial de " + b.os : "") + (isStudy(p) ? " y orden médica" + (cov(b.os).auth ? " autorizada" : "") : ""); }
+function confirmMsg(b){
+  const p = pro(b.pro), st = isStudy(p), prep = st ? typeOf(b).prep : "";
+  return `Hola ${b.name.split(" ")[0]}, te confirmamos tu turno en ${CLINIC.name}:\n\n• ${st ? b.reason : p.name + " · " + b.reason}\n• ${fmtLong(b.date)}, ${b.start} h\n• ${CLINIC.address}\n• Cobertura: ${covLine(b)}` +
+    (prep && prep !== NO_PREP ? `\n\nPreparación: ${prep}` : "") +
+    `\n\nTraé ${bringLine(b)}. Si no podés venir, avisanos respondiendo este mensaje así le damos el turno a otra persona.`;
+}
+function reminderMsg(b){
+  const p = pro(b.pro), st = isStudy(p), prep = st ? typeOf(b).prep : "";
+  return `Hola ${b.name.split(" ")[0]}, te recordamos tu turno de mañana a las ${b.start} h: ${st ? b.reason : p.name}, en ${CLINIC.address}.` +
+    (prep && prep !== NO_PREP ? `\n\nAcordate: ${prep}` : "") +
+    `\nTraé ${bringLine(b)}.\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno.`;
+}
+function renderPanel(){ renderKpis(); renderAgenda(); renderSide(); }
+
+/* ---------- drawer ---------- */
+let lastFocus = null;
+function openDrawer(kicker, title, body){
+  lastFocus = document.activeElement;
+  $("dKicker").textContent = kicker; $("dTitle").textContent = title; $("dBody").innerHTML = body;
+  $("scrim").classList.add("show"); $("drawer").classList.add("show");
+  setTimeout(() => $("dClose").focus(), 30);
+}
+function closeDrawer(){ $("scrim").classList.remove("show"); $("drawer").classList.remove("show"); if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+function openBooking(id){
+  const b = DB.bookings.find(x => x.id === id); if (!b) return;
+  const p = pro(b.pro);
+  if (b.date !== PANEL.date){ PANEL.date = b.date; renderPanel(); }
+  if (b.isNew){ b.isNew = false; save(); renderPanel(); }
+  if (b.status === "bloqueo"){
+    openDrawer(p.name, "Horario bloqueado", `<dl><dt>Día</dt><dd>${fmtLong(b.date)}</dd><dt>Horario</dt><dd class="num">${b.start} – ${toT(toMin(b.start)+b.dur)}</dd><dt>Motivo</dt><dd>${esc(b.name || "—")}</dd></dl>
+      <div class="actions"><button class="btn btn-soft" data-act="unblock" data-id="${b.id}">Quitar bloqueo</button></div>`);
+    return;
+  }
+  let acts = "";
+  if (b.status === "pendiente") acts = `<a class="btn btn-wa" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">${WA_ICON}Confirmar y avisar por WhatsApp</a>`;
+  if (b.status === "confirmado") acts = `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>
+      <button class="btn btn-soft" data-act="asistio" data-id="${b.id}">Asistió</button><button class="btn btn-soft" data-act="ausente" data-id="${b.id}">No asistió</button>`;
+  if (b.status === "asistio" || b.status === "ausente") acts = `<button class="btn btn-soft" data-act="confirmado" data-id="${b.id}">Volver a “confirmado”</button>`;
+  openDrawer(isStudy(p) ? p.name + " · " + b.reason : p.name + " · " + p.role, b.name, `
+    <div><span class="pill ${b.status}">${STATUS[b.status]}</span> ${b.first ? '<span class="pill pendiente" style="margin-left:4px">Primera vez</span>' : ""}</div>
+    <dl>
+      <dt>Día</dt><dd>${fmtLong(b.date)}</dd>
+      <dt>Horario</dt><dd class="num">${b.start} – ${toT(toMin(b.start)+b.dur)} (${b.dur} min)</dd>
+      <dt>${isStudy(p) ? "Estudio" : "Motivo"}</dt><dd>${esc(b.reason)}</dd>
+      <dt>DNI</dt><dd class="num">${esc(b.dni || "—")}</dd>
+      <dt>WhatsApp</dt><dd class="num">+${esc(normPhone(b.phone))}</dd>
+      <dt>Cobertura</dt><dd>${esc(covLine(b))}${b.os && b.os !== "Particular" && !covers(p, b.os) ? ' <span class="tag">no cubierta</span>' : ""}</dd>
+      ${isStudy(p) ? `<dt>Orden médica</dt><dd>${b.order ? "Sí" + (cov(b.os).auth ? " (requiere autorización)" : "") : '<span class="pill ausente">Falta</span>'}</dd>` : ""}
+      <dt>Origen</dt><dd>${b.source === "web" ? "Reserva online" : "Cargado por el consultorio"}</dd>
+      ${b.code ? `<dt>Código</dt><dd><span class="code">${b.code}</span></dd>` : ""}
+      ${b.os === "Particular" ? `<dt>A cobrar</dt><dd>${money(p.price)}</dd>` : ""}
+      ${b.note ? `<dt>Comentario</dt><dd>${esc(b.note)}</dd>` : ""}
+      ${b.status === "confirmado" ? `<dt>Recordatorio</dt><dd>${b.reminded ? "Enviado" : "No enviado"}</dd>` : ""}
+    </dl>
+    ${acts ? `<div class="actions">${acts}</div>` : ""}
+    <p class="sec-t">Mensaje que se envía al paciente</p>
+    <div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>
+    ${b.status === "pendiente" || b.status === "confirmado" ? `<div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
+}
+function openFree(pid, m){
+  const p = pro(pid), d = PANEL.date;
+  openDrawer(p.name, `Horario libre ${toT(m)}`, `
+    <p style="margin:0" class="muted">${fmtLong(d)} · ${toT(m)} – ${toT(m+p.dur)}</p>
+    <p class="sec-t">Agendar turno manual</p>
+    <form id="manualForm" data-pro="${pid}" data-m="${m}" novalidate>
+      <label for="m-name">Paciente<input id="m-name" placeholder="Nombre y apellido"></label>
+      <div class="row2"><label for="m-dni">DNI<input id="m-dni" inputmode="numeric"></label>
+      <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
+      <label for="m-reason">${isStudy(p) ? "Estudio" : "Motivo"}<select id="m-reason">${p.types.map(t => `<option>${esc(t.n)}</option>`).join("")}</select></label>
+      <div class="row2"><label for="m-os">Cobertura<select id="m-os">${COVERAGE.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
+      <label for="m-aff">Nº de afiliado<input id="m-aff" inputmode="numeric"></label></div>
+      ${isStudy(p) ? `<label class="check" for="m-order"><input type="checkbox" id="m-order" checked> Trae orden médica</label>` : ""}
+      <p class="err" id="m-err" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Agendar como confirmado</button>
+    </form>
+    <p class="sec-t">O bloquear este horario</p>
+    <div class="row2" style="align-items:end"><label for="blk-r">Motivo<input id="blk-r" placeholder="Ej. mantenimiento del equipo"></label>
+    <button class="btn btn-soft" data-act="block" data-pro="${pid}" data-m="${m}">Bloquear</button></div>`);
+}
+function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2600); }
+
+$("agenda").addEventListener("click", e => {
+  const ev = e.target.closest(".ev"); if (ev){ openBooking(Number(ev.dataset.id)); return; }
+  const f = e.target.closest(".free"); if (f) openFree(f.dataset.pro, Number(f.dataset.m));
+});
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-confirm]");
+  if (c){ const b = DB.bookings.find(x => x.id === Number(c.dataset.confirm)); b.status = "confirmado"; b.isNew = false; save(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Turno confirmado. Se abrió WhatsApp con el mensaje para " + b.name.split(" ")[0] + "."); return; }
+  const r = e.target.closest("[data-remind]");
+  if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; save(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
+  const o = e.target.closest(".li .open"); if (o){ openBooking(Number(o.dataset.id)); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  const act = a.dataset.act;
+  if (act === "block"){
+    const p = pro(a.dataset.pro);
+    DB.bookings.push({id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(Number(a.dataset.m)), dur:p.dur, status:"bloqueo", name:$("blk-r").value.trim() || "Bloqueado", phone:"", reason:"", source:"manual"});
+    save(); closeDrawer(); renderPanel(); toast("Horario bloqueado. Ya no aparece disponible para reservar."); return;
+  }
+  const b = DB.bookings.find(x => x.id === Number(a.dataset.id)); if (!b) return;
+  if (act === "unblock" || act === "cancel"){ b.status = "cancelado"; save(); closeDrawer(); renderPanel(); toast(act === "cancel" ? "Turno cancelado. El horario volvió a estar disponible." : "Bloqueo quitado."); return; }
+  b.status = act; save(); renderPanel(); openBooking(b.id);
+});
+$("dBody").addEventListener("submit", e => {
+  if (e.target.id !== "manualForm") return;
+  e.preventDefault();
+  const f = e.target, p = pro(f.dataset.pro), m = Number(f.dataset.m);
+  const name = $("m-name").value.trim(), phone = $("m-phone").value.trim();
+  if (!name){ $("m-err").textContent = "Escribí el nombre del paciente."; $("m-name").focus(); return; }
+  const os = $("m-os").value;
+  const b = {id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(m), dur:p.dur, status:"confirmado", name, phone: phone || "", reason:$("m-reason").value,
+    dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" ? "" : $("m-aff").value.trim(), order: isStudy(p) ? $("m-order").checked : false,
+    first:false, note:"", source:"manual", code:code(), reminded:false};
+  DB.bookings.push(b); save(); renderPanel(); openBooking(b.id); toast("Turno agendado.");
+});
+$("dClose").addEventListener("click", closeDrawer);
+$("scrim").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("drawer").classList.contains("show")) closeDrawer(); });
+$("prevDay").addEventListener("click", () => { PANEL.date = addDays(PANEL.date, -1); renderPanel(); });
+$("nextDay").addEventListener("click", () => { PANEL.date = addDays(PANEL.date, 1); renderPanel(); });
+$("todayBtn").addEventListener("click", () => { PANEL.date = TODAY(); renderPanel(); scrollToNow(); });
+
+/* ---------- navegación ---------- */
+function scrollToNow(){
+  const sc = $("agendaScroll"); const m = PANEL.date === TODAY() ? Math.max(DAY0, nowMin() - 90) : 9*60;
+  sc.scrollTop = Math.max(0, (m - DAY0) / ROW * PX);
+}
+function show(v){
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
+  $("view-book").hidden = v !== "book"; $("view-panel").hidden = v !== "panel";
+  if (v === "panel"){ renderPanel(); scrollToNow(); } else { renderBook(); }
+  try { history.replaceState(null, "", v === "panel" ? "#panel" : "#reservar"); } catch(_){}
+  window.scrollTo(0, 0);
+}
+document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) show(t.dataset.view); });
+$("resetBtn").addEventListener("click", () => { DB = seed(); save(); Object.assign(UI, {spec:"Todas", pro:null, date:null, time:null, done:null}); PANEL.date = TODAY(); show($("view-panel").hidden ? "book" : "panel"); toast("Demo restablecida con turnos de ejemplo."); });
+
+(function init(){
+  $("clinicName").textContent = CLINIC.name; $("clinicSub").textContent = CLINIC.sub; $("logo").textContent = CLINIC.name.split(" ").pop()[0];
+  load();
+  UI.pro = PROS[0].id;
+  show(location.hash === "#panel" ? "panel" : "book");
+})();
+</script>
+</body>
+</html>
