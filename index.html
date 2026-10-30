@@ -84,7 +84,26 @@ button{font:inherit;color:inherit}
 .hero{padding:26px 0 18px}
 .hero h1{font-size:clamp(26px,3.6vw,36px)}
 .hero p{margin:6px 0 0;color:var(--muted);max-width:62ch}
-.book{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.45fr);gap:18px;padding-bottom:40px;align-items:start}
+.book{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.45fr);gap:18px;padding-bottom:40px;align-items:start;position:relative;margin-top:-44px}
+.book .pane{box-shadow:0 14px 34px -22px rgba(16,40,80,.45)}
+/* Encabezado de reservas */
+.hero-band{--band-a:#2c5fb8;--band-b:#173f86;color:#fff;text-align:center;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M20 14h4v6h6v4h-6v6h-4v-6h-6v-4h6z' fill='%23ffffff' fill-opacity='.07'/%3E%3C/svg%3E"),
+    radial-gradient(120% 90% at 50% -10%, rgba(255,255,255,.18), transparent 60%),
+    linear-gradient(160deg, var(--band-a), var(--band-b));
+  padding:42px 0 74px}
+:root[data-theme="dark"] .hero-band{--band-a:#1f3d75;--band-b:#12264d}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .hero-band{--band-a:#1f3d75;--band-b:#12264d} }
+.hero-in{display:grid;justify-items:center;gap:10px}
+.hero-logo{width:64px;height:64px;border-radius:16px;background:#fff;padding:6px;box-shadow:0 8px 20px -8px rgba(0,0,0,.4)}
+.hero-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.hero-kicker{margin:0;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.hero-band h1{font-size:clamp(30px,4.6vw,46px);font-weight:600;letter-spacing:-.01em;color:#fff;margin:0}
+.hero-sub{margin:0;max-width:52ch;font-size:17px;opacity:.92}
+.perks{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.perks li{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:99px;padding:6px 13px;font-size:14px;font-weight:600;backdrop-filter:blur(4px)}
+.perks svg{width:16px;height:16px;flex:none}
 .pane{padding:18px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .chip{border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:99px;cursor:pointer;font-size:13.5px;font-weight:500}
@@ -391,9 +410,13 @@ dd{margin:0;font-weight:500}
   #resetBtn{display:none}
   #whoMail{display:none}
   input,select,textarea{font-size:16px}
-  .hero{padding:16px 0 12px}
-  .hero h1{font-size:25px}
-  .hero p{font-size:15px}
+  .hero-band{padding:26px 0 62px}
+  .hero-band h1{font-size:29px}
+  .hero-sub{font-size:15.5px}
+  .hero-logo{width:54px;height:54px}
+  .perks{gap:6px}
+  .perks li{font-size:12.5px;padding:5px 10px}
+  .book{margin-top:-40px}
   .pane{padding:14px}
   .step-h h2{font-size:20px}
   .chip{padding:8px 14px;font-size:14px}
@@ -474,10 +497,19 @@ dd{margin:0;font-weight:500}
 
 <!-- ===================== VISTA PACIENTE ===================== -->
 <main id="view-book">
-  <div class="wrap hero">
-    <h1>Reservá tu turno online</h1>
-    <p id="heroSub"></p>
-  </div>
+  <section class="hero-band">
+    <div class="wrap hero-in">
+      <div class="hero-logo" id="heroLogo" hidden></div>
+      <p class="hero-kicker" id="heroKicker"></p>
+      <h1>Reservá tu turno online</h1>
+      <p class="hero-sub" id="heroSub"></p>
+      <ul class="perks">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Sin registrarte</li>
+        <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>Confirmación por WhatsApp</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8v6M9 11h6"/></svg>Obras sociales y prepagas</li>
+      </ul>
+    </div>
+  </section>
   <div class="wrap book">
     <section class="card pane" aria-labelledby="s1">
       <div class="step-h"><span class="step-n">1</span><h2 id="s1"></h2></div>
@@ -959,6 +991,7 @@ function selection(){
 function renderPick(){
   const sm = isStudyMode();
   $("heroSub").textContent = sm ? "Consultas médicas y estudios. Elegí día y horario disponible y te confirmamos por WhatsApp." : "Elegí profesional, día y horario disponible. Te confirmamos por WhatsApp.";
+  $("heroKicker").textContent = C().name;
   $("s1").textContent = sm ? "¿Qué necesitás?" : "Elegí profesional";
   if (!sm) UI.tab = "consultas";
   $("kindChips").hidden = !sm;
@@ -1721,6 +1754,7 @@ function submitSvc(f){
 }
 function paintLogo(){
   const letter = (C().name.trim().split(" ").pop() || "A")[0].toUpperCase();
+  const hl = $("heroLogo"); if (hl){ hl.hidden = !C().logo; hl.innerHTML = C().logo ? `<img src="${C().logo}" alt="">` : ""; }
   ["logo", "loginLogo"].forEach(id => {
     const el = $(id); if (!el) return;
     el.classList.toggle("has-img", !!C().logo);
