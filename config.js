@@ -1,14 +1,14 @@
 // =====================================================================
 //  Conexión con la base de datos (Supabase)
-//  Completá estos dos datos con los de tu proyecto:
-//  Supabase → Project Settings → API Keys (o "Data API")
-//    · supabaseUrl: "Project URL", ej. https://abcdefgh.supabase.co
-//    · supabaseKey: la "Publishable key" (sb_publishable_…) o la "anon public"
-//  Esa clave es pública y se puede subir a GitHub sin problema.
-//  NUNCA pongas acá la "Secret key" ni la "service_role".
-//  Si los dejás vacíos, la app funciona en modo demostración.
+//  Vacío = MODO DEMOSTRACIÓN (usuario demo@consultorio.com / demo1234,
+//  los datos quedan solo en el navegador).
+//
+//  Para volver a conectar Supabase, completá con los datos del proyecto:
+//    supabaseUrl: "https://uoqnnuoihwfiuipsogsj.supabase.co",
+//    supabaseKey: "sb_publishable_DQ7a9I61218z8t4PAU-Ijw_HovI9bv9"
+//  (Esa clave es pública. NUNCA pongas acá la "Secret key".)
 // =====================================================================
 window.TURNOS_CONFIG = {
-  supabaseUrl: "https://uoqnnuoihwfiuipsogsj.supabase.co",
-  supabaseKey: "sb_publishable_DQ7a9I61218z8t4PAU-Ijw_HovI9bv9"
+  supabaseUrl: "",
+  supabaseKey: ""
 };
