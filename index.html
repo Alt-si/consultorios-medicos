@@ -102,7 +102,7 @@ button{font:inherit;color:inherit}
 .ichip button:hover{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 .ichip.main{padding-right:12px}
 .addrow{display:flex;gap:8px;flex-wrap:wrap}
-.addrow select{flex:1;min-width:180px}
+.addrow select,.addrow input{flex:1;min-width:180px;width:auto}
 .total{font-size:14px;color:var(--muted)}
 .total b{color:var(--ink)}
 
@@ -454,6 +454,8 @@ const DEFAULTS = {
     leadMinutes: 60,
     daysAhead: 14
   },
+  // Medios de pago que acepta el consultorio
+  payments: { methods: ["Efectivo", "Tarjeta de débito", "Transferencia"], alias: "" },
   // "turnos" = solo agenda con profesionales · "estudios" = consultas y estudios
   mode: "estudios",
   coverage: [
@@ -531,7 +533,16 @@ const wa = (num, text) => "https://wa.me/" + normPhone(num) + "?text=" + encodeU
 /* ---------- estado ---------- */
 const CFG_KEY = "agenda-config-v4", DB_KEY = "agenda-turnos-v3";
 let S, DB;
-function loadCfg(){ try { const s = JSON.parse(localStorage.getItem(CFG_KEY)); if (s && s.pros && s.services) { S = s; return; } } catch(_){} S = clone(DEFAULTS); }
+function loadCfg(){ try { const s = JSON.parse(localStorage.getItem(CFG_KEY)); if (s && s.pros && s.services) { S = s; if (!S.payments) S.payments = clone(DEFAULTS.payments); return; } } catch(_){} S = clone(DEFAULTS); }
+const PAY_CATALOG = ["Efectivo", "Tarjeta de débito", "Tarjeta de crédito", "Transferencia", "Mercado Pago", "Pago con QR"];
+function payText(){
+  const generic = ["Efectivo", "Tarjeta de débito", "Tarjeta de crédito", "Transferencia", "Pago con QR"];
+  const m = (S.payments.methods || []).map(x => generic.includes(x) ? x.charAt(0).toLowerCase() + x.slice(1) : x);
+  if (!m.length) return "";
+  const list = m.length > 1 ? m.slice(0, -1).join(", ") + " y " + m[m.length - 1] : m[0];
+  return "Aceptamos " + list + ".";
+}
+const aliasLine = () => S.payments.alias && S.payments.methods.includes("Transferencia") ? "Alias para transferencias: " + S.payments.alias : "";
 function saveCfg(){ try { localStorage.setItem(CFG_KEY, JSON.stringify(S)); } catch(_){} }
 function saveDB(){ try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(_){} }
 const C = () => S.clinic;
@@ -807,12 +818,12 @@ function updateOs(){
   $("osExtra").style.display = os === "Particular" ? "none" : "";
   let n = "";
   if (!covers(p, os)) n = `<div class="notice bad"><b>${esc(p.name)} no atiende por ${esc(os)}</b>Podés elegir «Particular»${UI.tab === "estudios" && UI.who === "any" ? " o volver al paso 2 y elegir otro horario" : ""}.</div>`;
-  else if (os === "Particular") n = `<div class="notice warn"><b>Monto a abonar: ${money(price)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`;
+  else if (os === "Particular") n = `<div class="notice warn"><b>Monto a abonar: ${money(price)}</b>Se abona el día del turno. ${esc(payText())}</div>`;
   else {
     n += f.unknown
       ? `<div class="notice"><b>Monto a abonar</b>Te lo confirmamos por WhatsApp junto con el turno.</div>`
       : f.pay > 0
-        ? `<div class="notice warn"><b>Monto a abonar: ${money(f.pay)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`
+        ? `<div class="notice warn"><b>Monto a abonar: ${money(f.pay)}</b>Se abona el día del turno. ${esc(payText())}</div>`
         : `<div class="notice"><b>Sin monto a abonar</b>Con tu cobertura no tenés que pagar nada por este turno.</div>`;
     if (needsOrder(items) && cov(os).auth) n += `<div class="notice warn"><b>${esc(os)} pide orden autorizada</b>Antes del turno gestioná la autorización y llevá la orden impresa o en el celular.</div>`;
   }
@@ -835,7 +846,7 @@ function doneHtml(b){
     <p style="margin:0">Tu horario quedó apartado. Enviá este mensaje por WhatsApp y el consultorio te lo confirma. Código <span class="code">${b.code}</span></p>
     ${prep ? `<div class="notice"><b>Cómo prepararte</b>${esc(prep)}</div>` : ""}
     ${needsText(b.items) ? `<div class="notice"><b>Para este estudio necesitás</b>${esc(needsText(b.items))}</div>` : ""}
-    <div class="notice warn"><b>El día del turno traé</b>${esc(bringLine(b))}.${payLine(b) ? "\n" + esc(payLine(b)) + "." : ""}</div>
+    <div class="notice warn"><b>El día del turno traé</b>${esc(bringLine(b))}.${payLine(b) ? "\n" + esc(payLine(b)) + ". " + esc(payText()) : ""}${payLine(b) && aliasLine() ? "\n" + esc(aliasLine()) : ""}</div>
     <p class="sec-t">Mensaje para el consultorio</p>
     <div class="bubble">${esc(msg)}</div>
     <div class="actions">
@@ -978,6 +989,7 @@ function confirmMsg(b){
   const p = pro(b.pro), prep = prepText(b.items);
   return `Hola ${b.name.split(" ")[0]}, te confirmamos tu turno en ${C().name}:\n\n• ${itemsName(b.items)}\n• ${p.name}\n• ${fmtLong(b.date)}, ${b.start} h\n• ${C().address}\n• Cobertura: ${covLine(b)}` +
     (payLine(b) ? `\n• ${payLine(b)}` : "") +
+    (payLine(b) && payLine(b) !== "Sin monto a abonar" && payText() ? `\n• ${payText()}` + (aliasLine() ? `\n• ${aliasLine()}` : "") : "") +
     (prep ? `\n\nPreparación:\n${prep}` : "") +
     (needsText(b.items) ? `\n\nPara este estudio necesitás:\n${needsText(b.items)}` : "") +
     `\n\nTraé ${bringLine(b)}. Si no podés venir, avisanos respondiendo este mensaje así le damos el turno a otra persona.`;
@@ -1139,6 +1151,15 @@ function renderConfig(){
   </section>
 
   <section class="card">
+    <h2>Medios de pago</h2>
+    <p class="hint">Se le muestran al paciente junto con el monto a abonar y van en el mensaje de confirmación.</p>
+    <div class="checks" style="margin-bottom:12px">${[...new Set([...PAY_CATALOG, ...S.payments.methods])].map((m, i) => `<span class="check" style="justify-content:space-between"><label class="check" for="pm-${i}"><input type="checkbox" id="pm-${i}" data-pay="${esc(m)}" ${S.payments.methods.includes(m)?"checked":""}> ${esc(m)}</label>${PAY_CATALOG.includes(m) ? "" : `<button class="linkbtn" type="button" data-paydel="${esc(m)}" aria-label="Quitar ${esc(m)}">Quitar</button>`}</span>`).join("")}</div>
+    <div class="addrow" style="margin-bottom:12px"><input id="pay-new" placeholder="Agregar otro (ej. Modo, cheque)"><button class="btn btn-soft" type="button" data-cfg="pay-add">Agregar</button></div>
+    <label for="pay-alias">Alias o CBU para transferencias (opcional)<input id="pay-alias" data-payalias="1" value="${esc(S.payments.alias || "")}" placeholder="Ej. centro.alameda.mp"></label>
+    <p class="muted" style="font-size:13px;margin:6px 0 0">Vista previa para el paciente: <b>${esc(payText() || "No hay medios de pago marcados.")}</b></p>
+  </section>
+
+  <section class="card">
     <h2>Obras sociales y prepagas</h2>
     <p class="hint">Marcá las que piden orden autorizada para estudios. Con cuáles trabaja cada profesional se elige en su ficha.</p>
     <div class="covs">${S.coverage.map((cv, i) => `<span class="cov">${esc(cv.n)}<label for="cv-${i}"><input type="checkbox" id="cv-${i}" data-cov-auth="${i}" ${cv.auth?"checked":""}> autorización</label><button type="button" data-cov-del="${i}" aria-label="Quitar ${esc(cv.n)}">×</button></span>`).join("")}</div>
@@ -1286,6 +1307,8 @@ $("cfg").addEventListener("change", e => {
   if (t.name === "mode"){ S.mode = t.value; UI.tab = "consultas"; saveCfg(); refreshAll(); toast(t.value === "estudios" ? "Modo consultas y estudios activado." : "Modo agenda de turnos activado."); return; }
   if (t.dataset.price){ const sv = svc(t.dataset.price); sv.price = Math.max(0, Number(t.value) || 0); saveCfg(); S.coverage.forEach(c => { const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + c.n)}"]`); if (el) el.textContent = diffLabel(sv, c.n); }); toast("Valor guardado."); return; }
   if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
+  if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
+  if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
   if (t.dataset.covAuth != null){ S.coverage[Number(t.dataset.covAuth)].auth = t.checked; saveCfg(); return; }
   if (t.dataset.c){ const k = t.dataset.c; S.clinic[k] = t.type === "number" ? Math.max(Number(t.min || 0), Number(t.value) || 0) : t.value.trim(); saveCfg(); refreshAll(); toast("Guardado."); }
 });
@@ -1296,6 +1319,8 @@ document.addEventListener("click", e => {
   const r = e.target.closest("[data-remind]");
   if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; saveDB(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
   const o = e.target.closest("[data-open]"); if (o){ openBooking(Number(o.dataset.open)); return; }
+  const pd = e.target.closest("[data-paydel]");
+  if (pd){ S.payments.methods = S.payments.methods.filter(x => x !== pd.dataset.paydel); saveCfg(); renderConfig(); toast("Quitado."); return; }
   const cv = e.target.closest("[data-cov-del]");
   if (cv){ const n = S.coverage[Number(cv.dataset.covDel)].n; S.coverage.splice(Number(cv.dataset.covDel), 1); S.pros.forEach(p => { if (Array.isArray(p.accepts)) p.accepts = p.accepts.filter(x => x !== n); }); S.services.forEach(sv => { if (sv.cov) delete sv.cov[n]; }); saveCfg(); renderConfig(); toast(n + " quitada."); return; }
   const g = e.target.closest("[data-cfg]");
@@ -1305,6 +1330,7 @@ document.addEventListener("click", e => {
     if (k === "pro-edit") return openProEditor(g.dataset.id);
     if (k === "svc-new") return openSvcEditor(null);
     if (k === "svc-edit") return openSvcEditor(g.dataset.id);
+    if (k === "pay-add"){ const v = $("pay-new").value.trim(); if (!v) return $("pay-new").focus(); if (S.payments.methods.some(x => x.toLowerCase() === v.toLowerCase())) return toast(v + " ya está en la lista."); S.payments.methods.push(v); saveCfg(); renderConfig(); toast(v + " agregado."); return; }
     if (k === "cov-add"){ const v = $("cov-new").value.trim(); if (!v) return $("cov-new").focus(); if (S.coverage.some(x => x.n.toLowerCase() === v.toLowerCase())) return toast(v + " ya está en la lista."); S.coverage.push({n:v}); saveCfg(); renderConfig(); $("cov-new").focus(); return; }
     if (k === "pro-del" || k === "svc-del" || k === "reset-cfg"){
       if (!g.classList.contains("armed")){ g.classList.add("armed"); g.dataset.label = g.textContent; g.textContent = "Tocá de nuevo para confirmar"; setTimeout(() => { if (document.contains(g)){ g.classList.remove("armed"); g.textContent = g.dataset.label; } }, 4000); return; }
