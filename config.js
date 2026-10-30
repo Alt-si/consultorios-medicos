@@ -9,6 +9,6 @@
 //  Si los dejás vacíos, la app funciona en modo demostración.
 // =====================================================================
 window.TURNOS_CONFIG = {
-  supabaseUrl: "",
-  supabaseKey: ""
+  supabaseUrl: "https://uoqnnuoihwfiuipsogsj.supabase.co",
+  supabaseKey: "sb_publishable_DQ7a9I61218z8t4PAU-Ijw_HovI9bv9"
 };
