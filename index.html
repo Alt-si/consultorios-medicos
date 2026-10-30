@@ -567,9 +567,9 @@ function payFor(items, os){
 }
 function payLine(b){
   const f = payFor(b.items, b.os);
-  if (!b.os || b.os === "Particular") return "Valor particular: " + money(f.total);
+  if (!b.os || b.os === "Particular") return "Monto a abonar: " + money(f.total);
   if (f.unknown) return "";
-  return f.pay > 0 ? "Diferencia a abonar: " + money(f.pay) : "Sin diferencia a abonar";
+  return f.pay > 0 ? "Monto a abonar: " + money(f.pay) : "Sin monto a abonar";
 }
 const live = b => b.status !== "cancelado" && pro(b.pro);
 const onDay = (pid, date) => DB.bookings.filter(b => b.pro === pid && b.date === date && live(b));
@@ -698,7 +698,7 @@ function renderPick(){
         <span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span>
         <span><b>${esc(p.name)}</b><span class="sp">${esc(p.role)}</span>
         <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en las próximas semanas"}</span></span>
-        <span class="price">desde<br><b>${money(min)}</b></span></button>`;
+        </button>`;
     }).join("") || `<div class="empty">Todavía no hay profesionales cargados. Agregalos desde Configuración.</div>`;
   } else {
     const list = studyList();
@@ -708,7 +708,7 @@ function renderPick(){
         <span class="av sq">${esc(svcAbbr(s))}</span>
         <span><b>${esc(s.name)}</b><span class="sp">${s.dur} min · ${ps.length > 1 ? ps.length + " profesionales" : esc(ps[0].name)}${s.order ? " · con orden médica" : ""}</span>
         <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en las próximas semanas"}</span></span>
-        <span class="price">particular<br><b>${money(s.price)}</b></span></button>`;
+        </button>`;
     }).join("") || `<div class="empty">No hay estudios cargados. Agregalos desde Configuración.</div>`;
   }
   $("pickList").innerHTML = h;
@@ -806,12 +806,14 @@ function updateOs(){
   const items = sel.items.map(s => ({id:s.id, n:s.name})), f = payFor(items, os), price = f.total;
   $("osExtra").style.display = os === "Particular" ? "none" : "";
   let n = "";
-  if (!covers(p, os)) n = `<div class="notice bad"><b>${esc(p.name)} no atiende por ${esc(os)}</b>Podés atenderte como particular por ${money(price)}${UI.tab === "estudios" && UI.who === "any" ? ", o volver al paso 2 y elegir otro horario" : ""}.</div>`;
-  else if (os === "Particular") n = `<div class="notice warn"><b>Valor particular: ${money(price)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`;
+  if (!covers(p, os)) n = `<div class="notice bad"><b>${esc(p.name)} no atiende por ${esc(os)}</b>Podés elegir «Particular»${UI.tab === "estudios" && UI.who === "any" ? " o volver al paso 2 y elegir otro horario" : ""}.</div>`;
+  else if (os === "Particular") n = `<div class="notice warn"><b>Monto a abonar: ${money(price)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`;
   else {
-    if (!f.unknown) n += f.pay > 0
-      ? `<div class="notice warn"><b>Diferencia a abonar: ${money(f.pay)}</b>Valor del ${hasStudy(items) ? "estudio" : "turno"} ${money(f.total)} · ${esc(os)} cubre ${money(f.covered)}. La diferencia se abona el día del turno.</div>`
-      : `<div class="notice"><b>Cubierto por ${esc(os)}</b>No tenés diferencia para abonar.</div>`;
+    n += f.unknown
+      ? `<div class="notice"><b>Monto a abonar</b>Te lo confirmamos por WhatsApp junto con el turno.</div>`
+      : f.pay > 0
+        ? `<div class="notice warn"><b>Monto a abonar: ${money(f.pay)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`
+        : `<div class="notice"><b>Sin monto a abonar</b>Con tu cobertura no tenés que pagar nada por este turno.</div>`;
     if (needsOrder(items) && cov(os).auth) n += `<div class="notice warn"><b>${esc(os)} pide orden autorizada</b>Antes del turno gestioná la autorización y llevá la orden impresa o en el celular.</div>`;
   }
   $("osNote").innerHTML = n;
@@ -1127,7 +1129,7 @@ function renderConfig(){
 
   <section class="card">
     <h2>Valores por obra social</h2>
-    <p class="hint">Cargá el valor de cada ${sm ? "consulta y estudio" : "consulta"} y cuánto te paga cada obra social. Si paga menos que el valor, la diferencia es lo que abona el paciente: se le muestra al reservar y va en el mensaje de confirmación. Dejá vacío si todavía no sabés cuánto paga.</p>
+    <p class="hint">Cargá el valor de cada ${sm ? "consulta y estudio" : "consulta"} y cuánto te paga cada obra social. Si paga menos que el valor, la diferencia es lo que abona el paciente. Esta tabla es interna: al paciente solo se le muestra el monto final que tiene que abonar. Dejá vacío si todavía no sabés cuánto paga.</p>
     ${S.services.length && S.coverage.length ? `<div class="mx-wrap"><table class="mx">
       <thead><tr><th scope="col">${sm ? "Consulta / estudio" : "Consulta"}</th><th scope="col">Valor</th>${S.coverage.map(c => `<th scope="col">${esc(c.n)}</th>`).join("")}</tr></thead>
       <tbody>${S.services.map(sv => `<tr><th scope="row">${esc(sv.name)}</th>
