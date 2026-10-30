@@ -307,9 +307,37 @@ dd{margin:0;font-weight:500}
 .toast.show{display:block}
 
 .book > *, .panel > *, .cfg > *{min-width:0}
-.pfilter{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:thin}
-.pfilter .chip{white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
-.pfilter .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.atools{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.atools select{width:auto;min-width:0;flex:1 1 240px;max-width:440px;font-weight:600;background:var(--surface);text-overflow:ellipsis}
+.seg2{display:inline-flex;background:var(--sunk);border-radius:9px;padding:3px;gap:2px}
+.seg2 button{border:0;background:transparent;padding:7px 16px;border-radius:7px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted)}
+.seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.wstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.wd{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 2px;cursor:pointer;display:grid;text-align:center;line-height:1.25}
+.wd small{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.wd b{font-family:var(--display);font-weight:500;font-size:19px}
+.wd span{font-size:11px;color:var(--muted);white-space:nowrap}
+.wd.today b{color:var(--accent)}
+.wd[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.wd[aria-pressed="true"] small,.wd[aria-pressed="true"] span,.wd[aria-pressed="true"] b{color:var(--accent-ink)}
+.alist{padding:6px 12px 14px}
+.lgroup + .lgroup{margin-top:16px;padding-top:4px;border-top:1px solid var(--line)}
+.lhead{display:flex;gap:10px;align-items:center;padding:8px 0 2px}
+.lhead .av{width:32px;height:32px;font-size:12px}
+.lhead b{display:block;font-size:15px}
+.lhead small{display:block;color:var(--muted);font-size:12.5px}
+.lrow{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-left:4px solid;border-radius:9px;padding:9px 10px;margin-top:6px;cursor:pointer}
+.lrow .lt{font-weight:700;font-size:15px;display:grid;line-height:1.2}
+.lrow .lt small{font-weight:500;font-size:11.5px;color:var(--muted)}
+.lrow .lb{min-width:0}
+.lrow .lb b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.lrow .lb span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lfree{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:center;padding:7px 10px;margin-top:6px;border:1px dashed var(--line);border-radius:9px}
+.lfree .lt{font-size:12.5px;color:var(--muted);font-weight:600}
+.fchips{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:7px;padding:5px 10px;font-size:13.5px;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums}
+.fchip:hover{background:var(--accent-soft)}
 @media (max-width:980px){
   .book{grid-template-columns:minmax(0,1fr)}
   .panel{grid-template-columns:minmax(0,1fr)}
@@ -373,6 +401,14 @@ dd{margin:0;font-weight:500}
   .toast{bottom:14px}
 }
 @media (max-width:520px){
+  .atools select{flex-basis:100%;max-width:none;width:100%}
+  .seg2{width:100%}
+  .seg2 button{flex:1}
+  .wstrip{gap:4px}
+  .wd span{font-size:10px}
+  .lrow{grid-template-columns:50px minmax(0,1fr)}
+  .lrow .pill{grid-column:2;justify-self:start}
+  .lfree{grid-template-columns:50px minmax(0,1fr)}
   .row2{grid-template-columns:1fr}
   .row3{grid-template-columns:1fr 1fr}
   .hrow{grid-template-columns:1fr;row-gap:5px;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -435,9 +471,19 @@ dd{margin:0;font-weight:500}
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="panel">
-      <div style="min-width:0"><div class="pfilter" id="pfilter" role="group" aria-label="Profesional"></div>
+      <div style="min-width:0">
+      <div class="atools">
+        <label for="proSel" class="sr">Profesional</label>
+        <select id="proSel"></select>
+        <div class="seg2" role="group" aria-label="Vista de la agenda">
+          <button type="button" data-aview="lista" aria-pressed="false">Lista</button>
+          <button type="button" data-aview="grilla" aria-pressed="false">Grilla</button>
+        </div>
+      </div>
+      <div class="wstrip" id="wstrip" role="group" aria-label="Días de la semana"></div>
       <div class="card agenda-card">
         <div class="agenda-scroll" id="agendaScroll"><div class="agenda" id="agenda"></div></div>
+        <div class="alist" id="alist" hidden></div>
       </div></div>
       <aside class="side">
         <div class="card"><h3>Pendientes de confirmar <span class="count" id="pendCount">0</span></h3><div id="pendList"></div></div>
@@ -1037,8 +1083,12 @@ function renderAgenda(){
   if (!S.pros.length){ g.style.gridTemplateColumns = "1fr"; g.innerHTML = `<div class="empty" style="margin:16px">No hay profesionales cargados. Agregalos desde Configuración.</div>`; return; }
   if (PANEL.only && !pro(PANEL.only)) PANEL.only = null;
   const list = PANEL.only ? [pro(PANEL.only)] : S.pros;
-  $("pfilter").innerHTML = `<button class="chip" type="button" data-only="" aria-pressed="${!PANEL.only}">Todos</button>` +
-    S.pros.map(p => `<button class="chip" type="button" data-only="${p.id}" aria-pressed="${PANEL.only===p.id}"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join("");
+  $("proSel").innerHTML = `<option value="">Todos los profesionales</option>` + S.pros.map(p => `<option value="${p.id}" ${PANEL.only===p.id?"selected":""}>${esc(p.name)} · ${esc(p.role)}</option>`).join("");
+  renderWeek(list);
+  document.querySelectorAll("[data-aview]").forEach(b => b.setAttribute("aria-pressed", b.dataset.aview === PANEL.view));
+  const lista = PANEL.view === "lista";
+  $("agendaScroll").hidden = lista; $("alist").hidden = !lista;
+  if (lista){ renderList(list); return; }
   g.style.gridTemplateColumns = `${mobile() ? 46 : 58}px repeat(${list.length}, minmax(${mobile() && list.length > 1 ? 140 : 160}px, 1fr))`;
   let h = `<div class="corner"></div>` + list.map(p => {
     const n = onDay(p.id, d).filter(b => b.status !== "bloqueo").length, works = ranges(p, d).length;
@@ -1176,10 +1226,63 @@ function openFree(pid, m){
 }
 function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2800); }
 
-$("pfilter").addEventListener("click", e => {
-  const c = e.target.closest("[data-only]"); if (!c) return;
-  PANEL.only = c.dataset.only || null; renderAgenda();
-  c.scrollIntoView({block:"nearest", inline:"nearest"});
+function renderWeek(list){
+  const d = PANEL.date, mon = addDays(d, -((parse(d).getDay() + 6) % 7)), ids = list.map(p => p.id), t = TODAY();
+  let h = "";
+  for (let i = 0; i < 7; i++){
+    const day = addDays(mon, i);
+    const n = DB.bookings.filter(b => b.date === day && ids.includes(b.pro) && live(b) && b.status !== "bloqueo").length;
+    const works = list.some(p => ranges(p, day).length);
+    h += `<button class="wd ${day === t ? "today" : ""}" type="button" data-wd="${day}" aria-pressed="${day === d}" aria-label="${fmtLong(day)}: ${n} turnos">
+      <small>${fmtDow(day)}</small><b>${parse(day).getDate()}</b><span>${works || n ? n + " turnos" : "—"}</span></button>`;
+  }
+  $("wstrip").innerHTML = h;
+}
+function renderList(list){
+  const d = PANEL.date, now = nowMin(), past = d < TODAY();
+  let h = "";
+  list.forEach(p => {
+    const rs = ranges(p, d), bs = onDay(p.id, d).sort((a, b) => a.start.localeCompare(b.start));
+    const n = bs.filter(b => b.status !== "bloqueo").length;
+    if (list.length > 1 && !rs.length && !bs.length) return;
+    h += `<section class="lgroup">`;
+    if (list.length > 1) h += `<header class="lhead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div><b>${esc(p.name)}</b><small>${esc(p.role)} · ${n} turno${n === 1 ? "" : "s"}</small></div></header>`;
+    if (!rs.length && !bs.length){ h += `<div class="empty">${esc(p.name)} no atiende este día.</div></section>`; return; }
+    const entries = bs.map(b => ({m: toMin(b.start), b}));
+    if (!past) starts(p, d, p.step).forEach(m => { if (d === TODAY() && m + p.step <= now) return; if (fits(p, d, m, p.step)) entries.push({m, free:true}); });
+    entries.sort((a, b) => a.m - b.m || (a.free ? 1 : -1));
+    let run = [];
+    const flush = () => {
+      if (!run.length) return;
+      h += `<div class="lfree"><span class="lt">Libre${run.length > 1 ? "s" : ""}</span><div class="fchips">${run.map(m => `<button class="fchip" type="button" data-pro="${p.id}" data-m="${m}" aria-label="Agendar ${toT(m)} con ${esc(p.name)}">${toT(m)}</button>`).join("")}</div></div>`;
+      run = [];
+    };
+    entries.forEach(e => {
+      if (e.free){ run.push(e.m); return; }
+      flush();
+      const b = e.b, blk = b.status === "bloqueo";
+      const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && b.orderSent ? " 📎" : "";
+      h += `<button class="lrow st-${b.status}" type="button" data-id="${b.id}">
+        <span class="lt num">${b.start}<small>${b.dur} min</small></span>
+        <span class="lb"><b>${esc(blk ? "Bloqueado" : b.name)}${b.isNew ? " ●" : ""}${warn}</b><span>${esc(blk ? (b.name || "") : itemsName(b.items) + " · " + (b.os || "Particular"))}</span></span>
+        <span class="pill ${b.status}">${STATUS[b.status]}</span></button>`;
+    });
+    flush();
+    if (!entries.length) h += `<p class="muted" style="margin:8px 0;font-size:14px">${past ? "Sin turnos." : "Sin horarios disponibles."}</p>`;
+    h += `</section>`;
+  });
+  $("alist").innerHTML = h || `<div class="empty">Ningún profesional atiende este día.</div>`;
+}
+$("proSel").addEventListener("change", e => { PANEL.only = e.target.value || null; renderAgenda(); });
+document.querySelector(".seg2").addEventListener("click", e => {
+  const b = e.target.closest("[data-aview]"); if (!b) return;
+  PANEL.view = b.dataset.aview; try { localStorage.setItem("agenda-vista", PANEL.view); } catch(_){}
+  renderAgenda(); if (PANEL.view === "grilla") scrollToNow();
+});
+$("wstrip").addEventListener("click", e => { const w = e.target.closest("[data-wd]"); if (!w) return; PANEL.date = w.dataset.wd; renderPanel(); if (PANEL.view === "grilla") scrollToNow(); });
+$("alist").addEventListener("click", e => {
+  const r = e.target.closest(".lrow"); if (r){ openBooking(Number(r.dataset.id)); return; }
+  const f = e.target.closest(".fchip"); if (f) openFree(f.dataset.pro, Number(f.dataset.m));
 });
 $("agenda").addEventListener("click", e => {
   const ev = e.target.closest(".ev"); if (ev){ openBooking(Number(ev.dataset.id)); return; }
@@ -1561,7 +1664,7 @@ function show(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   ["book","panel","config"].forEach(k => $("view-" + k).hidden = k !== v);
   if (v === "panel"){
-    if (mobile() && PANEL.only === null && !PANEL.touched){ PANEL.touched = true; const f = S.pros.find(p => ranges(p, PANEL.date).length) || S.pros[0]; if (f) PANEL.only = f.id; }
+    if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = v === "lista" || v === "grilla" ? v : (mobile() ? "lista" : "grilla"); }
     renderPanel(); scrollToNow();
   } else if (v === "config"){ renderConfig(); } else { renderBook(); }
   try { history.replaceState(null, "", "#" + (v === "book" ? "reservar" : v)); } catch(_){}
