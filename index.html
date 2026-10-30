@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Plan: software clínico sereno. Vista paciente en 3 pasos + panel con agenda por profesional. Estado codificado por color y forma. */
+/* Plan: software clínico sereno. Vista paciente en 3 pasos, panel con agenda por profesional y configuración editable. */
 :root{
   --bg:#f2f4f3; --surface:#ffffff; --sunk:#e9eeec; --ink:#14212a; --muted:#5a6770; --line:#d8dfdc;
   --accent:#2c5fb8; --accent-ink:#ffffff; --accent-soft:#e6eefb;
@@ -37,19 +37,21 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16p
 h1,h2,h3{font-family:var(--display);font-weight:500;margin:0;line-height:1.2;text-wrap:balance}
 button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none !important}
 .wrap{max-width:1240px;margin:0 auto;padding:0 18px}
 .muted{color:var(--muted)}
 .num{font-variant-numeric:tabular-nums}
 
 /* top */
 .top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
-.top .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
-.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
-.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:600;font-size:18px}
+.top .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:600;font-size:18px;flex:none}
 .brand b{font-family:var(--display);font-weight:500;font-size:19px;display:block;line-height:1.1}
 .brand small{color:var(--muted);font-size:12.5px}
-.tabs{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
-.tab{border:0;background:transparent;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+.tabs{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.tab{border:0;background:transparent;padding:7px 13px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.tab svg{width:16px;height:16px}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .linkbtn{border:0;background:none;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px}
 
@@ -58,6 +60,7 @@ button{font:inherit;color:inherit}
 .btn-wa{background:var(--wa);color:#fff}
 .btn-soft{background:var(--sunk);color:var(--ink);border-color:var(--line)}
 .btn-danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn-danger.armed{background:var(--bad);color:#fff}
 .btn-sm{padding:6px 10px;font-size:13.5px;border-radius:7px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn svg{width:17px;height:17px;flex:none}
@@ -70,22 +73,37 @@ button{font:inherit;color:inherit}
 /* ===== Vista paciente ===== */
 .hero{padding:26px 0 18px}
 .hero h1{font-size:clamp(26px,3.6vw,36px)}
-.hero p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.hero p{margin:6px 0 0;color:var(--muted);max-width:62ch}
 .book{display:grid;grid-template-columns:minmax(300px,1fr) minmax(0,1.45fr);gap:18px;padding-bottom:40px;align-items:start}
 .pane{padding:18px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .chip{border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:99px;cursor:pointer;font-size:13.5px;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.lg{padding:8px 16px;font-size:14.5px;font-weight:600}
 .pros{display:grid;gap:8px}
 .pro{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px;cursor:pointer}
 .pro[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;background:var(--accent-soft)}
-.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;flex:none}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;flex:none;background:var(--accent)}
+.av.sq{border-radius:11px}
 .pro b{display:block;font-size:15.5px}
-.pro .sp{font-size:13px;color:var(--muted)}
-.pro .next{font-size:12.5px;color:var(--ok);font-weight:600;margin-top:2px}
+.pro .sp{font-size:13px;color:var(--muted);display:block}
+.pro .next{font-size:12.5px;color:var(--ok);font-weight:600;margin-top:2px;display:block}
 .pro .next.none{color:var(--muted);font-weight:500}
-.pro .price{font-size:13px;text-align:right;color:var(--muted);white-space:nowrap}
-.pro .price b{color:var(--ink);font-size:15px}
+.pro .price{font-size:12.5px;text-align:right;color:var(--muted);white-space:nowrap}
+.pro .price b{color:var(--ink);font-size:14.5px}
+.who{display:grid;gap:6px;margin:4px 0 4px 56px}
+.who p{margin:0;font-size:13px;font-weight:600;color:var(--muted)}
+
+.opts{display:grid;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.combo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ichip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:4px 6px 4px 12px;font-size:13.5px;font-weight:600}
+.ichip button{border:0;background:transparent;color:inherit;cursor:pointer;width:22px;height:22px;border-radius:50%;font-size:15px;line-height:1}
+.ichip button:hover{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.ichip.main{padding-right:12px}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.addrow select{flex:1;min-width:180px}
+.total{font-size:14px;color:var(--muted)}
+.total b{color:var(--ink)}
 
 .days{display:grid;grid-auto-flow:column;grid-auto-columns:72px;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
 .day{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;display:grid;gap:1px}
@@ -112,22 +130,27 @@ button{font:inherit;color:inherit}
 .sel-sum b{display:block}
 form{display:grid;gap:11px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
 label{display:grid;gap:4px;font-size:13.5px;font-weight:600}
 input,select,textarea{font:inherit;font-size:15.5px;font-weight:400;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
+input[type=color]{padding:2px;height:40px;cursor:pointer}
 textarea{min-height:56px;resize:vertical}
 .check{display:flex;gap:8px;align-items:center;font-weight:500}
-.check input{width:auto}
+.check input{width:auto;flex:none}
 .err{color:var(--bad);font-size:13.5px;margin:0}
+.err:empty{display:none}
 .success{display:grid;gap:12px}
-.notice{padding:10px 12px;border-radius:8px;font-size:14px;line-height:1.45;border-left:4px solid var(--accent);background:var(--accent-soft)}
+.success .tick{width:44px;height:44px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center}
+.notice{padding:10px 12px;border-radius:8px;font-size:14px;line-height:1.45;border-left:4px solid var(--accent);background:var(--accent-soft);white-space:pre-line}
 .notice b{display:block;font-size:13px;margin-bottom:2px}
 .notice.warn{border-color:var(--pend);background:var(--pend-bg)}
 .notice.bad{border-color:var(--bad);background:var(--bad-bg)}
 .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:5px;background:var(--sunk);color:var(--muted);margin-left:4px;vertical-align:1px}
-.success .tick{width:44px;height:44px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center}
+.tag.acc{background:var(--accent-soft);color:var(--accent)}
 .bubble{background:#dcf8c6;color:#111b21;border-radius:10px 10px 2px 10px;padding:11px 13px;white-space:pre-wrap;font-size:14.5px;line-height:1.45}
 .code{font-family:ui-monospace,Menlo,monospace;background:var(--sunk);padding:2px 7px;border-radius:5px;font-size:14px}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
+.sec-t{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:0}
 
 /* ===== Panel ===== */
 .ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:22px 0 14px}
@@ -146,9 +169,9 @@ textarea{min-height:56px;resize:vertical}
 .agenda-scroll{overflow:auto;max-height:calc(100vh - 160px);min-height:420px}
 .agenda{display:grid;position:relative}
 .ahead{position:sticky;top:0;z-index:3;background:var(--surface);border-bottom:1px solid var(--line);padding:9px 8px;display:flex;gap:8px;align-items:center;min-width:0}
-.ahead .av{width:30px;height:30px;font-size:12px}
+.ahead .av{width:30px;height:30px;font-size:11.5px}
 .ahead b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ahead small{font-size:12px;color:var(--muted);display:block;white-space:nowrap}
+.ahead small{font-size:12px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .corner{position:sticky;left:0;top:0;z-index:4;background:var(--surface);border-bottom:1px solid var(--line)}
 .tcol{position:sticky;left:0;z-index:2;background:var(--surface);border-right:1px solid var(--line)}
 .tcol div{position:absolute;right:6px;font-size:11.5px;color:var(--muted);transform:translateY(-7px);font-variant-numeric:tabular-nums}
@@ -158,7 +181,7 @@ textarea{min-height:56px;resize:vertical}
 .col .work{position:absolute;left:0;right:0;background:var(--surface)}
 .free{position:absolute;left:4px;right:4px;border:1px dashed transparent;border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:transparent;text-align:left;padding:2px 7px}
 .free:hover,.free:focus-visible{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
-.ev{position:absolute;left:4px;right:4px;border-radius:7px;padding:4px 7px 4px 9px;cursor:pointer;text-align:left;border:0;overflow:hidden;font-size:12.5px;line-height:1.3;border-left:4px solid}
+.ev{position:absolute;left:4px;right:4px;border-radius:7px;padding:3px 7px 3px 9px;cursor:pointer;text-align:left;border:0;overflow:hidden;font-size:12.5px;line-height:1.3;border-left:4px solid}
 .ev b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev > span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
 .st-pendiente{background:var(--pend-bg);border-color:var(--pend);color:var(--ink)}
@@ -168,7 +191,6 @@ textarea{min-height:56px;resize:vertical}
 .st-bloqueo{background:var(--sunk);border-color:var(--muted);color:var(--muted);background-image:repeating-linear-gradient(45deg,transparent 0 5px,color-mix(in srgb,var(--line) 80%,transparent) 5px 6px)}
 .now{position:absolute;left:0;right:0;border-top:2px solid var(--bad);z-index:1;pointer-events:none}
 .now::before{content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
-
 .side{display:grid;gap:14px}
 .side .card{padding:14px}
 .side h3{font-family:var(--body);font-size:14.5px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
@@ -191,20 +213,61 @@ textarea{min-height:56px;resize:vertical}
 .keys div{display:flex;gap:8px;align-items:center}
 .keys i{width:14px;height:14px;border-radius:3px;border-left:4px solid;flex:none}
 
+/* ===== Configuración ===== */
+.cfg{display:grid;gap:14px;padding-bottom:60px;max-width:900px}
+.cfg .card{padding:18px}
+.cfg h2{font-size:22px;margin-bottom:4px}
+.cfg .hint{color:var(--muted);font-size:14px;margin:0 0 14px;max-width:70ch}
+.cfg-head{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mode{display:block;border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;font-weight:400;position:relative}
+.mode input{position:absolute;opacity:0;width:1px;height:1px}
+.mode:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;background:var(--accent-soft)}
+.mode:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.mode b{display:block;font-size:16px;margin-bottom:3px}
+.mode span{font-size:14px;color:var(--muted);display:block}
+.rows{display:grid}
+.rowi{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.rowi:first-child{border-top:0}
+.rowi b{display:block}
+.rowi .meta{font-size:13.5px;color:var(--muted)}
+.covs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.cov{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:5px 6px 5px 11px;font-size:14px}
+.cov label{display:flex;gap:4px;align-items:center;font-weight:500;font-size:12.5px;color:var(--muted)}
+.cov label input{width:auto}
+.cov button{border:0;background:var(--sunk);border-radius:6px;width:24px;height:24px;cursor:pointer}
+.hours-ed{display:grid;gap:6px}
+.hrow{display:grid;grid-template-columns:78px 1fr 1fr;gap:8px;align-items:center}
+.hrow .pair{display:flex;gap:4px;align-items:center;font-size:13px;color:var(--muted)}
+.hrow input[type=time]{padding:6px;font-size:14px}
+.hrow.off .pair{opacity:.35}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px}
+.checks .check{font-size:14px}
+fieldset{border:0;padding:0;margin:0;display:grid;gap:8px;min-width:0}
+legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
+
+.mx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.mx{border-collapse:collapse;font-size:13.5px;min-width:100%}
+.mx th,.mx td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.mx thead th{background:var(--sunk);font-weight:700;font-size:12.5px;white-space:nowrap;position:sticky;top:0}
+.mx tbody th{font-weight:600;min-width:170px;position:sticky;left:0;background:var(--surface);z-index:1}
+.mx input{width:96px;padding:6px 7px;font-size:14px;font-variant-numeric:tabular-nums}
+.mx .diff{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap}
+.mx tr:last-child th,.mx tr:last-child td{border-bottom:0}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--surface);z-index:51;transform:translateX(105%);display:flex;flex-direction:column;border-left:1px solid var(--line)}
+.drawer.wide{width:min(580px,100%)}
 .drawer.show{transform:none}
 @media (prefers-reduced-motion:no-preference){.drawer{transition:transform .22s ease}}
 .dh{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:start}
 .dh h2{font-size:22px}
-.db{padding:16px 18px;overflow:auto;display:grid;gap:14px;align-content:start}
+.db{padding:16px 18px;overflow:auto;display:grid;gap:14px;align-content:start;flex:1}
 .close{border:0;background:var(--sunk);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;flex:none}
 dl{display:grid;grid-template-columns:110px 1fr;gap:7px 10px;margin:0;font-size:14.5px}
 dt{color:var(--muted)}
 dd{margin:0;font-weight:500}
-.sec-t{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:0}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:9px;font-size:14px;z-index:60;display:none;max-width:calc(100% - 32px)}
 .toast.show{display:block}
 
@@ -213,11 +276,18 @@ dd{margin:0;font-weight:500}
   .panel{grid-template-columns:1fr}
   .kpis{grid-template-columns:repeat(2,1fr)}
 }
+@media (max-width:620px){
+  .modes{grid-template-columns:1fr}
+  .row3{grid-template-columns:1fr 1fr}
+  .checks{grid-template-columns:1fr}
+}
 @media (max-width:520px){
   .row2{grid-template-columns:1fr}
   .datenav .cur{min-width:0;font-size:14px}
   .brand small{display:none}
-  .tab{padding:7px 10px}
+  .tab{padding:7px 9px;font-size:13px}
+  .hrow{grid-template-columns:1fr}
+  .who{margin-left:0}
 }
 </style>
 </head>
@@ -227,13 +297,14 @@ dd{margin:0;font-weight:500}
   <div class="wrap">
     <div class="brand">
       <div class="logo" id="logo">A</div>
-      <div><b id="clinicName"></b><small id="clinicSub"></small></div>
+      <div style="min-width:0"><b id="clinicName"></b><small id="clinicSub"></small></div>
     </div>
     <div class="tabs" role="tablist" aria-label="Vista">
-      <button class="tab" role="tab" id="tab-book" aria-selected="true" data-view="book">Reservar turno</button>
-      <button class="tab" role="tab" id="tab-panel" aria-selected="false" data-view="panel">Panel del consultorio</button>
+      <button class="tab" role="tab" aria-selected="true" data-view="book">Reservar turno</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="panel">Panel del consultorio</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Configuración</button>
     </div>
-    <button class="linkbtn" id="resetBtn" type="button">Restablecer demo</button>
+    <button class="linkbtn" id="resetBtn" type="button">Restablecer turnos de ejemplo</button>
   </div>
 </header>
 
@@ -241,17 +312,17 @@ dd{margin:0;font-weight:500}
 <main id="view-book">
   <div class="wrap hero">
     <h1>Reservá tu turno online</h1>
-    <p>Consultas médicas y estudios por imágenes. Elegí día y horario disponible y te confirmamos por WhatsApp.</p>
+    <p id="heroSub"></p>
   </div>
   <div class="wrap book">
     <section class="card pane" aria-labelledby="s1">
-      <div class="step-h"><span class="step-n">1</span><h2 id="s1">Elegí consulta o estudio</h2></div>
-      <div class="chips" id="specChips" role="group" aria-label="Especialidad"></div>
-      <div class="pros" id="proList"></div>
+      <div class="step-h"><span class="step-n">1</span><h2 id="s1"></h2></div>
+      <div class="chips" id="kindChips" role="group" aria-label="Tipo de turno"></div>
+      <div class="pros" id="pickList"></div>
     </section>
-
     <section class="card pane" aria-labelledby="s2">
       <div class="step-h"><span class="step-n">2</span><h2 id="s2">Día y horario</h2></div>
+      <div id="optsArea"></div>
       <div id="calArea"></div>
       <div id="formArea"></div>
     </section>
@@ -286,10 +357,18 @@ dd{margin:0;font-weight:500}
             <div><i class="st-ausente"></i>No asistió</div>
             <div><i class="st-bloqueo"></i>Horario bloqueado</div>
           </div>
-          <p class="muted" style="font-size:12.5px;margin:10px 0 0">Hacé clic en un horario libre para agendar un turno manual o bloquearlo.</p>
+          <p class="muted" style="font-size:12.5px;margin:10px 0 0">Hacé clic en un horario libre para agendar un turno manual o bloquearlo. ⚠ = estudio sin orden médica.</p>
         </div>
       </aside>
     </div>
+  </div>
+</main>
+
+<!-- ===================== CONFIGURACIÓN ===================== -->
+<main id="view-config" hidden>
+  <div class="wrap">
+    <div class="ph"><h1>Configuración</h1></div>
+    <div class="cfg" id="cfg"></div>
   </div>
 </main>
 
@@ -302,57 +381,72 @@ dd{margin:0;font-weight:500}
 
 <script>
 /* =================================================================
-   CONFIGURACIÓN DEL CONSULTORIO — lo único que se edita por cliente
+   CONFIGURACIÓN DE EJEMPLO
+   Se edita desde la pestaña "Configuración" y queda guardada en el
+   navegador. Para entregar a un cliente se puede cambiar acá.
    ================================================================= */
-const CLINIC = {
-  name: "Centro Médico Alameda",
-  sub: "Consultorios y diagnóstico por imágenes",
-  address: "Av. Alameda 1240, piso 2",
-  whatsapp: "5491100000000",          // número del consultorio, solo dígitos con código de país
-  whatsappLabel: "+54 9 11 0000-0000",
-  currency: "$",
-  leadMinutes: 60,                    // no se puede reservar con menos de 60 min de anticipación
-  daysAhead: 14                       // cuántos días hacia adelante se muestran
+const DEFAULTS = {
+  clinic: {
+    name: "Centro Médico Alameda",
+    sub: "Consultorios y diagnóstico por imágenes",
+    address: "Av. Alameda 1240, piso 2",
+    whatsapp: "5491100000000",
+    currency: "$",
+    leadMinutes: 60,
+    daysAhead: 14
+  },
+  // "turnos" = solo agenda con profesionales · "estudios" = consultas y estudios
+  mode: "estudios",
+  coverage: [
+    {n:"OSDE"}, {n:"Swiss Medical"}, {n:"Galeno"}, {n:"Medifé"}, {n:"Sancor Salud"}, {n:"Omint"},
+    {n:"OSECAC", auth:true}, {n:"IOMA", auth:true}, {n:"PAMI", auth:true}
+  ],
+  services: [
+    {id:"c_clin", kind:"consulta", name:"Consulta clínica", dur:30, price:35000},
+    {id:"c_apto", kind:"consulta", name:"Apto físico", dur:20, price:25000},
+    {id:"c_gin",  kind:"consulta", name:"Control ginecológico", dur:30, price:40000},
+    {id:"c_emb",  kind:"consulta", name:"Control de embarazo", dur:30, price:40000},
+    {id:"e_mamo", kind:"estudio", name:"Mamografía bilateral", dur:20, price:45000, order:true, combo:true,
+      prep:"El día del estudio no uses desodorante, talco ni cremas en axilas y mamas. Traé tus mamografías anteriores."},
+    {id:"e_ecomam", kind:"estudio", name:"Ecografía mamaria", dur:20, price:40000, order:true, combo:true,
+      prep:"No requiere preparación. Traé tus estudios mamarios anteriores."},
+    {id:"e_ecoabd", kind:"estudio", name:"Ecografía abdominal", dur:20, price:40000, order:true, combo:true,
+      prep:"Ayuno de 6 horas. El día anterior evitá bebidas gaseosas y chicles."},
+    {id:"e_ecorv", kind:"estudio", name:"Ecografía renal y vesical", dur:20, price:40000, order:true, combo:true,
+      prep:"Tomá 1 litro de agua una hora antes y no orines hasta terminar el estudio."},
+    {id:"e_ecotv", kind:"estudio", name:"Ecografía transvaginal", dur:20, price:40000, order:true, combo:true,
+      prep:"Vení con la vejiga vacía."},
+    {id:"e_ecotir", kind:"estudio", name:"Ecografía tiroidea", dur:20, price:40000, order:true, combo:true, prep:""},
+    {id:"e_dmo", kind:"estudio", name:"Densitometría ósea", dur:20, price:50000, order:true, combo:false,
+      prep:"No tomes suplementos de calcio 24 horas antes. No tenés que haberte hecho estudios con contraste (bario o yodo) en los últimos 7 días. Vení con ropa sin partes metálicas."}
+  ],
+  // hours: día de la semana (0 domingo … 6 sábado) → franjas. step: cada cuántos minutos empieza un turno.
+  pros: [
+    {id:"herrera", name:"Dr. Pablo Herrera", role:"Clínica médica", color:"#3b6fb6", step:30, accepts:"all",
+      services:["c_clin","c_apto"], hours:{2:[["09:00","13:00"],["15:00","18:00"]],4:[["09:00","13:00"],["15:00","18:00"]]}},
+    {id:"romero", name:"Dra. Silvia Romero", role:"Ginecología y obstetricia", color:"#a3456a", step:30,
+      accepts:["OSDE","Swiss Medical","Galeno","Medifé","Sancor Salud","Omint","OSECAC"],
+      services:["c_gin","c_emb","e_ecotv"], hours:{1:[["09:00","13:00"]],3:[["09:00","13:00"],["15:00","18:00"]],5:[["09:00","13:00"]]}},
+    {id:"costa", name:"Dra. Mariana Costa", role:"Diagnóstico por imágenes", color:"#2c7a7b", step:20, accepts:"all",
+      services:["e_mamo","e_ecomam","e_ecoabd","e_ecorv","e_ecotir","e_dmo"],
+      hours:{1:[["08:00","13:00"]],2:[["08:00","13:00"]],3:[["08:00","13:00"]],4:[["08:00","13:00"]],5:[["08:00","13:00"]]}},
+    {id:"paredes", name:"Dr. Luis Paredes", role:"Ecografía general", color:"#6a5acd", step:20,
+      accepts:["OSDE","Swiss Medical","Galeno","Medifé","Sancor Salud","Omint","OSECAC","PAMI"],
+      services:["e_ecoabd","e_ecorv","e_ecomam","e_ecotir"], hours:{2:[["14:00","18:00"]],4:[["14:00","18:00"]],6:[["09:00","12:00"]]}}
+  ]
 };
-// Coberturas. auth:true = los estudios necesitan orden autorizada por la obra social.
-const COVERAGE = [
-  {n:"Particular"},
-  {n:"OSDE"}, {n:"Swiss Medical"}, {n:"Galeno"}, {n:"Medifé"}, {n:"Sancor Salud"}, {n:"Omint"},
-  {n:"OSECAC", auth:true}, {n:"IOMA", auth:true}, {n:"PAMI", auth:true}
-];
-// Agendas: médicos (consulta) y equipos (estudio).
-// hours: clave = día de la semana (0 domingo … 6 sábado) → franjas [inicio, fin]
-// accepts: "all" o la lista de coberturas con las que trabaja. price: valor particular.
-// types: motivos o tipos de estudio, cada uno con su preparación.
-const NO_PREP = "No requiere preparación.";
-const PROS = [
-  {id:"herrera", kind:"consulta", group:"Consultas", name:"Dr. Pablo Herrera", role:"Clínica médica", dur:30, price:35000, color:"#3b6fb6", accepts:"all",
-   hours:{2:[["09:00","13:00"],["15:00","18:00"]],4:[["09:00","13:00"],["15:00","18:00"]]},
-   types:[{n:"Primera consulta"},{n:"Control"},{n:"Lectura de estudios"},{n:"Apto físico"}]},
-  {id:"romero", kind:"consulta", group:"Consultas", name:"Dra. Silvia Romero", role:"Ginecología y obstetricia", dur:30, price:40000, color:"#a3456a",
-   accepts:["OSDE","Swiss Medical","Galeno","Medifé","Sancor Salud","Omint","OSECAC"],
-   hours:{1:[["09:00","13:00"]],3:[["09:00","13:00"],["15:00","18:00"]],5:[["09:00","13:00"]]},
-   types:[{n:"Control ginecológico anual"},{n:"Consulta"},{n:"Control de embarazo"}]},
-  {id:"mamo", kind:"estudio", group:"Estudios", name:"Mamografía", abbr:"MG", role:"Mamógrafo digital", dur:20, price:45000, color:"#b0506f", needsOrder:true, accepts:"all",
-   hours:{1:[["08:00","12:00"]],2:[["08:00","12:00"]],3:[["08:00","12:00"]],4:[["08:00","12:00"]],5:[["08:00","12:00"]]},
-   types:[{n:"Mamografía bilateral",prep:"El día del estudio no uses desodorante, talco ni cremas en axilas y mamas. Traé tus mamografías anteriores."},
-          {n:"Mamografía con proyecciones adicionales",prep:"El día del estudio no uses desodorante, talco ni cremas en axilas y mamas. Traé tus mamografías anteriores."}]},
-  {id:"eco", kind:"estudio", group:"Estudios", name:"Ecografía", abbr:"ECO", role:"Ecógrafo Doppler color", dur:20, price:40000, color:"#2c7a7b", needsOrder:true, accepts:"all",
-   hours:{1:[["08:00","13:00"],["15:00","18:00"]],2:[["08:00","13:00"],["15:00","18:00"]],3:[["08:00","13:00"],["15:00","18:00"]],4:[["08:00","13:00"],["15:00","18:00"]],5:[["08:00","13:00"]]},
-   types:[{n:"Ecografía abdominal",prep:"Ayuno de 6 horas. El día anterior evitá bebidas gaseosas y chicles."},
-          {n:"Ecografía ginecológica transvaginal",prep:"Vení con la vejiga vacía."},
-          {n:"Ecografía pelviana",prep:"Tomá 1 litro de agua una hora antes y no orines hasta terminar el estudio."},
-          {n:"Ecografía renal y vesical",prep:"Tomá 1 litro de agua una hora antes y no orines hasta terminar el estudio."},
-          {n:"Ecografía tiroidea",prep:NO_PREP},
-          {n:"Ecografía mamaria",prep:"No requiere preparación. Traé tus estudios mamarios anteriores."}]},
-  {id:"dmo", kind:"estudio", group:"Estudios", name:"Densitometría ósea", abbr:"DMO", role:"Columna lumbar y cadera", dur:20, price:50000, color:"#6a5acd", needsOrder:true,
-   accepts:["OSDE","Swiss Medical","Galeno","Medifé","Sancor Salud","Omint","OSECAC","PAMI"],
-   hours:{2:[["08:00","12:00"]],4:[["08:00","12:00"]]},
-   types:[{n:"Densitometría de columna y cadera",prep:"No tomes suplementos de calcio 24 horas antes. No tenés que haberte hecho estudios con contraste (bario o yodo) en los últimos 7 días. Vení con ropa sin partes metálicas."}]}
-];
+// Lo que paga cada obra social (ejemplo): porcentaje del valor particular.
+(function(){
+  const pct = {"OSDE":.8,"Swiss Medical":.8,"Galeno":.75,"Medifé":.7,"Sancor Salud":.7,"Omint":.85,"OSECAC":.6,"IOMA":.55,"PAMI":1};
+  DEFAULTS.services.forEach(s => { s.cov = {}; Object.entries(pct).forEach(([k, v]) => s.cov[k] = Math.round(s.price * v / 500) * 500); });
+  const needs = {e_mamo:"Orden médica y tus mamografías anteriores, si tenés, para comparar.", e_dmo:"Orden médica y densitometrías anteriores para comparar la evolución.",
+    e_ecomam:"Orden médica y estudios mamarios anteriores.", e_ecoabd:"Orden médica. Si tenés análisis de sangre recientes, traelos."};
+  Object.entries(needs).forEach(([id, t]) => DEFAULTS.services.find(x => x.id === id).needs = t);
+})();
 /* ================================================================= */
 
-const DAY0 = 8*60, DAY1 = 20*60, ROW = 30, PX = 48; // agenda 08:00–20:00, filas de 30 min
+const DAY0 = 8*60, DAY1 = 20*60, ROW = 30, PX = 48;
+const DOWS = [[1,"Lun"],[2,"Mar"],[3,"Mié"],[4,"Jue"],[5,"Vie"],[6,"Sáb"],[0,"Dom"]];
 const STATUS = {pendiente:"Pendiente", confirmado:"Confirmado", asistio:"Asistió", ausente:"No asistió", bloqueo:"Bloqueado", cancelado:"Cancelado"};
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -364,341 +458,478 @@ const toMin = t => { const [h,m] = t.split(":").map(Number); return h*60+m; };
 const toT = m => pad(Math.floor(m/60))+":"+pad(m%60);
 const TODAY = () => ymd(new Date());
 const nowMin = () => { const d = new Date(); return d.getHours()*60+d.getMinutes(); };
-const fmtLong = s => { const t = parse(s).toLocaleDateString("es", {weekday:"long", day:"numeric", month:"long"}); return t.charAt(0).toUpperCase() + t.slice(1); };
+const cap1 = t => t.charAt(0).toUpperCase() + t.slice(1);
+const fmtLong = s => cap1(parse(s).toLocaleDateString("es", {weekday:"long", day:"numeric", month:"long"}));
 const fmtDow = s => parse(s).toLocaleDateString("es", {weekday:"short"}).replace(".","");
-const initials = n => n.replace(/^(Dra?\.|Lic\.)\s*/,"").split(" ").map(w=>w[0]).slice(0,2).join("");
-const pro = id => PROS.find(p => p.id === id);
-const abbr = p => p.abbr || initials(p.name);
-const isStudy = p => p.kind === "estudio";
-const typeOf = b => (pro(b.pro).types.find(t => t.n === b.reason) || {});
-const covers = (p, os) => os === "Particular" || p.accepts === "all" || p.accepts.includes(os);
-const cov = os => COVERAGE.find(c => c.n === os) || {};
-const covLine = b => b.os === "Particular" || !b.os ? "Particular" : b.os + (b.plan ? " " + b.plan : "") + (b.aff ? " · Nº " + b.aff : "");
-const digits = s => String(s).replace(/\D/g,"");
-// Normaliza números argentinos: agrega 549 si falta y quita 0 y 15 locales
-const normPhone = n => { let d = digits(n); if (d.startsWith("54")) return d; d = d.replace(/^0/, ""); if (d.length === 12 && d.slice(2,4) === "15") d = d.slice(0,2) + d.slice(4); return "549" + d; };
+const digits = s => String(s ?? "").replace(/\D/g,"");
+const uid = p => p + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36);
+const clone = o => JSON.parse(JSON.stringify(o));
+const initials = n => String(n).replace(/^(Dra?\.|Lic\.)\s*/i,"").split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+const svcAbbr = s => s.name.split(/\s+/).filter(w => w.length > 2).slice(0,2).map(w => w[0]).join("").toUpperCase() || "E";
+const normPhone = n => { let d = digits(n); if (!d) return ""; if (d.startsWith("54")) return d; d = d.replace(/^0/, ""); if (d.length === 12 && d.slice(2,4) === "15") d = d.slice(0,2) + d.slice(4); return "549" + d; };
 const wa = (num, text) => "https://wa.me/" + normPhone(num) + "?text=" + encodeURIComponent(text);
-const money = n => CLINIC.currency + " " + Number(n).toLocaleString("es-AR");
 
-/* ---------- datos ---------- */
-const KEY = "agenda-demo-v2";
-let DB;
-function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-function code(r){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<5;i++) s+=a[Math.floor((r?r():Math.random())*a.length)]; return s; }
-function rawSlots(p, date){
-  const ranges = p.hours[parse(date).getDay()] || [];
+/* ---------- estado ---------- */
+const CFG_KEY = "agenda-config-v4", DB_KEY = "agenda-turnos-v3";
+let S, DB;
+function loadCfg(){ try { const s = JSON.parse(localStorage.getItem(CFG_KEY)); if (s && s.pros && s.services) { S = s; return; } } catch(_){} S = clone(DEFAULTS); }
+function saveCfg(){ try { localStorage.setItem(CFG_KEY, JSON.stringify(S)); } catch(_){} }
+function saveDB(){ try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); } catch(_){} }
+const C = () => S.clinic;
+const money = n => C().currency + " " + Number(n || 0).toLocaleString("es-AR");
+const pro = id => S.pros.find(p => p.id === id);
+const svc = id => S.services.find(s => s.id === id);
+const proSvcs = (p, kind) => p.services.map(svc).filter(s => s && (!kind || s.kind === kind));
+const prosFor = sid => S.pros.filter(p => p.services.includes(sid));
+const covers = (p, os) => os === "Particular" || p.accepts === "all" || (p.accepts || []).includes(os);
+const cov = os => S.coverage.find(c => c.n === os) || {};
+const covLine = b => !b.os || b.os === "Particular" ? "Particular" : b.os + (b.plan ? " " + b.plan : "") + (b.aff ? " · Nº " + b.aff : "");
+const isStudyMode = () => S.mode === "estudios";
+const itemsName = items => items.map(i => i.n).join(" + ");
+const itemsSvcs = items => items.map(i => svc(i.id) || {name:i.n, kind:"consulta"});
+const hasStudy = items => itemsSvcs(items).some(s => s.kind === "estudio");
+const needsOrder = items => itemsSvcs(items).some(s => s.order);
+function prepText(items){
+  const list = itemsSvcs(items).filter(s => s.prep);
+  return list.map(s => (list.length > 1 || items.length > 1 ? s.name + ": " : "") + s.prep).join("\n");
+}
+function needsText(items){
+  const list = itemsSvcs(items).filter(s => s.needs);
+  return list.map(s => (list.length > 1 ? s.name + ": " : "") + s.needs).join("\n");
+}
+// Cuánto cubre la obra social y cuánto abona el paciente
+function payFor(items, os){
+  const list = itemsSvcs(items);
+  const total = list.reduce((a, s) => a + (Number(s.price) || 0), 0);
+  if (!os || os === "Particular") return {total, covered:0, pay:total, unknown:false};
+  let covered = 0, unknown = false;
+  list.forEach(s => { const v = s.cov && s.cov[os]; if (v === undefined || v === null || v === "") unknown = true; else covered += Math.min(Number(v), Number(s.price) || 0); });
+  return {total, covered, pay: unknown ? null : Math.max(0, total - covered), unknown};
+}
+function payLine(b){
+  const f = payFor(b.items, b.os);
+  if (!b.os || b.os === "Particular") return "Valor particular: " + money(f.total);
+  if (f.unknown) return "";
+  return f.pay > 0 ? "Diferencia a abonar: " + money(f.pay) : "Sin diferencia a abonar";
+}
+const live = b => b.status !== "cancelado" && pro(b.pro);
+const onDay = (pid, date) => DB.bookings.filter(b => b.pro === pid && b.date === date && live(b));
+
+/* ---------- disponibilidad ---------- */
+function ranges(p, date){ return (p.hours[parse(date).getDay()] || []).map(([a,b]) => [toMin(a), toMin(b)]); }
+function fits(p, date, m, dur, ignoreId){
+  if (!ranges(p, date).some(([a,b]) => m >= a && m + dur <= b)) return false;
+  return !onDay(p.id, date).some(b => { if (b.id === ignoreId) return false; const s = toMin(b.start); return s < m + dur && m < s + b.dur; });
+}
+function starts(p, date, dur){
   const out = [];
-  ranges.forEach(([a,b]) => { for (let m = toMin(a); m + p.dur <= toMin(b); m += p.dur) out.push(m); });
+  ranges(p, date).forEach(([a,b]) => { for (let m = a; m + dur <= b; m += p.step) out.push(m); });
   return out;
 }
+function availability(pids, date, dur){
+  const t = TODAY(), cut = nowMin() + Number(C().leadMinutes || 0), map = new Map();
+  if (date < t) return [];
+  pids.forEach(id => {
+    const p = pro(id); if (!p) return;
+    starts(p, date, dur).forEach(m => {
+      const ok = date > t || m >= cut;
+      const f = ok && fits(p, date, m, dur);
+      const cur = map.get(m);
+      if (!cur) map.set(m, {m, free:f, pro: f ? id : null});
+      else if (!cur.free && f){ cur.free = true; cur.pro = id; }
+    });
+  });
+  return [...map.values()].sort((a,b) => a.m - b.m);
+}
+function nextFree(pids, dur){
+  for (let i = 0; i < C().daysAhead; i++){
+    const d = addDays(TODAY(), i); const s = availability(pids, d, dur).find(x => x.free);
+    if (s) return {date:d, m:s.m, off:i};
+  }
+  return null;
+}
+const relDay = (off, date) => off === 0 ? "hoy" : off === 1 ? "mañana" : fmtDow(date) + " " + parse(date).getDate();
+
+/* ---------- turnos de ejemplo ---------- */
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function code(r){ const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 5; i++) s += a[Math.floor((r ? r() : Math.random()) * a.length)]; return s; }
 function seed(){
-  const names = ["Lucía Fernández","Martín Gómez","Sofía Herrera","Diego Castro","Valentina Ríos","Mateo Navarro","Camila Ortiz","Joaquín Silva","Paula Medina","Nicolás Vega","Florencia Paz","Andrés Molina","Julieta Romero","Tomás Aguirre","Carolina Díaz","Gabriel Rojas","Natalia Suárez","Federico Luna","Mariana Ibáñez","Pablo Cabrera","Agustina Ponce","Sebastián Muñoz"];
-  const t = TODAY(); const r = rng(Number(digits(t)));
+  const names = ["Lucía Fernández","Martín Gómez","Sofía Herrera","Diego Castro","Valentina Ríos","Mateo Navarro","Camila Ortiz","Joaquín Silva","Paula Medina","Nicolás Vega","Florencia Paz","Andrés Molina","Julieta Romero","Tomás Aguirre","Carolina Díaz","Gabriel Rojas","Natalia Suárez","Federico Luna","Mariana Ibáñez","Pablo Cabrera","Agustina Ponce","Sebastián Muñoz","Romina Acosta","Graciela Benítez"];
+  const t = TODAY(), r = rng(Number(digits(t)));
   const bookings = []; let id = 1;
+  const covNames = ["Particular", ...S.coverage.map(c => c.n)];
   for (let off = -2; off <= 9; off++){
     const date = addDays(t, off);
-    PROS.forEach(p => {
-      const sl = rawSlots(p, date);
-      const fill = off <= 0 ? 0.7 : off <= 3 ? 0.55 : 0.3;
-      sl.forEach((m, i) => {
-        if (off >= 0 && i === 3 && r() < 0.35){ bookings.push({id:id++, pro:p.id, date, start:toT(m), dur:p.dur, status:"bloqueo", name:"Reunión de equipo", phone:"", reason:"", note:"", source:"manual"}); return; }
-        if (r() > fill) return;
-        const past = off < 0 || (off === 0 && m + p.dur <= nowMin());
-        let status;
-        if (past) status = r() < 0.88 ? "asistio" : "ausente";
-        else if (off <= 1) status = r() < 0.85 ? "confirmado" : "pendiente";
-        else status = r() < 0.7 ? "confirmado" : "pendiente";
-        const nm = names[Math.floor(r()*names.length)];
-        let os = "Particular";
-        for (let k = 0; k < 4; k++){ const c = COVERAGE[Math.floor(r()*COVERAGE.length)].n; if (covers(p, c)){ os = c; break; } }
-        bookings.push({id:id++, pro:p.id, date, start:toT(m), dur:p.dur, status, name:nm,
-          phone:"54911" + String(Math.floor(r()*90000000)+10000000), reason:p.types[Math.floor(r()*p.types.length)].n,
-          dni:String(Math.floor(r()*30000000)+20000000), os, plan:"", aff: os === "Particular" ? "" : String(Math.floor(r()*9e9)+1e9),
-          order: isStudy(p) ? r() < 0.9 : false,
-          first: r() < 0.25, note:"", source: r() < 0.6 ? "web" : "manual", code:code(r), reminded:false});
+    S.pros.forEach(p => {
+      const opts = proSvcs(p); if (!opts.length) return;
+      const fill = off <= 0 ? 0.7 : off <= 3 ? 0.5 : 0.28;
+      let blocked = false;
+      ranges(p, date).forEach(([a, b]) => {
+        let m = a;
+        while (m < b){
+          if (!blocked && off >= 0 && m > a + 60 && r() < 0.12){
+            blocked = true;
+            bookings.push({id:id++, pro:p.id, date, start:toT(m), dur:p.step, status:"bloqueo", name:"Reunión de equipo", items:[], source:"manual"});
+            m += p.step; continue;
+          }
+          const s1 = opts[Math.floor(r()*opts.length)];
+          const items = [{id:s1.id, n:s1.name}];
+          if (s1.combo && r() < 0.25){ const s2 = opts.find(o => o.id !== s1.id && o.combo); if (s2) items.push({id:s2.id, n:s2.name}); }
+          const dur = items.reduce((x, i) => x + svc(i.id).dur, 0);
+          if (m + dur > b) break;
+          if (r() < fill){
+            const past = off < 0 || (off === 0 && m + dur <= nowMin());
+            let status;
+            if (past) status = r() < 0.88 ? "asistio" : "ausente";
+            else if (off <= 1) status = r() < 0.85 ? "confirmado" : "pendiente";
+            else status = r() < 0.7 ? "confirmado" : "pendiente";
+            let os = "Particular";
+            for (let k = 0; k < 4; k++){ const c = covNames[Math.floor(r()*covNames.length)]; if (covers(p, c)){ os = c; break; } }
+            bookings.push({id:id++, pro:p.id, date, start:toT(m), dur, status, name:names[Math.floor(r()*names.length)],
+              phone:"54911" + String(Math.floor(r()*90000000)+10000000), items,
+              dni:String(Math.floor(r()*30000000)+20000000), os, plan:"", aff: os === "Particular" ? "" : String(Math.floor(r()*9e9)+1e9),
+              order: needsOrder(items) ? r() < 0.9 : false, first: r() < 0.25, note:"", source: r() < 0.6 ? "web" : "manual", code:code(r), reminded:false});
+            m += Math.ceil(dur / p.step) * p.step;
+          } else m += p.step;
+        }
       });
     });
   }
   return {seededOn:t, nextId:id, bookings};
 }
-function load(){
-  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.seededOn === TODAY()) { DB = s; return; } } catch(_){}
-  DB = seed(); save();
-}
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(_){} }
-const live = b => b.status !== "cancelado";
-const onDay = (pid, date) => DB.bookings.filter(b => b.pro === pid && b.date === date && live(b));
-function isTaken(pid, date, m, dur){
-  return onDay(pid, date).some(b => { const s = toMin(b.start); return s < m + dur && m < s + b.dur; });
-}
-function slotsFor(p, date){
-  const t = TODAY(), cut = nowMin() + CLINIC.leadMinutes;
-  return rawSlots(p, date).map(m => ({m, free: !isTaken(p.id, date, m, p.dur) && !(date === t && m < cut) && date >= t}));
-}
-function nextFree(p){
-  for (let i = 0; i < CLINIC.daysAhead; i++){
-    const d = addDays(TODAY(), i); const s = slotsFor(p, d).find(x => x.free);
-    if (s) return {date:d, m:s.m, off:i};
-  }
-  return null;
+function loadDB(){
+  try { const s = JSON.parse(localStorage.getItem(DB_KEY)); if (s && s.seededOn === TODAY()) { DB = s; return; } } catch(_){}
+  DB = seed(); saveDB();
 }
 
-/* ---------- vista paciente ---------- */
-const UI = {spec:"Todas", pro:null, date:null, time:null, done:null};
-function renderSpecs(){
-  const specs = ["Todas", ...new Set(PROS.map(p => p.group))];
-  $("specChips").innerHTML = specs.map(s => `<button class="chip" type="button" data-s="${esc(s)}" aria-pressed="${s===UI.spec}">${esc(s)}</button>`).join("");
+/* ================= VISTA PACIENTE ================= */
+const UI = {tab:"consultas", pro:null, svc:null, who:"any", motivo:null, extra:[], date:null, time:null, slotPro:null, done:null};
+function resetPick(){ Object.assign(UI, {date:null, time:null, slotPro:null, done:null}); }
+function consultPros(){ return S.pros.filter(p => isStudyMode() ? proSvcs(p, "consulta").length : proSvcs(p).length); }
+function consultList(p){ return isStudyMode() ? proSvcs(p, "consulta") : proSvcs(p); }
+function studyList(){ return S.services.filter(s => s.kind === "estudio" && prosFor(s.id).length); }
+function selection(){
+  if (UI.tab === "estudios" && isStudyMode()){
+    const s = svc(UI.svc); if (!s) return null;
+    const items = [s, ...UI.extra.map(svc).filter(Boolean)];
+    let pids = prosFor(s.id).filter(p => items.every(i => p.services.includes(i.id))).map(p => p.id);
+    if (UI.who !== "any") pids = pids.filter(id => id === UI.who);
+    return {items, pids, dur: items.reduce((a, i) => a + i.dur, 0)};
+  }
+  const p = pro(UI.pro); if (!p) return null;
+  const list = consultList(p); if (!list.length) return null;
+  const m = list.find(x => x.id === UI.motivo) || list[0];
+  return {items:[m], pids:[p.id], dur:m.dur};
 }
-function relDay(off, date){ return off === 0 ? "hoy" : off === 1 ? "mañana" : fmtDow(date) + " " + parse(date).getDate(); }
-function renderPros(){
-  const list = PROS.filter(p => UI.spec === "Todas" || p.group === UI.spec);
-  $("proList").innerHTML = list.map(p => {
-    const n = nextFree(p);
-    return `<button class="pro" type="button" data-p="${p.id}" aria-pressed="${UI.pro===p.id}">
-      <span class="av" style="background:${p.color}">${esc(abbr(p))}</span>
-      <span><b>${esc(p.name)}</b><span class="sp">${esc(p.role)} · ${p.dur} min${p.needsOrder ? " · con orden médica" : ""}</span>
-      <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en 2 semanas"}</span></span>
-      <span class="price"><b>${money(p.price)}</b><br>particular</span></button>`;
-  }).join("");
+
+function renderPick(){
+  const sm = isStudyMode();
+  $("heroSub").textContent = sm ? "Consultas médicas y estudios. Elegí día y horario disponible y te confirmamos por WhatsApp." : "Elegí profesional, día y horario disponible. Te confirmamos por WhatsApp.";
+  $("s1").textContent = sm ? "¿Qué necesitás?" : "Elegí profesional";
+  if (!sm) UI.tab = "consultas";
+  $("kindChips").hidden = !sm;
+  $("kindChips").innerHTML = sm ? `<button class="chip lg" type="button" data-tab="consultas" aria-pressed="${UI.tab==="consultas"}">Consultas médicas</button><button class="chip lg" type="button" data-tab="estudios" aria-pressed="${UI.tab==="estudios"}">Estudios</button>` : "";
+  let h = "";
+  if (UI.tab === "consultas"){
+    const list = consultPros();
+    h = list.map(p => {
+      const sv = consultList(p), d = Math.min(...sv.map(s => s.dur));
+      const n = nextFree([p.id], d), min = Math.min(...sv.map(s => s.price));
+      return `<button class="pro" type="button" data-pro="${p.id}" aria-pressed="${UI.pro===p.id}">
+        <span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span>
+        <span><b>${esc(p.name)}</b><span class="sp">${esc(p.role)}</span>
+        <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en las próximas semanas"}</span></span>
+        <span class="price">desde<br><b>${money(min)}</b></span></button>`;
+    }).join("") || `<div class="empty">Todavía no hay profesionales cargados. Agregalos desde Configuración.</div>`;
+  } else {
+    const list = studyList();
+    h = list.map(s => {
+      const ps = prosFor(s.id), sel = UI.svc === s.id, n = nextFree(ps.map(p => p.id), s.dur);
+      let who = "";
+      if (sel && ps.length > 1){
+        who = `<div class="who"><p>¿Con quién?</p><div class="chips" style="margin:0"><button class="chip" type="button" data-who="any" aria-pressed="${UI.who==="any"}">Indistinto (primer turno libre)</button>` +
+          ps.map(p => `<button class="chip" type="button" data-who="${p.id}" aria-pressed="${UI.who===p.id}">${esc(p.name)}</button>`).join("") + `</div></div>`;
+      }
+      return `<button class="pro" type="button" data-svc="${s.id}" aria-pressed="${sel}">
+        <span class="av sq">${esc(svcAbbr(s))}</span>
+        <span><b>${esc(s.name)}</b><span class="sp">${s.dur} min · ${ps.length > 1 ? ps.length + " profesionales" : esc(ps[0].name)}${s.order ? " · con orden médica" : ""}</span>
+        <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en las próximas semanas"}</span></span>
+        <span class="price">particular<br><b>${money(s.price)}</b></span></button>${who}`;
+    }).join("") || `<div class="empty">No hay estudios cargados. Agregalos desde Configuración.</div>`;
+  }
+  $("pickList").innerHTML = h;
 }
+
+function renderOpts(){
+  const sel = selection(), area = $("optsArea");
+  if (!sel){ area.innerHTML = ""; return; }
+  if (UI.tab === "consultas"){
+    const p = pro(UI.pro), list = consultList(p);
+    area.innerHTML = list.length > 1 ? `<div class="opts"><label for="o-motivo">Motivo de consulta<select id="o-motivo">${list.map(s => `<option value="${s.id}" ${sel.items[0].id===s.id?"selected":""}>${esc(s.name)} · ${s.dur} min</option>`).join("")}</select></label></div>` : "";
+    return;
+  }
+  const main = sel.items[0];
+  const cand = prosFor(main.id).filter(p => UI.who === "any" || p.id === UI.who);
+  const addable = main.combo ? S.services.filter(s => s.kind === "estudio" && s.combo && !sel.items.some(i => i.id === s.id) && cand.some(p => sel.items.every(i => p.services.includes(i.id)) && p.services.includes(s.id))) : [];
+  area.innerHTML = `<div class="opts">
+    <div><p class="sec-t" style="margin-bottom:6px">Tu turno</p><div class="combo">
+      <span class="ichip main">${esc(main.name)}</span>
+      ${sel.items.slice(1).map(s => `<span class="ichip">+ ${esc(s.name)}<button type="button" data-rmx="${s.id}" aria-label="Quitar ${esc(s.name)}">×</button></span>`).join("")}
+    </div></div>
+    ${addable.length ? `<div><label for="o-add">¿Necesitás otro estudio el mismo día? Lo hacemos en el mismo turno</label>
+      <div class="addrow" style="margin-top:4px"><select id="o-add">${addable.map(s => `<option value="${s.id}">${esc(s.name)} · ${s.dur} min</option>`).join("")}</select>
+      <button class="btn btn-soft" type="button" id="o-addbtn">Agregar al turno</button></div></div>` : ""}
+    <div class="total">Duración del turno: <b>${sel.dur} min</b>${sel.items.length > 1 ? " (" + sel.items.map(s => s.dur).join(" + ") + ")" : ""}${sel.pids.length ? "" : " · <b style='color:var(--bad)'>Ningún profesional hace estos estudios juntos</b>"}</div>
+  </div>`;
+}
+
 function renderCal(){
-  const area = $("calArea");
-  if (!UI.pro){ area.innerHTML = `<div class="empty">Elegí una consulta o un estudio para ver los días y horarios disponibles.</div>`; $("formArea").innerHTML = ""; return; }
-  const p = pro(UI.pro);
+  const area = $("calArea"), sel = selection();
+  if (!sel){ area.innerHTML = `<div class="empty">${UI.tab === "estudios" ? "Elegí un estudio" : "Elegí un profesional"} para ver los días y horarios disponibles.</div>`; $("formArea").innerHTML = ""; return; }
   const days = [];
-  for (let i = 0; i < CLINIC.daysAhead; i++){
-    const d = addDays(TODAY(), i); const free = slotsFor(p, d).filter(s => s.free).length;
-    days.push({d, free, works: rawSlots(p, d).length > 0});
+  for (let i = 0; i < C().daysAhead; i++){
+    const d = addDays(TODAY(), i), av = availability(sel.pids, d, sel.dur);
+    days.push({d, free: av.filter(s => s.free).length, works: av.length > 0});
   }
   if (!UI.date || !days.find(x => x.d === UI.date && x.free)){ const f = days.find(x => x.free); UI.date = f ? f.d : null; UI.time = null; }
   let h = `<div class="days" role="group" aria-label="Días">` + days.map(x =>
     `<button class="day" type="button" data-d="${x.d}" ${x.free?"":"disabled"} aria-pressed="${UI.date===x.d}" aria-label="${fmtLong(x.d)}, ${x.free} horarios libres">
       <small>${fmtDow(x.d)}</small><b>${parse(x.d).getDate()}</b><span>${x.free ? x.free + " libres" : (x.works ? "Completo" : "—")}</span></button>`).join("") + `</div>`;
   if (UI.date){
-    const sl = slotsFor(p, UI.date);
+    const av = availability(sel.pids, UI.date, sel.dur);
     const grp = (t, arr) => arr.length ? `<div class="slot-group"><h3>${t}</h3><div class="slots">` + arr.map(s =>
-      `<button class="slot" type="button" data-t="${s.m}" ${s.free?"":"disabled"} aria-pressed="${UI.time===s.m}" aria-label="${toT(s.m)}${s.free?"":" ocupado"}">${toT(s.m)}</button>`).join("") + `</div></div>` : "";
+      `<button class="slot" type="button" data-t="${s.m}" data-p="${s.pro || ""}" ${s.free?"":"disabled"} aria-pressed="${UI.time===s.m}" aria-label="${toT(s.m)}${s.free?"":" ocupado"}">${toT(s.m)}</button>`).join("") + `</div></div>` : "";
     h += `<p style="margin:14px 0 0;font-weight:600">${fmtLong(UI.date)}</p>`;
-    h += grp("Mañana", sl.filter(s => s.m < 13*60)) + grp("Tarde", sl.filter(s => s.m >= 13*60));
+    h += grp("Mañana", av.filter(s => s.m < 13*60)) + grp("Tarde", av.filter(s => s.m >= 13*60));
     h += `<div class="legend"><span><i style="border:1px solid var(--accent)"></i>Disponible</span><span><i style="background:var(--sunk);border:1px solid var(--line)"></i>Ocupado</span></div>`;
   } else {
-    h += `<div class="empty" style="margin-top:12px">No hay turnos libres en las próximas 2 semanas. Escribinos por WhatsApp y te avisamos si se libera uno.</div>`;
+    h += `<div class="empty" style="margin-top:12px">No hay turnos libres en las próximas semanas. Escribinos por WhatsApp y te avisamos si se libera uno.</div>`;
   }
   area.innerHTML = h;
   renderForm();
 }
+
 function renderForm(){
   const fa = $("formArea");
   if (UI.done){ fa.innerHTML = doneHtml(UI.done); return; }
   if (UI.time == null){ fa.innerHTML = ""; return; }
-  const p = pro(UI.pro), st = isStudy(p);
+  const sel = selection(), p = pro(UI.slotPro), items = sel.items.map(s => ({id:s.id, n:s.name}));
+  const ord = needsOrder(items), prep = prepText(items);
   fa.innerHTML = `<div class="form-wrap">
     <div class="step-h"><span class="step-n">3</span><h2>Tus datos</h2></div>
-    <div class="sel-sum"><span class="av" style="background:${p.color};width:38px;height:38px;font-size:12px">${esc(abbr(p))}</span>
-      <div><b>${esc(p.name)}</b><span>${fmtLong(UI.date)}</span> · <span class="num">${toT(UI.time)} h</span></div></div>
+    <div class="sel-sum"><span class="av" style="background:${esc(p.color)};width:38px;height:38px;font-size:12px">${esc(initials(p.name))}</span>
+      <div><b>${esc(itemsName(items))}</b><span>${esc(p.name)} · ${fmtLong(UI.date)} · <span class="num">${toT(UI.time)} h</span> · ${sel.dur} min</span></div></div>
+    ${prep ? `<div class="notice"><b>Preparación</b>${esc(prep)}</div>` : ""}
+    ${needsText(items) ? `<div class="notice"><b>Para este ${hasStudy(items) ? "estudio" : "turno"} necesitás</b>${esc(needsText(items))}</div>` : ""}
     <form id="bookForm" novalidate>
       <div class="row2">
         <label for="b-name">Nombre y apellido<input id="b-name" autocomplete="name" placeholder="Ej. Laura Gómez"></label>
         <label for="b-dni">DNI<input id="b-dni" inputmode="numeric" placeholder="Ej. 30123456"></label>
       </div>
       <label for="b-phone">WhatsApp<input id="b-phone" type="tel" autocomplete="tel" placeholder="Ej. 11 5555-1234"></label>
-      <label for="b-reason">${st ? "Estudio" : "Motivo de consulta"}<select id="b-reason">${p.types.map(t => `<option>${esc(t.n)}</option>`).join("")}</select></label>
-      <div id="prepBox"></div>
-      <label for="b-os">Cobertura<select id="b-os">${COVERAGE.map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
+      <label for="b-os">Cobertura<select id="b-os"><option>Particular</option>${S.coverage.map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
       <div class="row2" id="osExtra">
         <label for="b-plan">Plan (opcional)<input id="b-plan" placeholder="Ej. 210"></label>
         <label for="b-aff">Nº de afiliado<input id="b-aff" inputmode="numeric" placeholder="Como figura en la credencial"></label>
       </div>
       <div id="osNote"></div>
-      ${st ? `<label class="check" for="b-order"><input type="checkbox" id="b-order"> Tengo la orden médica y la llevo el día del turno</label>` : ""}
+      ${ord ? `<label class="check" for="b-order"><input type="checkbox" id="b-order"> Tengo la orden médica y la llevo el día del turno</label>` : ""}
       <label class="check" for="b-first"><input type="checkbox" id="b-first"> Es mi primera vez en el centro</label>
       <label for="b-note">Comentario (opcional)<textarea id="b-note" placeholder="Síntomas, estudios anteriores, preferencias…"></textarea></label>
       <p class="err" id="b-err" role="alert"></p>
       <button class="btn btn-primary" type="submit">Reservar turno</button>
     </form></div>`;
-  updateFormBits();
+  updateOs();
 }
-function prepHtml(p, typeName, title){
-  const t = p.types.find(x => x.n === typeName) || {};
-  if (!t.prep) return "";
-  return `<div class="notice"><b>${title || "Preparación"}</b>${esc(t.prep)}</div>`;
-}
-function osNoteHtml(p, os){
-  if (!covers(p, os)) return `<div class="notice bad"><b>No trabajamos con ${esc(os)} para ${isStudy(p) ? "este estudio" : "este profesional"}</b>Podés atenderte como particular por ${money(p.price)}, o elegir otra cobertura.</div>`;
-  if (os === "Particular") return `<div class="notice warn"><b>Valor particular: ${money(p.price)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`;
-  if (isStudy(p) && cov(os).auth) return `<div class="notice warn"><b>${esc(os)} pide orden autorizada</b>Antes del turno gestioná la autorización de la orden y llevala impresa o en el celular.</div>`;
-  return "";
-}
-function updateFormBits(){
-  const p = pro(UI.pro); if (!$("b-os")) return;
-  const os = $("b-os").value;
-  $("prepBox").innerHTML = isStudy(p) ? prepHtml(p, $("b-reason").value) : "";
+function updateOs(){
+  if (!$("b-os")) return;
+  const p = pro(UI.slotPro), os = $("b-os").value, sel = selection();
+  const items = sel.items.map(s => ({id:s.id, n:s.name})), f = payFor(items, os), price = f.total;
   $("osExtra").style.display = os === "Particular" ? "none" : "";
-  $("osNote").innerHTML = osNoteHtml(p, os);
+  let n = "";
+  if (!covers(p, os)) n = `<div class="notice bad"><b>${esc(p.name)} no atiende por ${esc(os)}</b>Podés atenderte como particular por ${money(price)}${UI.tab === "estudios" && UI.who === "any" ? ", o volver al paso 2 y elegir otro horario" : ""}.</div>`;
+  else if (os === "Particular") n = `<div class="notice warn"><b>Valor particular: ${money(price)}</b>Se abona el día del turno. Aceptamos efectivo, débito y transferencia.</div>`;
+  else {
+    if (!f.unknown) n += f.pay > 0
+      ? `<div class="notice warn"><b>Diferencia a abonar: ${money(f.pay)}</b>Valor del ${hasStudy(items) ? "estudio" : "turno"} ${money(f.total)} · ${esc(os)} cubre ${money(f.covered)}. La diferencia se abona el día del turno.</div>`
+      : `<div class="notice"><b>Cubierto por ${esc(os)}</b>No tenés diferencia para abonar.</div>`;
+    if (needsOrder(items) && cov(os).auth) n += `<div class="notice warn"><b>${esc(os)} pide orden autorizada</b>Antes del turno gestioná la autorización y llevá la orden impresa o en el celular.</div>`;
+  }
+  $("osNote").innerHTML = n;
 }
 function patientMsg(b){
-  const p = pro(b.pro), st = isStudy(p);
-  return `Hola, reservé un turno en ${CLINIC.name}:\n\n` +
-    (st ? `• Estudio: ${b.reason}\n` : `• Profesional: ${p.name} (${p.role})\n• Motivo: ${b.reason}\n`) +
-    `• Día: ${fmtLong(b.date)}\n• Hora: ${b.start} h\n• Paciente: ${b.name} · DNI ${b.dni}\n• Cobertura: ${covLine(b)}` +
-    (st ? `\n• Orden médica: ${b.order ? "sí, la llevo" : "no la tengo todavía"}` : "") +
-    (b.first ? "\n• Primera vez en el centro" : "") + (b.note ? "\n• Comentario: " + b.note : "") +
-    `\n\nCódigo de reserva: ${b.code}`;
+  const p = pro(b.pro);
+  return `Hola, reservé un turno en ${C().name}:\n\n• ${hasStudy(b.items) ? "Estudio" : "Consulta"}: ${itemsName(b.items)}\n• Profesional: ${p.name}\n• Día: ${fmtLong(b.date)}\n• Hora: ${b.start} h (${b.dur} min)\n• Paciente: ${b.name} · DNI ${b.dni}\n• Cobertura: ${covLine(b)}` +
+    (needsOrder(b.items) ? `\n• Orden médica: ${b.order ? "sí, la llevo" : "no la tengo todavía"}` : "") +
+    (payLine(b) ? "\n• " + payLine(b) : "") +
+    (b.first ? "\n• Primera vez en el centro" : "") + (b.note ? "\n• Comentario: " + b.note : "") + `\n\nCódigo de reserva: ${b.code}`;
 }
+function bringLine(b){ return "DNI" + (b.os && b.os !== "Particular" ? ", credencial de " + b.os : "") + (needsOrder(b.items) ? " y orden médica" + (cov(b.os).auth ? " autorizada" : "") : ""); }
+const WA_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4a.5.5 0 0 0 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z"/></svg>`;
 function doneHtml(b){
-  const msg = patientMsg(b);
+  const msg = patientMsg(b), prep = prepText(b.items);
   return `<div class="form-wrap success">
     <div class="tick"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
     <h2>Turno reservado</h2>
     <p style="margin:0">Tu horario quedó apartado. Enviá este mensaje por WhatsApp y el consultorio te lo confirma. Código <span class="code">${b.code}</span></p>
-    ${isStudy(pro(b.pro)) ? prepHtml(pro(b.pro), b.reason, "Cómo prepararte para el estudio") : ""}
-    <div class="notice warn"><b>El día del turno traé</b>DNI${b.os !== "Particular" ? ", credencial de " + esc(b.os) : ""}${isStudy(pro(b.pro)) ? " y la orden médica" + (cov(b.os).auth ? " autorizada" : "") : ""}.</div>
+    ${prep ? `<div class="notice"><b>Cómo prepararte</b>${esc(prep)}</div>` : ""}
+    ${needsText(b.items) ? `<div class="notice"><b>Para este estudio necesitás</b>${esc(needsText(b.items))}</div>` : ""}
+    <div class="notice warn"><b>El día del turno traé</b>${esc(bringLine(b))}.${payLine(b) ? "\n" + esc(payLine(b)) + "." : ""}</div>
     <p class="sec-t">Mensaje para el consultorio</p>
     <div class="bubble">${esc(msg)}</div>
     <div class="actions">
-      <a class="btn btn-wa" href="${wa(CLINIC.whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a>
+      <a class="btn btn-wa" href="${wa(C().whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a>
       <button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button>
     </div>
-    <p class="muted" style="font-size:13px;margin:0">WhatsApp del consultorio: ${esc(CLINIC.whatsappLabel)} · <button class="linkbtn" type="button" id="another">Reservar otro turno</button></p>
+    <p class="muted" style="font-size:13px;margin:0"><button class="linkbtn" type="button" id="another">Reservar otro turno</button></p>
   </div>`;
 }
-const WA_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4a.5.5 0 0 0 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z"/></svg>`;
-function renderBook(){ renderSpecs(); renderPros(); renderCal(); }
+function renderBook(){ renderPick(); renderOpts(); renderCal(); }
 
-$("specChips").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; UI.spec = b.dataset.s; renderSpecs(); renderPros(); });
-$("proList").addEventListener("click", e => {
-  const b = e.target.closest(".pro"); if (!b) return;
-  UI.pro = b.dataset.p; UI.date = null; UI.time = null; UI.done = null; renderPros(); renderCal();
-  if (matchMedia("(max-width:980px)").matches) $("calArea").scrollIntoView({block:"start"});
+$("kindChips").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tab = b.dataset.tab; UI.extra = []; resetPick(); renderBook(); });
+$("pickList").addEventListener("click", e => {
+  const w = e.target.closest("[data-who]"); if (w){ UI.who = w.dataset.who; UI.extra = []; resetPick(); renderBook(); return; }
+  const p = e.target.closest("[data-pro]"); if (p){ UI.pro = p.dataset.pro; UI.motivo = null; resetPick(); renderBook(); return; }
+  const s = e.target.closest("[data-svc]"); if (s){ if (UI.svc !== s.dataset.svc){ UI.svc = s.dataset.svc; UI.who = "any"; UI.extra = []; } resetPick(); renderBook(); }
+});
+$("optsArea").addEventListener("change", e => { if (e.target.id === "o-motivo"){ UI.motivo = e.target.value; resetPick(); renderOpts(); renderCal(); } });
+$("optsArea").addEventListener("click", e => {
+  if (e.target.id === "o-addbtn"){ UI.extra.push($("o-add").value); resetPick(); renderOpts(); renderCal(); return; }
+  const r = e.target.closest("[data-rmx]"); if (r){ UI.extra = UI.extra.filter(x => x !== r.dataset.rmx); resetPick(); renderOpts(); renderCal(); }
 });
 $("calArea").addEventListener("click", e => {
   const d = e.target.closest(".day"); if (d && !d.disabled){ UI.date = d.dataset.d; UI.time = null; UI.done = null; renderCal(); return; }
-  const s = e.target.closest(".slot"); if (s && !s.disabled){ UI.time = Number(s.dataset.t); UI.done = null; renderCal(); $("b-name") && $("b-name").focus(); }
+  const s = e.target.closest(".slot"); if (s && !s.disabled){ UI.time = Number(s.dataset.t); UI.slotPro = s.dataset.p; UI.done = null; renderCal(); if ($("b-name")) $("b-name").focus(); }
 });
-$("formArea").addEventListener("change", e => { if (e.target.id === "b-os" || e.target.id === "b-reason") updateFormBits(); });
+$("formArea").addEventListener("change", e => { if (e.target.id === "b-os") updateOs(); });
 $("formArea").addEventListener("submit", e => {
   e.preventDefault();
-  const p = pro(UI.pro);
-  const name = $("b-name").value.trim(), phone = $("b-phone").value.trim();
-  const dni = digits($("b-dni").value), os = $("b-os").value, aff = $("b-aff").value.trim();
-  const err = (t, el) => { $("b-err").textContent = t; if (el) $(el).focus(); };
+  const sel = selection(), p = pro(UI.slotPro);
+  const name = $("b-name").value.trim(), phone = $("b-phone").value.trim(), dni = digits($("b-dni").value), os = $("b-os").value, aff = $("b-aff").value.trim();
+  const items = sel.items.map(s => ({id:s.id, n:s.name}));
+  const err = (t, el) => { $("b-err").textContent = t; if (el && $(el)) $(el).focus(); };
   if (!name) return err("Escribí tu nombre y apellido.", "b-name");
   if (dni.length < 7 || dni.length > 8) return err("Escribí tu DNI, solo números.", "b-dni");
   if (digits(phone).length < 8) return err("Escribí un WhatsApp válido, con código de área.", "b-phone");
-  if (!covers(p, os)) return err("Elegí «Particular» o una cobertura con la que trabajemos para este turno.", "b-os");
+  if (!covers(p, os)) return err("Elegí «Particular» o una cobertura que acepte " + p.name + ".", "b-os");
   if (os !== "Particular" && !aff) return err("Escribí tu número de afiliado de " + os + ".", "b-aff");
-  if (isStudy(p) && !$("b-order").checked) return err("Para los estudios necesitás orden médica. Marcá la casilla si ya la tenés.", "b-order");
-  if (isTaken(p.id, UI.date, UI.time, p.dur)){ err("Ese horario se acaba de ocupar. Elegí otro."); UI.time = null; renderCal(); return; }
-  const b = {id:DB.nextId++, pro:p.id, date:UI.date, start:toT(UI.time), dur:p.dur, status:"pendiente", name, phone, dni, os,
-    plan: os === "Particular" ? "" : $("b-plan").value.trim(), aff: os === "Particular" ? "" : aff, order: isStudy(p) ? $("b-order").checked : false,
-    reason:$("b-reason").value, first:$("b-first").checked, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
-  DB.bookings.push(b); save();
-  UI.done = b; UI.time = null; renderPros(); renderCal();
+  if (needsOrder(items) && !$("b-order").checked) return err("Para los estudios necesitás orden médica. Marcá la casilla si ya la tenés.", "b-order");
+  if (!fits(p, UI.date, UI.time, sel.dur)){ err("Ese horario se acaba de ocupar. Elegí otro."); UI.time = null; renderCal(); return; }
+  const b = {id:DB.nextId++, pro:p.id, date:UI.date, start:toT(UI.time), dur:sel.dur, status:"pendiente", name, phone, dni, os,
+    plan: os === "Particular" ? "" : $("b-plan").value.trim(), aff: os === "Particular" ? "" : aff, order: needsOrder(items) ? $("b-order").checked : false,
+    items, first:$("b-first").checked, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
+  DB.bookings.push(b); saveDB();
+  UI.done = b; UI.time = null; renderPick(); renderCal();
   $("formArea").scrollIntoView({block:"nearest"});
 });
 $("formArea").addEventListener("click", e => {
   if (e.target.id === "another"){ UI.done = null; renderCal(); }
-  if (e.target.closest("#seePanel")){ const id = Number(e.target.closest("#seePanel").dataset.id); const b = DB.bookings.find(x => x.id === id); PANEL.date = b.date; show("panel"); openBooking(id); }
+  const sp = e.target.closest("#seePanel"); if (sp){ const b = DB.bookings.find(x => x.id === Number(sp.dataset.id)); PANEL.date = b.date; show("panel"); openBooking(b.id); }
 });
 
-/* ---------- panel ---------- */
+/* ================= PANEL ================= */
 const PANEL = {date: TODAY()};
 function weekStats(){
-  const t = TODAY(); let cap = 0, used = 0, money = 0, studies = 0, noOrder = 0;
+  const t = TODAY(); let cap = 0, used = 0, studies = 0, noOrder = 0, total = 0;
   for (let i = 0; i < 7; i++){
     const d = addDays(t, i);
-    PROS.forEach(p => {
-      cap += rawSlots(p, d).length * p.dur;
-      onDay(p.id, d).forEach(b => { if (b.status !== "bloqueo"){ used += b.dur; if (b.status !== "ausente") money += p.price; if (isStudy(p)){ studies++; if (!b.order) noOrder++; } } else cap -= b.dur; });
+    S.pros.forEach(p => {
+      ranges(p, d).forEach(([a,b]) => cap += b - a);
+      onDay(p.id, d).forEach(b => {
+        if (b.status === "bloqueo"){ cap -= b.dur; return; }
+        used += b.dur; total++;
+        if (hasStudy(b.items)){ studies++; if (needsOrder(b.items) && !b.order) noOrder++; }
+      });
     });
   }
-  return {occ: cap ? Math.round(used / cap * 100) : 0, money, studies, noOrder};
+  return {occ: cap > 0 ? Math.round(used / cap * 100) : 0, studies, noOrder, total};
 }
 function renderKpis(){
   const d = PANEL.date;
   const day = DB.bookings.filter(b => b.date === d && live(b) && b.status !== "bloqueo");
-  const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= TODAY());
+  const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= TODAY() && live(b));
   const w = weekStats();
-  const isToday = d === TODAY();
   $("kpis").innerHTML = `
-    <div class="card kpi"><small>Turnos ${isToday ? "hoy" : "este día"}</small><b>${day.length}</b><div class="muted" style="font-size:12.5px">${day.filter(b=>b.status==="confirmado").length} confirmados · ${day.filter(b=>b.status==="pendiente").length} pendientes</div></div>
+    <div class="card kpi"><small>Turnos ${d === TODAY() ? "hoy" : "este día"}</small><b>${day.length}</b><div class="muted" style="font-size:12.5px">${day.filter(b=>b.status==="confirmado").length} confirmados · ${day.filter(b=>b.status==="pendiente").length} pendientes</div></div>
     <div class="card kpi ${pend.length ? "warn" : ""}"><small>Pendientes de confirmar</small><b>${pend.length}</b><div class="muted" style="font-size:12.5px">en los próximos días</div></div>
-    <div class="card kpi"><small>Ocupación próximos 7 días</small><b>${w.occ}%</b><div class="bar"><i style="width:${w.occ}%"></i></div></div>
-    <div class="card kpi"><small>Estudios próximos 7 días</small><b>${w.studies}</b><div class="muted" style="font-size:12.5px">${w.noOrder ? w.noOrder + " sin orden médica confirmada" : "todos con orden médica"}</div></div>`;
+    <div class="card kpi"><small>Ocupación próximos 7 días</small><b>${w.occ}%</b><div class="bar"><i style="width:${Math.min(100, w.occ)}%"></i></div></div>
+    ${isStudyMode()
+      ? `<div class="card kpi"><small>Estudios próximos 7 días</small><b>${w.studies}</b><div class="muted" style="font-size:12.5px">${w.noOrder ? w.noOrder + " sin orden médica confirmada" : "todos con orden médica"}</div></div>`
+      : `<div class="card kpi"><small>Turnos próximos 7 días</small><b>${w.total}</b><div class="muted" style="font-size:12.5px">entre todos los profesionales</div></div>`}`;
 }
 function renderAgenda(){
-  const d = PANEL.date, rows = (DAY1 - DAY0) / ROW, H = rows * PX;
+  const d = PANEL.date, rows = (DAY1 - DAY0) / ROW, H = rows * PX, y = m => (m - DAY0) / ROW * PX;
   $("curDate").textContent = fmtLong(d) + (d === TODAY() ? " · hoy" : "");
   const g = $("agenda");
-  g.style.gridTemplateColumns = `58px repeat(${PROS.length}, minmax(150px, 1fr))`;
-  let h = `<div class="corner"></div>` + PROS.map(p => {
-    const n = onDay(p.id, d).filter(b => b.status !== "bloqueo").length, works = rawSlots(p, d).length;
-    return `<div class="ahead"><span class="av" style="background:${p.color}">${esc(abbr(p))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos" : (isStudy(p) ? "Sin agenda hoy" : "No atiende")}</small></div></div>`;
+  if (!S.pros.length){ g.style.gridTemplateColumns = "1fr"; g.innerHTML = `<div class="empty" style="margin:16px">No hay profesionales cargados. Agregalos desde Configuración.</div>`; return; }
+  g.style.gridTemplateColumns = `58px repeat(${S.pros.length}, minmax(160px, 1fr))`;
+  let h = `<div class="corner"></div>` + S.pros.map(p => {
+    const n = onDay(p.id, d).filter(b => b.status !== "bloqueo").length, works = ranges(p, d).length;
+    return `<div class="ahead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos · " + esc(p.role) : "No atiende este día"}</small></div></div>`;
   }).join("");
-  // columna de horas
   h += `<div class="tcol" style="height:${H}px">` + Array.from({length:rows}, (_, i) => i % 2 === 0 && i ? `<div style="top:${i*PX}px">${toT(DAY0 + i*ROW)}</div>` : "").join("") + `</div>`;
-  const now = nowMin(), showNow = d === TODAY() && now > DAY0 && now < DAY1;
-  PROS.forEach(p => {
+  const now = nowMin(), showNow = d === TODAY() && now > DAY0 && now < DAY1, past = d < TODAY();
+  S.pros.forEach(p => {
     let c = `<div class="col" style="height:${H}px">`;
-    const ranges = p.hours[parse(d).getDay()] || [];
-    ranges.forEach(([a,b]) => { c += `<div class="work" style="top:${(toMin(a)-DAY0)/ROW*PX}px;height:${(toMin(b)-toMin(a))/ROW*PX}px"></div>`; });
+    ranges(p, d).forEach(([a,b]) => { c += `<div class="work" style="top:${y(a)}px;height:${y(b)-y(a)}px"></div>`; });
     for (let i = 2; i < rows; i += 2) c += `<div class="gl" style="top:${i*PX}px"></div>`;
-    const past = d < TODAY();
-    rawSlots(p, d).forEach(m => {
-      if (isTaken(p.id, d, m, p.dur)) return;
-      if (past || (d === TODAY() && m + p.dur <= now)) return;
-      c += `<button class="free" type="button" data-pro="${p.id}" data-m="${m}" style="top:${(m-DAY0)/ROW*PX+2}px;height:${p.dur/ROW*PX-4}px" aria-label="Libre ${toT(m)} con ${esc(p.name)}">+ ${toT(m)} libre</button>`;
+    if (!past) starts(p, d, p.step).forEach(m => {
+      if (!fits(p, d, m, p.step) || (d === TODAY() && m + p.step <= now)) return;
+      c += `<button class="free" type="button" data-pro="${p.id}" data-m="${m}" style="top:${y(m)+2}px;height:${p.step/ROW*PX-4}px" aria-label="Libre ${toT(m)} con ${esc(p.name)}">+ ${toT(m)} libre</button>`;
     });
     onDay(p.id, d).forEach(b => {
-      const top = (toMin(b.start) - DAY0) / ROW * PX + 2, ht = b.dur / ROW * PX - 4;
-      const title = b.status === "bloqueo" ? "Bloqueado" : b.name;
-      const sub = b.status === "bloqueo" ? (b.name || "") : (b.os || "Particular") + " · " + b.reason;
+      const s = toMin(b.start), top = y(s) + 2, ht = b.dur / ROW * PX - 4;
+      const blk = b.status === "bloqueo";
+      const title = blk ? "Bloqueado" : b.name;
+      const sub = blk ? (b.name || "") : (b.os || "Particular") + " · " + itemsName(b.items);
+      const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : "";
       c += `<button class="ev st-${b.status}" type="button" data-id="${b.id}" style="top:${top}px;height:${ht}px" aria-label="${esc(b.start + " " + title + ", " + STATUS[b.status])}">
-        <b><span class="num">${b.start}</span> ${esc(title)}${b.isNew ? " ●" : ""}${isStudy(p) && !b.order && b.status !== "bloqueo" ? " ⚠" : ""}</b>${ht > 30 ? `<span>${esc(sub)}</span>` : ""}</button>`;
+        <b><span class="num">${b.start}</span> ${esc(title)}${b.isNew ? " ●" : ""}${warn}</b>${ht > 34 ? `<span>${esc(sub)}</span>` : ""}</button>`;
     });
-    if (showNow) c += `<div class="now" style="top:${(now-DAY0)/ROW*PX}px"></div>`;
-    c += `</div>`;
-    h += c;
+    if (showNow) c += `<div class="now" style="top:${y(now)}px"></div>`;
+    h += c + `</div>`;
   });
   g.innerHTML = h;
 }
 function renderSide(){
   const t = TODAY();
-  const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= t).sort((a,b) => (a.date+a.start).localeCompare(b.date+b.start));
+  const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= t && live(b)).sort((a,b) => (a.date+a.start).localeCompare(b.date+b.start));
   $("pendCount").textContent = pend.length;
-  $("pendList").innerHTML = pend.length ? pend.slice(0, 6).map(b => `<div class="li"><button class="open" data-id="${b.id}"><b>${esc(b.name)}${b.isNew ? ' <span class="pill pendiente">Nuevo</span>' : ""}</b><span class="muted">${esc(pro(b.pro).name)} · ${relDay(Math.round((parse(b.date)-parse(t))/864e5), b.date)} ${b.start}</span></button>
+  $("pendList").innerHTML = pend.length ? pend.slice(0, 6).map(b => `<div class="li"><button class="open" data-open="${b.id}"><b>${esc(b.name)}${b.isNew ? ' <span class="pill pendiente">Nuevo</span>' : ""}</b><span class="muted">${esc(itemsName(b.items))} · ${relDay(Math.round((parse(b.date)-parse(t))/864e5), b.date)} ${b.start}</span></button>
     <a class="btn btn-wa btn-sm" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">Confirmar</a></div>`).join("")
     + (pend.length > 6 ? `<p class="muted" style="font-size:13px;margin:8px 0 0">y ${pend.length - 6} más</p>` : "")
     : `<p class="muted" style="font-size:13.5px;margin:0">Todo confirmado.</p>`;
   const tm = addDays(t, 1);
-  const rem = DB.bookings.filter(b => b.date === tm && b.status === "confirmado").sort((a,b) => a.start.localeCompare(b.start));
+  const rem = DB.bookings.filter(b => b.date === tm && b.status === "confirmado" && live(b)).sort((a,b) => a.start.localeCompare(b.start));
   $("remCount").textContent = rem.filter(b => !b.reminded).length;
-  $("remList").innerHTML = rem.length ? rem.slice(0, 8).map(b => `<div class="li"><button class="open" data-id="${b.id}"><b>${esc(b.name)}</b><span class="muted num">${b.start} · ${esc(pro(b.pro).name)}</span></button>
+  $("remList").innerHTML = rem.length ? rem.slice(0, 8).map(b => `<div class="li"><button class="open" data-open="${b.id}"><b>${esc(b.name)}</b><span class="muted num">${b.start} · ${esc(itemsName(b.items))}</span></button>
     ${b.reminded ? `<span class="sent">Enviado ✓</span>` : `<a class="btn btn-soft btn-sm" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">Recordar</a>`}</div>`).join("")
     + (rem.length > 8 ? `<p class="muted" style="font-size:13px;margin:8px 0 0">y ${rem.length - 8} más</p>` : "")
     : `<p class="muted" style="font-size:13.5px;margin:0">No hay turnos confirmados para mañana.</p>`;
 }
-function bringLine(b){ const p = pro(b.pro); return "DNI" + (b.os && b.os !== "Particular" ? ", credencial de " + b.os : "") + (isStudy(p) ? " y orden médica" + (cov(b.os).auth ? " autorizada" : "") : ""); }
 function confirmMsg(b){
-  const p = pro(b.pro), st = isStudy(p), prep = st ? typeOf(b).prep : "";
-  return `Hola ${b.name.split(" ")[0]}, te confirmamos tu turno en ${CLINIC.name}:\n\n• ${st ? b.reason : p.name + " · " + b.reason}\n• ${fmtLong(b.date)}, ${b.start} h\n• ${CLINIC.address}\n• Cobertura: ${covLine(b)}` +
-    (prep && prep !== NO_PREP ? `\n\nPreparación: ${prep}` : "") +
+  const p = pro(b.pro), prep = prepText(b.items);
+  return `Hola ${b.name.split(" ")[0]}, te confirmamos tu turno en ${C().name}:\n\n• ${itemsName(b.items)}\n• ${p.name}\n• ${fmtLong(b.date)}, ${b.start} h\n• ${C().address}\n• Cobertura: ${covLine(b)}` +
+    (payLine(b) ? `\n• ${payLine(b)}` : "") +
+    (prep ? `\n\nPreparación:\n${prep}` : "") +
+    (needsText(b.items) ? `\n\nPara este estudio necesitás:\n${needsText(b.items)}` : "") +
     `\n\nTraé ${bringLine(b)}. Si no podés venir, avisanos respondiendo este mensaje así le damos el turno a otra persona.`;
 }
 function reminderMsg(b){
-  const p = pro(b.pro), st = isStudy(p), prep = st ? typeOf(b).prep : "";
-  return `Hola ${b.name.split(" ")[0]}, te recordamos tu turno de mañana a las ${b.start} h: ${st ? b.reason : p.name}, en ${CLINIC.address}.` +
-    (prep && prep !== NO_PREP ? `\n\nAcordate: ${prep}` : "") +
-    `\nTraé ${bringLine(b)}.\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno.`;
+  const p = pro(b.pro), prep = prepText(b.items);
+  return `Hola ${b.name.split(" ")[0]}, te recordamos tu turno de mañana a las ${b.start} h: ${itemsName(b.items)} con ${p.name}, en ${C().address}.` +
+    (prep ? `\n\nAcordate:\n${prep}` : "") + (needsText(b.items) ? `\n\nNecesitás:\n${needsText(b.items)}` : "") + `\nTraé ${bringLine(b)}.` + (payLine(b) ? `\n${payLine(b)}.` : "") + `\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno.`;
 }
 function renderPanel(){ renderKpis(); renderAgenda(); renderSide(); }
 
 /* ---------- drawer ---------- */
 let lastFocus = null;
-function openDrawer(kicker, title, body){
-  lastFocus = document.activeElement;
+function openDrawer(kicker, title, body, wide){
+  if (!$("drawer").classList.contains("show")) lastFocus = document.activeElement;
+  $("drawer").classList.toggle("wide", !!wide);
   $("dKicker").textContent = kicker; $("dTitle").textContent = title; $("dBody").innerHTML = body;
   $("scrim").classList.add("show"); $("drawer").classList.add("show");
+  $("dBody").scrollTop = 0;
   setTimeout(() => $("dClose").focus(), 30);
 }
 function closeDrawer(){ $("scrim").classList.remove("show"); $("drawer").classList.remove("show"); if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
@@ -706,7 +937,7 @@ function openBooking(id){
   const b = DB.bookings.find(x => x.id === id); if (!b) return;
   const p = pro(b.pro);
   if (b.date !== PANEL.date){ PANEL.date = b.date; renderPanel(); }
-  if (b.isNew){ b.isNew = false; save(); renderPanel(); }
+  if (b.isNew){ b.isNew = false; saveDB(); renderPanel(); }
   if (b.status === "bloqueo"){
     openDrawer(p.name, "Horario bloqueado", `<dl><dt>Día</dt><dd>${fmtLong(b.date)}</dd><dt>Horario</dt><dd class="num">${b.start} – ${toT(toMin(b.start)+b.dur)}</dd><dt>Motivo</dt><dd>${esc(b.name || "—")}</dd></dl>
       <div class="actions"><button class="btn btn-soft" data-act="unblock" data-id="${b.id}">Quitar bloqueo</button></div>`);
@@ -717,81 +948,315 @@ function openBooking(id){
   if (b.status === "confirmado") acts = `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>
       <button class="btn btn-soft" data-act="asistio" data-id="${b.id}">Asistió</button><button class="btn btn-soft" data-act="ausente" data-id="${b.id}">No asistió</button>`;
   if (b.status === "asistio" || b.status === "ausente") acts = `<button class="btn btn-soft" data-act="confirmado" data-id="${b.id}">Volver a “confirmado”</button>`;
-  openDrawer(isStudy(p) ? p.name + " · " + b.reason : p.name + " · " + p.role, b.name, `
-    <div><span class="pill ${b.status}">${STATUS[b.status]}</span> ${b.first ? '<span class="pill pendiente" style="margin-left:4px">Primera vez</span>' : ""}</div>
+  const ord = needsOrder(b.items);
+  openDrawer(p.name + " · " + p.role, b.name, `
+    <div><span class="pill ${b.status}">${STATUS[b.status]}</span>${b.items.length > 1 ? ' <span class="tag acc">Turno combinado</span>' : ""}${b.first ? ' <span class="tag">Primera vez</span>' : ""}</div>
     <dl>
+      <dt>${hasStudy(b.items) ? "Estudios" : "Motivo"}</dt><dd>${b.items.map(i => esc(i.n)).join("<br>")}</dd>
       <dt>Día</dt><dd>${fmtLong(b.date)}</dd>
       <dt>Horario</dt><dd class="num">${b.start} – ${toT(toMin(b.start)+b.dur)} (${b.dur} min)</dd>
-      <dt>${isStudy(p) ? "Estudio" : "Motivo"}</dt><dd>${esc(b.reason)}</dd>
       <dt>DNI</dt><dd class="num">${esc(b.dni || "—")}</dd>
-      <dt>WhatsApp</dt><dd class="num">+${esc(normPhone(b.phone))}</dd>
-      <dt>Cobertura</dt><dd>${esc(covLine(b))}${b.os && b.os !== "Particular" && !covers(p, b.os) ? ' <span class="tag">no cubierta</span>' : ""}</dd>
-      ${isStudy(p) ? `<dt>Orden médica</dt><dd>${b.order ? "Sí" + (cov(b.os).auth ? " (requiere autorización)" : "") : '<span class="pill ausente">Falta</span>'}</dd>` : ""}
+      <dt>WhatsApp</dt><dd class="num">${b.phone ? "+" + esc(normPhone(b.phone)) : "—"}</dd>
+      <dt>Cobertura</dt><dd>${esc(covLine(b))}</dd>
+      ${ord ? `<dt>Orden médica</dt><dd>${b.order ? "Sí" + (cov(b.os).auth ? " (requiere autorización)" : "") : '<span class="pill ausente">Falta</span>'}</dd>` : ""}
       <dt>Origen</dt><dd>${b.source === "web" ? "Reserva online" : "Cargado por el consultorio"}</dd>
       ${b.code ? `<dt>Código</dt><dd><span class="code">${b.code}</span></dd>` : ""}
-      ${b.os === "Particular" ? `<dt>A cobrar</dt><dd>${money(p.price)}</dd>` : ""}
+      ${(() => { const f = payFor(b.items, b.os); if (!b.os || b.os === "Particular") return `<dt>A cobrar</dt><dd>${money(f.total)} <span class="muted">(particular)</span></dd>`;
+        if (f.unknown) return `<dt>A cobrar</dt><dd class="muted">Falta cargar cuánto paga ${esc(b.os)}</dd>`;
+        return `<dt>Valor</dt><dd>${money(f.total)}</dd><dt>Paga ${esc(b.os)}</dt><dd>${money(f.covered)}</dd><dt>Paciente abona</dt><dd><b>${money(f.pay)}</b></dd>`; })()}
       ${b.note ? `<dt>Comentario</dt><dd>${esc(b.note)}</dd>` : ""}
       ${b.status === "confirmado" ? `<dt>Recordatorio</dt><dd>${b.reminded ? "Enviado" : "No enviado"}</dd>` : ""}
     </dl>
+    ${ord && !b.order && (b.status === "pendiente" || b.status === "confirmado") ? `<div class="actions"><button class="btn btn-soft btn-sm" data-act="order" data-id="${b.id}">Marcar que trajo la orden</button></div>` : ""}
     ${acts ? `<div class="actions">${acts}</div>` : ""}
-    <p class="sec-t">Mensaje que se envía al paciente</p>
-    <div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>
-    ${b.status === "pendiente" || b.status === "confirmado" ? `<div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
+    ${b.status === "pendiente" || b.status === "confirmado" ? `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>
+      <div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
 }
 function openFree(pid, m){
-  const p = pro(pid), d = PANEL.date;
+  const p = pro(pid), d = PANEL.date, sv = proSvcs(p);
   openDrawer(p.name, `Horario libre ${toT(m)}`, `
-    <p style="margin:0" class="muted">${fmtLong(d)} · ${toT(m)} – ${toT(m+p.dur)}</p>
-    <p class="sec-t">Agendar turno manual</p>
+    <p style="margin:0" class="muted">${fmtLong(d)} · desde las ${toT(m)}</p>
+    <p class="sec-t">Agendar turno</p>
     <form id="manualForm" data-pro="${pid}" data-m="${m}" novalidate>
+      <fieldset><legend>${sv.some(s => s.kind === "estudio") ? "Consultas o estudios (podés elegir más de uno)" : "Motivo"}</legend>
+        <div class="checks">${sv.map((s, i) => `<label class="check" for="m-s-${s.id}"><input type="checkbox" id="m-s-${s.id}" value="${s.id}" ${i===0?"checked":""}> ${esc(s.name)} <span class="muted">· ${s.dur}′</span></label>`).join("")}</div>
+      </fieldset>
       <label for="m-name">Paciente<input id="m-name" placeholder="Nombre y apellido"></label>
       <div class="row2"><label for="m-dni">DNI<input id="m-dni" inputmode="numeric"></label>
       <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
-      <label for="m-reason">${isStudy(p) ? "Estudio" : "Motivo"}<select id="m-reason">${p.types.map(t => `<option>${esc(t.n)}</option>`).join("")}</select></label>
-      <div class="row2"><label for="m-os">Cobertura<select id="m-os">${COVERAGE.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
+      <div class="row2"><label for="m-os">Cobertura<select id="m-os"><option>Particular</option>${S.coverage.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
       <label for="m-aff">Nº de afiliado<input id="m-aff" inputmode="numeric"></label></div>
-      ${isStudy(p) ? `<label class="check" for="m-order"><input type="checkbox" id="m-order" checked> Trae orden médica</label>` : ""}
+      <label class="check" for="m-order"><input type="checkbox" id="m-order" checked> Trae orden médica (si es estudio)</label>
       <p class="err" id="m-err" role="alert"></p>
       <button class="btn btn-primary" type="submit">Agendar como confirmado</button>
     </form>
     <p class="sec-t">O bloquear este horario</p>
     <div class="row2" style="align-items:end"><label for="blk-r">Motivo<input id="blk-r" placeholder="Ej. mantenimiento del equipo"></label>
-    <button class="btn btn-soft" data-act="block" data-pro="${pid}" data-m="${m}">Bloquear</button></div>`);
+    <button class="btn btn-soft" type="button" data-act="block" data-pro="${pid}" data-m="${m}">Bloquear ${p.step} min</button></div>`);
 }
-function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2600); }
+function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove("show"), 2800); }
 
 $("agenda").addEventListener("click", e => {
   const ev = e.target.closest(".ev"); if (ev){ openBooking(Number(ev.dataset.id)); return; }
   const f = e.target.closest(".free"); if (f) openFree(f.dataset.pro, Number(f.dataset.m));
 });
+$("dBody").addEventListener("submit", e => {
+  e.preventDefault();
+  if (e.target.id === "manualForm") return submitManual(e.target);
+  if (e.target.id === "proForm") return submitPro(e.target);
+  if (e.target.id === "svcForm") return submitSvc(e.target);
+});
+function submitManual(f){
+  const p = pro(f.dataset.pro), m = Number(f.dataset.m);
+  const ids = [...f.querySelectorAll(".checks input:checked")].map(i => i.value);
+  const err = t => { $("m-err").textContent = t; };
+  if (!ids.length) return err("Elegí al menos una consulta o estudio.");
+  const name = $("m-name").value.trim(); if (!name){ $("m-name").focus(); return err("Escribí el nombre del paciente."); }
+  const items = ids.map(id => ({id, n:svc(id).name})), dur = ids.reduce((a, id) => a + svc(id).dur, 0);
+  if (!fits(p, PANEL.date, m, dur)) return err(`No entra: el turno dura ${dur} min y se superpone con otro turno o termina fuera del horario de atención.`);
+  const os = $("m-os").value;
+  const b = {id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
+    dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
+    first:false, note:"", source:"manual", code:code(), reminded:false};
+  DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado.");
+}
+
+/* ================= CONFIGURACIÓN ================= */
+function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]); return l.length ? l.join(", ") : "Sin horarios"; }
+function renderConfig(){
+  const sm = isStudyMode(), c = C();
+  $("cfg").innerHTML = `
+  <section class="card">
+    <h2>Tipo de agenda</h2>
+    <p class="hint">Elegí cómo reservan los pacientes. Podés cambiarlo cuando quieras; los turnos ya dados se mantienen.</p>
+    <div class="modes" role="radiogroup" aria-label="Tipo de agenda">
+      <label class="mode" for="mode-t"><input type="radio" name="mode" id="mode-t" value="turnos" ${!sm?"checked":""}><b>Agenda de turnos</b><span>El paciente elige profesional, motivo, día y horario. Para consultorios de uno o varios médicos.</span></label>
+      <label class="mode" for="mode-e"><input type="radio" name="mode" id="mode-e" value="estudios" ${sm?"checked":""}><b>Consultas y estudios</b><span>Además de consultas, el paciente elige estudios. Cada estudio lo pueden hacer uno o varios profesionales y se pueden combinar dos en el mismo turno.</span></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="cfg-head"><div><h2>Profesionales</h2><p class="hint">Días y horarios de atención, intervalo entre turnos, coberturas y ${sm ? "consultas y estudios" : "motivos"} que atiende cada uno.</p></div>
+      <button class="btn btn-primary" type="button" data-cfg="pro-new">+ Agregar profesional</button></div>
+    <div class="rows">${S.pros.map(p => `<div class="rowi">
+      <span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span>
+      <div><b>${esc(p.name)}</b><span class="meta">${esc(p.role)} · ${daysLabel(p)} · turnos cada ${p.step} min</span><br>
+      <span class="meta">${proSvcs(p).map(s => esc(s.name)).join(", ") || "<span style='color:var(--bad)'>Sin servicios asignados</span>"}</span></div>
+      <button class="btn btn-soft btn-sm" type="button" data-cfg="pro-edit" data-id="${p.id}">Editar</button></div>`).join("") || `<div class="empty">Todavía no hay profesionales.</div>`}</div>
+  </section>
+
+  <section class="card">
+    <div class="cfg-head"><div><h2>${sm ? "Consultas y estudios" : "Motivos de consulta"}</h2><p class="hint">Duración, precio particular${sm ? ", preparación, orden médica y si se puede combinar con otro estudio en el mismo turno" : ""}.</p></div>
+      <button class="btn btn-primary" type="button" data-cfg="svc-new">+ Agregar</button></div>
+    <div class="rows">${S.services.map(s => { const ps = prosFor(s.id); return `<div class="rowi">
+      <span class="av sq" style="${s.kind === "consulta" ? "background:var(--sunk);color:var(--ink)" : ""}">${esc(svcAbbr(s))}</span>
+      <div><b>${esc(s.name)} ${sm ? `<span class="tag ${s.kind === "estudio" ? "acc" : ""}">${s.kind === "estudio" ? "Estudio" : "Consulta"}</span>` : ""}${s.combo && sm && s.kind === "estudio" ? '<span class="tag">Combinable</span>' : ""}${s.order ? '<span class="tag">Orden médica</span>' : ""}</b>
+      <span class="meta">${s.dur} min · ${money(s.price)} · ${ps.length ? "Lo atiende" + (ps.length > 1 ? "n" : "") + ": " + ps.map(p => esc(p.name)).join(", ") : "<span style='color:var(--bad)'>Ningún profesional asignado</span>"}</span></div>
+      <button class="btn btn-soft btn-sm" type="button" data-cfg="svc-edit" data-id="${s.id}">Editar</button></div>`; }).join("") || `<div class="empty">No hay nada cargado.</div>`}</div>
+  </section>
+
+  <section class="card">
+    <h2>Valores por obra social</h2>
+    <p class="hint">Cargá el valor de cada ${sm ? "consulta y estudio" : "consulta"} y cuánto te paga cada obra social. Si paga menos que el valor, la diferencia es lo que abona el paciente: se le muestra al reservar y va en el mensaje de confirmación. Dejá vacío si todavía no sabés cuánto paga.</p>
+    ${S.services.length && S.coverage.length ? `<div class="mx-wrap"><table class="mx">
+      <thead><tr><th scope="col">${sm ? "Consulta / estudio" : "Consulta"}</th><th scope="col">Valor</th>${S.coverage.map(c => `<th scope="col">${esc(c.n)}</th>`).join("")}</tr></thead>
+      <tbody>${S.services.map(sv => `<tr><th scope="row">${esc(sv.name)}</th>
+        <td><input type="number" min="0" step="500" data-price="${sv.id}" value="${esc(sv.price)}" aria-label="Valor de ${esc(sv.name)}"></td>
+        ${S.coverage.map(c => { const v = sv.cov && sv.cov[c.n]; return `<td><input type="number" min="0" step="500" data-covamt="${sv.id}" data-os="${esc(c.n)}" value="${v ?? ""}" placeholder="—" aria-label="${esc(c.n)} paga por ${esc(sv.name)}"><small class="diff" data-diff="${sv.id}|${esc(c.n)}">${diffLabel(sv, c.n)}</small></td>`; }).join("")}
+      </tr>`).join("")}</tbody></table></div>` : `<div class="empty">Cargá consultas, estudios y obras sociales para completar los valores.</div>`}
+  </section>
+
+  <section class="card">
+    <h2>Obras sociales y prepagas</h2>
+    <p class="hint">Marcá las que piden orden autorizada para estudios. Con cuáles trabaja cada profesional se elige en su ficha.</p>
+    <div class="covs">${S.coverage.map((cv, i) => `<span class="cov">${esc(cv.n)}<label for="cv-${i}"><input type="checkbox" id="cv-${i}" data-cov-auth="${i}" ${cv.auth?"checked":""}> autorización</label><button type="button" data-cov-del="${i}" aria-label="Quitar ${esc(cv.n)}">×</button></span>`).join("")}</div>
+    <div class="addrow"><input id="cov-new" placeholder="Agregar obra social o prepaga"><button class="btn btn-soft" type="button" data-cfg="cov-add">Agregar</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Datos del consultorio</h2>
+    <p class="hint">Aparecen en la web y en los mensajes de WhatsApp. Se guardan solos.</p>
+    <form id="clinicForm" novalidate style="gap:11px">
+      <div class="row2"><label for="c-name">Nombre<input id="c-name" data-c="name" value="${esc(c.name)}"></label><label for="c-sub">Descripción corta<input id="c-sub" data-c="sub" value="${esc(c.sub)}"></label></div>
+      <div class="row2"><label for="c-addr">Dirección<input id="c-addr" data-c="address" value="${esc(c.address)}"></label><label for="c-wa">WhatsApp del consultorio<input id="c-wa" data-c="whatsapp" value="${esc(c.whatsapp)}" inputmode="tel"></label></div>
+      <div class="row3"><label for="c-lead">Anticipación mínima (min)<input id="c-lead" data-c="leadMinutes" type="number" min="0" step="15" value="${esc(c.leadMinutes)}"></label>
+      <label for="c-days">Días a mostrar<input id="c-days" data-c="daysAhead" type="number" min="1" max="60" value="${esc(c.daysAhead)}"></label>
+      <label for="c-cur">Moneda<input id="c-cur" data-c="currency" value="${esc(c.currency)}"></label></div>
+    </form>
+  </section>
+
+  <p><button class="linkbtn" type="button" data-cfg="reset-cfg">Volver a la configuración de ejemplo</button></p>`;
+}
+function diffLabel(sv, os){
+  const v = sv.cov && sv.cov[os];
+  if (v === undefined || v === null || v === "") return "sin cargar";
+  const d = (Number(sv.price) || 0) - Number(v);
+  return d > 0 ? "paciente " + money(d) : "sin diferencia";
+}
+function hoursEditor(p){
+  return `<div class="hours-ed">` + DOWS.map(([d, l]) => {
+    const r = (p.hours[d] || []), on = r.length > 0, a = r[0] || ["",""], b = r[1] || ["",""];
+    return `<div class="hrow ${on?"":"off"}" data-dow="${d}">
+      <label class="check" for="h-on-${d}"><input type="checkbox" id="h-on-${d}" ${on?"checked":""}> ${l}</label>
+      <span class="pair"><input type="time" id="h-a1-${d}" value="${a[0]}" aria-label="${l} desde"> a <input type="time" id="h-b1-${d}" value="${a[1]}" aria-label="${l} hasta"></span>
+      <span class="pair"><input type="time" id="h-a2-${d}" value="${b[0]}" aria-label="${l} segundo turno desde"> a <input type="time" id="h-b2-${d}" value="${b[1]}" aria-label="${l} segundo turno hasta"></span>
+    </div>`;
+  }).join("") + `<p class="muted" style="font-size:12.5px;margin:2px 0 0">Segunda franja opcional, para horario partido (ej. 9 a 13 y 16 a 20).</p></div>`;
+}
+function openProEditor(id){
+  const isNew = !id;
+  const p = isNew ? {id:"", name:"", role:"", color:"#2c5fb8", step:30, accepts:"all", services:[], hours:{1:[["09:00","13:00"]],2:[["09:00","13:00"]],3:[["09:00","13:00"]],4:[["09:00","13:00"]],5:[["09:00","13:00"]]}} : pro(id);
+  const sm = isStudyMode();
+  const groups = sm ? [["consulta","Consultas"],["estudio","Estudios"]] : [[null,"Motivos de consulta"]];
+  const future = isNew ? 0 : DB.bookings.filter(b => b.pro === id && b.date >= TODAY() && live(b) && b.status !== "bloqueo").length;
+  openDrawer("Configuración", isNew ? "Nuevo profesional" : "Editar profesional", `
+    <form id="proForm" data-id="${esc(p.id)}" novalidate>
+      <div class="row2"><label for="p-name">Nombre<input id="p-name" value="${esc(p.name)}" placeholder="Ej. Dra. Ana López"></label>
+      <label for="p-role">Especialidad<input id="p-role" value="${esc(p.role)}" placeholder="Ej. Cardiología"></label></div>
+      <div class="row2"><label for="p-step">Un turno cada<select id="p-step">${[10,15,20,30,40,45,60].map(n => `<option value="${n}" ${p.step===n?"selected":""}>${n} minutos</option>`).join("")}</select></label>
+      <label for="p-color">Color en la agenda<input type="color" id="p-color" value="${esc(p.color)}"></label></div>
+      <fieldset><legend>Días y horarios de atención</legend>${hoursEditor(p)}</fieldset>
+      ${groups.map(([k, title]) => { const list = S.services.filter(s => !k || s.kind === k); return `<fieldset><legend>${title} que atiende</legend>${list.length ? `<div class="checks">${list.map(s => `<label class="check" for="ps-${s.id}"><input type="checkbox" class="p-svc" id="ps-${s.id}" value="${s.id}" ${p.services.includes(s.id)?"checked":""}> ${esc(s.name)}</label>`).join("")}</div>` : `<p class="muted" style="margin:0;font-size:14px">No hay cargados. Agregalos en "${sm ? "Consultas y estudios" : "Motivos de consulta"}".</p>`}</fieldset>`; }).join("")}
+      <fieldset><legend>Obras sociales con las que trabaja</legend>
+        <div class="actions"><label class="check" for="pa-all"><input type="radio" name="pacc" id="pa-all" value="all" ${p.accepts==="all"?"checked":""}> Todas</label>
+        <label class="check" for="pa-some"><input type="radio" name="pacc" id="pa-some" value="some" ${p.accepts!=="all"?"checked":""}> Solo algunas</label>
+        <label class="check" for="pa-none"><input type="radio" name="pacc" id="pa-none" value="none"> Solo particular</label></div>
+        <div class="checks" id="paList" ${p.accepts==="all"?"hidden":""}>${S.coverage.map(c => `<label class="check" for="pc-${esc(c.n)}"><input type="checkbox" class="p-cov" id="pc-${esc(c.n)}" value="${esc(c.n)}" ${p.accepts!=="all" && (p.accepts||[]).includes(c.n)?"checked":""}> ${esc(c.n)}</label>`).join("")}</div>
+      </fieldset>
+      <p class="err" id="p-err" role="alert"></p>
+      <div class="actions" style="justify-content:space-between">
+        <button class="btn btn-primary" type="submit">${isNew ? "Agregar profesional" : "Guardar cambios"}</button>
+        ${isNew ? "" : `<button class="btn btn-danger" type="button" data-cfg="pro-del" data-id="${p.id}" data-future="${future}">Eliminar</button>`}
+      </div>
+      ${future ? `<p class="muted" style="font-size:13px;margin:0">Tiene ${future} turnos a futuro. Si lo eliminás dejan de mostrarse en la agenda.</p>` : ""}
+    </form>`, true);
+}
+function submitPro(f){
+  const err = t => { $("p-err").textContent = t; $("p-err").scrollIntoView({block:"nearest"}); };
+  const name = $("p-name").value.trim(); if (!name){ $("p-name").focus(); return err("Escribí el nombre del profesional."); }
+  const hours = {};
+  for (const [d, l] of DOWS){
+    if (!$("h-on-" + d).checked) continue;
+    const rs = [];
+    for (const k of [1,2]){
+      const a = $(`h-a${k}-${d}`).value, b = $(`h-b${k}-${d}`).value;
+      if (!a && !b) continue;
+      if (!a || !b || toMin(a) >= toMin(b)) return err(`Revisá el horario del ${l}: la hora de inicio tiene que ser anterior a la de fin.`);
+      rs.push([a, b]);
+    }
+    if (!rs.length) return err(`Marcaste ${l} pero no cargaste horario.`);
+    if (rs.length === 2 && toMin(rs[1][0]) < toMin(rs[0][1])) return err(`En ${l} la segunda franja tiene que empezar después de que termine la primera.`);
+    hours[d] = rs;
+  }
+  if (!Object.keys(hours).length) return err("Marcá al menos un día de atención.");
+  const services = [...document.querySelectorAll(".p-svc:checked")].map(i => i.value);
+  if (!services.length) return err("Elegí al menos una consulta o estudio que atienda.");
+  const acc = document.querySelector('input[name="pacc"]:checked').value;
+  const accepts = acc === "all" ? "all" : acc === "none" ? [] : [...document.querySelectorAll(".p-cov:checked")].map(i => i.value);
+  const data = {name, role:$("p-role").value.trim(), color:$("p-color").value, step:Number($("p-step").value), hours, services, accepts};
+  if (f.dataset.id){ Object.assign(pro(f.dataset.id), data); toast("Cambios guardados."); }
+  else { S.pros.push({id:uid("p"), ...data}); toast("Profesional agregado."); }
+  saveCfg(); closeDrawer(); refreshAll();
+}
+function openSvcEditor(id){
+  const isNew = !id, sm = isStudyMode();
+  const s = isNew ? {id:"", kind: sm ? "estudio" : "consulta", name:"", dur:20, price:0, order:false, combo:false, prep:""} : svc(id);
+  openDrawer("Configuración", isNew ? (sm ? "Nueva consulta o estudio" : "Nuevo motivo de consulta") : "Editar " + (s.kind === "estudio" ? "estudio" : "consulta"), `
+    <form id="svcForm" data-id="${esc(s.id)}" novalidate>
+      <label for="s-name">Nombre<input id="s-name" value="${esc(s.name)}" placeholder="Ej. Ecodoppler venoso"></label>
+      ${sm ? `<div class="actions"><label class="check" for="sk-c"><input type="radio" name="skind" id="sk-c" value="consulta" ${s.kind==="consulta"?"checked":""}> Consulta</label>
+        <label class="check" for="sk-e"><input type="radio" name="skind" id="sk-e" value="estudio" ${s.kind==="estudio"?"checked":""}> Estudio</label></div>` : ""}
+      <div class="row2"><label for="s-dur">Duración<select id="s-dur">${[10,15,20,25,30,40,45,60,90].map(n => `<option value="${n}" ${s.dur===n?"selected":""}>${n} minutos</option>`).join("")}</select></label>
+      <label for="s-price">Precio particular<input id="s-price" type="number" min="0" step="500" value="${esc(s.price)}"></label></div>
+      <label class="check" for="s-order"><input type="checkbox" id="s-order" ${s.order?"checked":""}> Requiere orden médica</label>
+      ${sm ? `<label class="check" for="s-combo"><input type="checkbox" id="s-combo" ${s.combo?"checked":""}> Se puede combinar con otro estudio en el mismo turno</label>` : ""}
+      <label for="s-prep">Preparación para el paciente (opcional)<textarea id="s-prep" placeholder="Ej. Ayuno de 6 horas.">${esc(s.prep || "")}</textarea></label>
+      <label for="s-needs">Para este ${sm ? "estudio" : "turno"} necesitás… (opcional)<textarea id="s-needs" placeholder="Ej. Orden médica, estudios anteriores, análisis de sangre recientes.">${esc(s.needs || "")}</textarea></label>
+      <p class="muted" style="font-size:13px;margin:-4px 0 0">Cuánto paga cada obra social se carga en Configuración → Valores por obra social.</p>
+      <fieldset><legend>Profesionales que lo atienden</legend>
+        ${S.pros.length ? `<div class="checks">${S.pros.map(p => `<label class="check" for="sp-${p.id}"><input type="checkbox" class="s-pro" id="sp-${p.id}" value="${p.id}" ${s.id && p.services.includes(s.id)?"checked":""}> ${esc(p.name)}</label>`).join("")}</div>` : `<p class="muted" style="margin:0">Primero agregá profesionales.</p>`}
+      </fieldset>
+      <p class="err" id="s-err" role="alert"></p>
+      <div class="actions" style="justify-content:space-between">
+        <button class="btn btn-primary" type="submit">${isNew ? "Agregar" : "Guardar cambios"}</button>
+        ${isNew ? "" : `<button class="btn btn-danger" type="button" data-cfg="svc-del" data-id="${s.id}">Eliminar</button>`}
+      </div>
+    </form>`, true);
+}
+function submitSvc(f){
+  const name = $("s-name").value.trim();
+  if (!name){ $("s-name").focus(); $("s-err").textContent = "Escribí el nombre."; return; }
+  const kindEl = document.querySelector('input[name="skind"]:checked');
+  const data = {name, kind: kindEl ? kindEl.value : (f.dataset.id ? svc(f.dataset.id).kind : "consulta"), dur:Number($("s-dur").value), price:Number($("s-price").value) || 0,
+    order:$("s-order").checked, combo: $("s-combo") ? $("s-combo").checked : false, prep:$("s-prep").value.trim(), needs:$("s-needs").value.trim()};
+  let id = f.dataset.id;
+  if (id) Object.assign(svc(id), data); else { id = uid("s"); S.services.push({id, cov:{}, ...data}); }
+  const chosen = [...document.querySelectorAll(".s-pro:checked")].map(i => i.value);
+  S.pros.forEach(p => { const has = p.services.includes(id); if (chosen.includes(p.id) && !has) p.services.push(id); if (!chosen.includes(p.id) && has) p.services = p.services.filter(x => x !== id); });
+  saveCfg(); closeDrawer(); refreshAll(); toast(f.dataset.id ? "Cambios guardados." : "Agregado.");
+}
+function refreshAll(){
+  $("clinicName").textContent = C().name; $("clinicSub").textContent = C().sub; $("logo").textContent = (C().name.trim().split(" ").pop() || "A")[0].toUpperCase();
+  if (UI.pro && !pro(UI.pro)) UI.pro = null;
+  if (UI.svc && !svc(UI.svc)) UI.svc = null;
+  UI.extra = UI.extra.filter(svc);
+  if (UI.who !== "any" && !pro(UI.who)) UI.who = "any";
+  resetPick();
+  if (!$("view-config").hidden) renderConfig();
+  if (!$("view-panel").hidden) renderPanel();
+  if (!$("view-book").hidden) renderBook();
+}
+
+/* eventos de configuración */
+$("cfg").addEventListener("change", e => {
+  const t = e.target;
+  if (t.name === "mode"){ S.mode = t.value; UI.tab = "consultas"; saveCfg(); refreshAll(); toast(t.value === "estudios" ? "Modo consultas y estudios activado." : "Modo agenda de turnos activado."); return; }
+  if (t.dataset.price){ const sv = svc(t.dataset.price); sv.price = Math.max(0, Number(t.value) || 0); saveCfg(); S.coverage.forEach(c => { const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + c.n)}"]`); if (el) el.textContent = diffLabel(sv, c.n); }); toast("Valor guardado."); return; }
+  if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
+  if (t.dataset.covAuth != null){ S.coverage[Number(t.dataset.covAuth)].auth = t.checked; saveCfg(); return; }
+  if (t.dataset.c){ const k = t.dataset.c; S.clinic[k] = t.type === "number" ? Math.max(Number(t.min || 0), Number(t.value) || 0) : t.value.trim(); saveCfg(); refreshAll(); toast("Guardado."); }
+});
+$("cfg").addEventListener("submit", e => e.preventDefault());
 document.addEventListener("click", e => {
   const c = e.target.closest("[data-confirm]");
-  if (c){ const b = DB.bookings.find(x => x.id === Number(c.dataset.confirm)); b.status = "confirmado"; b.isNew = false; save(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Turno confirmado. Se abrió WhatsApp con el mensaje para " + b.name.split(" ")[0] + "."); return; }
+  if (c){ const b = DB.bookings.find(x => x.id === Number(c.dataset.confirm)); b.status = "confirmado"; b.isNew = false; saveDB(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Turno confirmado. Se abrió WhatsApp con el mensaje para " + b.name.split(" ")[0] + "."); return; }
   const r = e.target.closest("[data-remind]");
-  if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; save(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
-  const o = e.target.closest(".li .open"); if (o){ openBooking(Number(o.dataset.id)); return; }
+  if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; saveDB(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
+  const o = e.target.closest("[data-open]"); if (o){ openBooking(Number(o.dataset.open)); return; }
+  const cv = e.target.closest("[data-cov-del]");
+  if (cv){ const n = S.coverage[Number(cv.dataset.covDel)].n; S.coverage.splice(Number(cv.dataset.covDel), 1); S.pros.forEach(p => { if (Array.isArray(p.accepts)) p.accepts = p.accepts.filter(x => x !== n); }); S.services.forEach(sv => { if (sv.cov) delete sv.cov[n]; }); saveCfg(); renderConfig(); toast(n + " quitada."); return; }
+  const g = e.target.closest("[data-cfg]");
+  if (g){
+    const k = g.dataset.cfg;
+    if (k === "pro-new") return openProEditor(null);
+    if (k === "pro-edit") return openProEditor(g.dataset.id);
+    if (k === "svc-new") return openSvcEditor(null);
+    if (k === "svc-edit") return openSvcEditor(g.dataset.id);
+    if (k === "cov-add"){ const v = $("cov-new").value.trim(); if (!v) return $("cov-new").focus(); if (S.coverage.some(x => x.n.toLowerCase() === v.toLowerCase())) return toast(v + " ya está en la lista."); S.coverage.push({n:v}); saveCfg(); renderConfig(); $("cov-new").focus(); return; }
+    if (k === "pro-del" || k === "svc-del" || k === "reset-cfg"){
+      if (!g.classList.contains("armed")){ g.classList.add("armed"); g.dataset.label = g.textContent; g.textContent = "Tocá de nuevo para confirmar"; setTimeout(() => { if (document.contains(g)){ g.classList.remove("armed"); g.textContent = g.dataset.label; } }, 4000); return; }
+      if (k === "pro-del"){ S.pros = S.pros.filter(p => p.id !== g.dataset.id); toast("Profesional eliminado."); }
+      if (k === "svc-del"){ const id = g.dataset.id; S.services = S.services.filter(s => s.id !== id); S.pros.forEach(p => p.services = p.services.filter(x => x !== id)); toast("Eliminado."); }
+      if (k === "reset-cfg"){ S = clone(DEFAULTS); DB = seed(); saveDB(); toast("Se restauró la configuración de ejemplo."); }
+      saveCfg(); closeDrawer(); refreshAll(); return;
+    }
+  }
   const a = e.target.closest("[data-act]"); if (!a) return;
   const act = a.dataset.act;
   if (act === "block"){
     const p = pro(a.dataset.pro);
-    DB.bookings.push({id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(Number(a.dataset.m)), dur:p.dur, status:"bloqueo", name:$("blk-r").value.trim() || "Bloqueado", phone:"", reason:"", source:"manual"});
-    save(); closeDrawer(); renderPanel(); toast("Horario bloqueado. Ya no aparece disponible para reservar."); return;
+    DB.bookings.push({id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(Number(a.dataset.m)), dur:p.step, status:"bloqueo", name:$("blk-r").value.trim() || "Bloqueado", items:[], source:"manual"});
+    saveDB(); closeDrawer(); renderPanel(); toast("Horario bloqueado. Ya no aparece disponible para reservar."); return;
   }
   const b = DB.bookings.find(x => x.id === Number(a.dataset.id)); if (!b) return;
-  if (act === "unblock" || act === "cancel"){ b.status = "cancelado"; save(); closeDrawer(); renderPanel(); toast(act === "cancel" ? "Turno cancelado. El horario volvió a estar disponible." : "Bloqueo quitado."); return; }
-  b.status = act; save(); renderPanel(); openBooking(b.id);
+  if (act === "unblock" || act === "cancel"){ b.status = "cancelado"; saveDB(); closeDrawer(); renderPanel(); toast(act === "cancel" ? "Turno cancelado. El horario volvió a estar disponible." : "Bloqueo quitado."); return; }
+  if (act === "order"){ b.order = true; saveDB(); renderPanel(); openBooking(b.id); return; }
+  b.status = act; saveDB(); renderPanel(); openBooking(b.id);
 });
-$("dBody").addEventListener("submit", e => {
-  if (e.target.id !== "manualForm") return;
-  e.preventDefault();
-  const f = e.target, p = pro(f.dataset.pro), m = Number(f.dataset.m);
-  const name = $("m-name").value.trim(), phone = $("m-phone").value.trim();
-  if (!name){ $("m-err").textContent = "Escribí el nombre del paciente."; $("m-name").focus(); return; }
-  const os = $("m-os").value;
-  const b = {id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(m), dur:p.dur, status:"confirmado", name, phone: phone || "", reason:$("m-reason").value,
-    dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" ? "" : $("m-aff").value.trim(), order: isStudy(p) ? $("m-order").checked : false,
-    first:false, note:"", source:"manual", code:code(), reminded:false};
-  DB.bookings.push(b); save(); renderPanel(); openBooking(b.id); toast("Turno agendado.");
+$("dBody").addEventListener("change", e => {
+  const t = e.target;
+  if (t.id && t.id.startsWith("h-on-")) t.closest(".hrow").classList.toggle("off", !t.checked);
+  if (t.name === "pacc") $("paList").hidden = t.value !== "some";
 });
 $("dClose").addEventListener("click", closeDrawer);
 $("scrim").addEventListener("click", closeDrawer);
@@ -802,24 +1267,27 @@ $("todayBtn").addEventListener("click", () => { PANEL.date = TODAY(); renderPane
 
 /* ---------- navegación ---------- */
 function scrollToNow(){
-  const sc = $("agendaScroll"); const m = PANEL.date === TODAY() ? Math.max(DAY0, nowMin() - 90) : 9*60;
+  const sc = $("agendaScroll"); const m = PANEL.date === TODAY() ? Math.max(DAY0, nowMin() - 90) : 8*60;
   sc.scrollTop = Math.max(0, (m - DAY0) / ROW * PX);
 }
 function show(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-  $("view-book").hidden = v !== "book"; $("view-panel").hidden = v !== "panel";
-  if (v === "panel"){ renderPanel(); scrollToNow(); } else { renderBook(); }
-  try { history.replaceState(null, "", v === "panel" ? "#panel" : "#reservar"); } catch(_){}
+  ["book","panel","config"].forEach(k => $("view-" + k).hidden = k !== v);
+  if (v === "panel"){ renderPanel(); scrollToNow(); } else if (v === "config"){ renderConfig(); } else { renderBook(); }
+  try { history.replaceState(null, "", "#" + (v === "book" ? "reservar" : v)); } catch(_){}
   window.scrollTo(0, 0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) show(t.dataset.view); });
-$("resetBtn").addEventListener("click", () => { DB = seed(); save(); Object.assign(UI, {spec:"Todas", pro:null, date:null, time:null, done:null}); PANEL.date = TODAY(); show($("view-panel").hidden ? "book" : "panel"); toast("Demo restablecida con turnos de ejemplo."); });
+$("resetBtn").addEventListener("click", () => {
+  DB = seed(); saveDB(); Object.assign(UI, {tab:"consultas", pro:null, svc:null, who:"any", motivo:null, extra:[]}); resetPick(); PANEL.date = TODAY();
+  refreshAll(); toast("Se cargaron turnos de ejemplo nuevos.");
+});
 
 (function init(){
-  $("clinicName").textContent = CLINIC.name; $("clinicSub").textContent = CLINIC.sub; $("logo").textContent = CLINIC.name.split(" ").pop()[0];
-  load();
-  UI.pro = PROS[0].id;
-  show(location.hash === "#panel" ? "panel" : "book");
+  loadCfg(); loadDB();
+  refreshAll();
+  const h = location.hash.replace("#","");
+  show(h === "panel" ? "panel" : h === "config" ? "config" : "book");
 })();
 </script>
 </body>
