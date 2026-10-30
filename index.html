@@ -336,6 +336,8 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .logo-prev img{width:100%;height:100%;object-fit:contain}
 .logo-prev span{font-size:12px;color:#8a949b}
 .logo-ed label.btn{cursor:pointer}
+.login-top{gap:6px}
+.login-top svg{width:16px;height:16px}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -485,6 +487,7 @@ dd{margin:0;font-weight:500}
       <button class="tab" role="tab" aria-selected="false" data-view="panel"><span class="full">Panel del consultorio</span><span class="short">Panel</span></button>
       <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Configuración</button>
     </div>
+    <button class="btn btn-soft btn-sm login-top" id="loginTop" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Ingresar</button>
     <span class="who-box" id="whoBox" hidden><span id="whoMail"></span><button class="btn btn-soft btn-sm" type="button" id="logoutBtn">Salir</button></span>
     <button class="btn btn-primary btn-sm" id="installBtn" type="button" hidden>Instalar app</button>
     <button class="linkbtn" id="resetBtn" type="button">Restablecer turnos de ejemplo</button>
@@ -1931,6 +1934,7 @@ function show(v){
   const needLogin = !STAFF && (v === "panel" || v === "config");
   ["book","panel","config"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
   $("view-login").hidden = !needLogin;
+  $("loginTop").hidden = STAFF || needLogin;
   if (needLogin){ LOGIN_NEXT = v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
   if (v === "panel"){
     ensureRange(PANEL.date);
@@ -1944,6 +1948,7 @@ document.querySelector(".tabs").addEventListener("click", e => { const t = e.tar
 window.addEventListener("hashchange", () => { const h = location.hash.replace("#", ""); show(h === "panel" ? "panel" : h === "config" ? "config" : "book"); });
 let LOGIN_NEXT = "panel";
 $("staffLink").addEventListener("click", () => show("panel"));
+$("loginTop").addEventListener("click", () => show("panel"));
 $("l-back").addEventListener("click", () => show("book"));
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -1980,6 +1985,7 @@ async function afterLogin(){
 function applyRole(){
   document.querySelector(".tabs").hidden = !STAFF;
   $("staffLink").hidden = STAFF;
+  $("loginTop").hidden = STAFF || !$("view-login").hidden;
   $("resetBtn").hidden = CLOUD || !STAFF;
   $("whoBox").hidden = !STAFF;
   $("demoHint").hidden = CLOUD;
