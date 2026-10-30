@@ -240,7 +240,8 @@ textarea{min-height:56px;resize:vertical}
 .hours-ed{display:grid;gap:6px}
 .hrow{display:grid;grid-template-columns:78px 1fr 1fr;gap:8px;align-items:center}
 .hrow .pair{display:flex;gap:4px;align-items:center;font-size:13px;color:var(--muted)}
-.hrow input[type=time]{padding:6px;font-size:14px}
+.hrow input[type=time]{padding:6px;font-size:14px;flex:1;min-width:0;width:auto}
+.hrow .pair{min-width:0}
 .hrow.off .pair{opacity:.35}
 .checks{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px}
 .checks .check{font-size:14px}
@@ -275,6 +276,19 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .send-steps .muted{font-size:13.5px}
 .send-steps .btn{justify-self:start}
 .order-img{max-width:100%;border-radius:8px;border:1px solid var(--line);display:block}
+.mlist{display:grid}
+.mrow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.mrow .check{font-size:14.5px;min-width:0}
+.mrow .check .muted{font-size:13px}
+.mrow.editing{flex-wrap:wrap;background:var(--accent-soft);padding:8px;border-radius:8px;border:0;margin:4px 0}
+.mrow.editing .me-name{flex:2 1 180px;width:auto}
+.mrow.editing select,.mrow.editing .me-price{flex:1 1 90px;width:auto}
+.mact{display:flex;gap:6px;flex:none;align-items:center}
+.linkbtn.danger{color:var(--bad)}
+.linkbtn.armed{color:#fff;background:var(--bad);border-radius:6px;text-decoration:none;padding:4px 8px}
+.madd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.madd .madd-name{flex:2 1 180px;width:auto}
+.madd select,.madd .madd-price{flex:1 1 90px;width:auto}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -1284,6 +1298,21 @@ function hoursEditor(p){
     </div>`;
   }).join("") + `<p class="muted" style="font-size:12.5px;margin:2px 0 0">Segunda franja opcional, para horario partido (ej. 9 a 13 y 16 a 20).</p></div>`;
 }
+const DURS = [10,15,20,25,30,40,45,60,90];
+function svcRows(k, checked){
+  const has = id => checked instanceof Set ? checked.has(id) : (checked || []).includes(id);
+  const list = S.services.filter(s => !k || s.kind === k);
+  return list.map(s => `<div class="mrow" data-sid="${s.id}">
+      <label class="check" for="ps-${s.id}"><input type="checkbox" class="p-svc" id="ps-${s.id}" value="${s.id}" ${has(s.id)?"checked":""}> <span>${esc(s.name)} <span class="muted">· ${s.dur} min · ${money(s.price)}</span></span></label>
+      <span class="mact"><button type="button" class="linkbtn" data-medit="${s.id}">Editar</button><button type="button" class="linkbtn danger" data-mdel="${s.id}">Borrar</button></span>
+    </div>`).join("") || `<p class="muted" style="margin:0;font-size:14px">Todavía no hay. Agregá el primero abajo.</p>`;
+}
+function rerenderGroup(box, extraChecked){
+  const set = new Set([...box.querySelectorAll(".p-svc:checked")].map(i => i.value));
+  if (extraChecked) set.add(extraChecked);
+  box.innerHTML = svcRows(box.dataset.kind || null, set);
+  if (!$("view-config").hidden) renderConfig();
+}
 function openProEditor(id){
   const isNew = !id;
   const p = isNew ? {id:"", name:"", role:"", color:"#2c5fb8", step:30, accepts:"all", services:[], hours:{1:[["09:00","13:00"]],2:[["09:00","13:00"]],3:[["09:00","13:00"]],4:[["09:00","13:00"]],5:[["09:00","13:00"]]}} : pro(id);
@@ -1297,7 +1326,15 @@ function openProEditor(id){
       <div class="row2"><label for="p-step">Un turno cada<select id="p-step">${[10,15,20,30,40,45,60].map(n => `<option value="${n}" ${p.step===n?"selected":""}>${n} minutos</option>`).join("")}</select></label>
       <label for="p-color">Color en la agenda<input type="color" id="p-color" value="${esc(p.color)}"></label></div>
       <fieldset><legend>Días y horarios de atención</legend>${hoursEditor(p)}</fieldset>
-      ${groups.map(([k, title]) => { const list = S.services.filter(s => !k || s.kind === k); return `<fieldset><legend>${title} que atiende</legend>${list.length ? `<div class="checks">${list.map(s => `<label class="check" for="ps-${s.id}"><input type="checkbox" class="p-svc" id="ps-${s.id}" value="${s.id}" ${p.services.includes(s.id)?"checked":""}> ${esc(s.name)}</label>`).join("")}</div>` : `<p class="muted" style="margin:0;font-size:14px">No hay cargados. Agregalos en "${sm ? "Consultas y estudios" : "Motivos de consulta"}".</p>`}</fieldset>`; }).join("")}
+      ${groups.map(([k, title]) => `<fieldset><legend>${title} que atiende</legend>
+        <div class="mlist" data-kind="${k || ""}">${svcRows(k, p.services)}</div>
+        <div class="madd"><input class="madd-name" placeholder="${k === "estudio" ? "Nuevo estudio (ej. Ecodoppler)" : "Nuevo motivo (ej. Control)"}" aria-label="Nombre del nuevo ${k === "estudio" ? "estudio" : "motivo"}">
+          <select class="madd-dur" aria-label="Duración">${[10,15,20,25,30,40,45,60,90].map(n => `<option value="${n}" ${n===(k === "estudio" ? 20 : 30)?"selected":""}>${n} min</option>`).join("")}</select>
+          <input class="madd-price" type="number" min="0" step="500" placeholder="Precio" aria-label="Precio particular">
+          <button class="btn btn-soft btn-sm" type="button" data-madd="${k || ""}">+ Agregar</button></div>
+        <p class="err madd-err" role="alert"></p>
+      </fieldset>`).join("")}
+      <p class="muted" style="font-size:12.5px;margin:-4px 0 0">Agregar, editar o borrar ${sm ? "consultas y estudios" : "motivos"} se guarda al instante y vale para todos los profesionales. Marcá los que atiende este profesional y tocá Guardar.</p>
       <fieldset><legend>Obras sociales con las que trabaja</legend>
         <div class="actions"><label class="check" for="pa-all"><input type="radio" name="pacc" id="pa-all" value="all" ${p.accepts==="all"?"checked":""}> Todas</label>
         <label class="check" for="pa-some"><input type="radio" name="pacc" id="pa-some" value="some" ${p.accepts!=="all"?"checked":""}> Solo algunas</label>
@@ -1439,6 +1476,68 @@ document.addEventListener("click", e => {
   if (act === "unblock" || act === "cancel"){ b.status = "cancelado"; saveDB(); closeDrawer(); renderPanel(); toast(act === "cancel" ? "Turno cancelado. El horario volvió a estar disponible." : "Bloqueo quitado."); return; }
   if (act === "order"){ b.order = true; saveDB(); renderPanel(); openBooking(b.id); return; }
   b.status = act; saveDB(); renderPanel(); openBooking(b.id);
+});
+$("dBody").addEventListener("click", e => {
+  const ed = e.target.closest("[data-medit]");
+  if (ed){
+    const sv = svc(ed.dataset.medit), row = ed.closest(".mrow"), was = row.querySelector(".p-svc").checked;
+    row.classList.add("editing"); row.dataset.was = was ? "1" : "";
+    row.innerHTML = `<input class="me-name" value="${esc(sv.name)}" aria-label="Nombre">
+      <select class="me-dur" aria-label="Duración">${DURS.map(n => `<option value="${n}" ${sv.dur===n?"selected":""}>${n} min</option>`).join("")}</select>
+      <input class="me-price" type="number" min="0" step="500" value="${esc(sv.price)}" aria-label="Precio particular">
+      <span class="mact"><button type="button" class="btn btn-primary btn-sm" data-msave="${sv.id}">Guardar</button><button type="button" class="btn btn-soft btn-sm" data-mcancel>Cancelar</button></span>`;
+    row.querySelector(".me-name").focus();
+    return;
+  }
+  const sv = e.target.closest("[data-msave]");
+  if (sv){
+    const row = sv.closest(".mrow"), box = row.closest(".mlist"), name = row.querySelector(".me-name").value.trim();
+    const errEl = box.parentElement.querySelector(".madd-err");
+    if (!name){ errEl.textContent = "Escribí el nombre."; return row.querySelector(".me-name").focus(); }
+    if (S.services.some(x => x.id !== sv.dataset.msave && x.name.toLowerCase() === name.toLowerCase())){ errEl.textContent = "Ya existe uno con ese nombre."; return; }
+    errEl.textContent = "";
+    Object.assign(svc(sv.dataset.msave), {name, dur:Number(row.querySelector(".me-dur").value), price:Math.max(0, Number(row.querySelector(".me-price").value) || 0)});
+    saveCfg();
+    const keep = row.dataset.was ? sv.dataset.msave : null;
+    rerenderGroup(box, keep); toast("Guardado.");
+    return;
+  }
+  const cc = e.target.closest("[data-mcancel]");
+  if (cc){ const row = cc.closest(".mrow"); rerenderGroup(row.closest(".mlist"), row.dataset.was ? row.dataset.sid : null); return; }
+  const del = e.target.closest("[data-mdel]");
+  if (del){
+    if (!del.classList.contains("armed")){
+      del.classList.add("armed"); del.textContent = "¿Borrar? Tocá de nuevo";
+      setTimeout(() => { if (document.contains(del)){ del.classList.remove("armed"); del.textContent = "Borrar"; } }, 4000);
+      return;
+    }
+    const id = del.dataset.mdel, box = del.closest(".mlist"), n = svc(id).name;
+    S.services = S.services.filter(x => x.id !== id);
+    S.pros.forEach(p => p.services = p.services.filter(x => x !== id));
+    saveCfg(); rerenderGroup(box); toast(n + " borrado.");
+    return;
+  }
+  const add = e.target.closest("[data-madd]");
+  if (add) addFromRow(add.closest("fieldset"));
+});
+function addFromRow(fs){
+  const box = fs.querySelector(".mlist"), errEl = fs.querySelector(".madd-err"), nameEl = fs.querySelector(".madd-name");
+  const name = nameEl.value.trim();
+  if (!name){ errEl.textContent = "Escribí el nombre para agregarlo."; return nameEl.focus(); }
+  if (S.services.some(x => x.name.toLowerCase() === name.toLowerCase())){ errEl.textContent = "Ya existe uno con ese nombre: marcalo en la lista."; return; }
+  errEl.textContent = "";
+  const kind = box.dataset.kind || "consulta", id = uid("s");
+  S.services.push({id, kind, name, dur:Number(fs.querySelector(".madd-dur").value), price:Math.max(0, Number(fs.querySelector(".madd-price").value) || 0),
+    order: kind === "estudio", orderPhoto: true, combo: false, prep:"", needs:"", cov:{}});
+  saveCfg();
+  nameEl.value = ""; fs.querySelector(".madd-price").value = "";
+  rerenderGroup(box, id); toast(name + " agregado y marcado para este profesional.");
+  nameEl.focus();
+}
+$("dBody").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  if (e.target.classList.contains("madd-name") || e.target.classList.contains("madd-price")){ e.preventDefault(); addFromRow(e.target.closest("fieldset")); }
+  if (e.target.closest(".mrow.editing")){ e.preventDefault(); e.target.closest(".mrow").querySelector("[data-msave]").click(); }
 });
 $("dBody").addEventListener("change", e => {
   const t = e.target;
