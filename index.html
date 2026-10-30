@@ -382,6 +382,20 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
   .calhead .seg2{flex:1}
   .ygrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 }
+.creds-box{border:2px solid var(--ok);background:var(--ok-bg);border-radius:12px;padding:14px;display:grid;gap:10px;margin-top:14px}
+.creds-box > b{font-size:16px}
+.code.big{font-size:18px;letter-spacing:.06em;padding:4px 10px;background:var(--surface)}
+.acc{display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.acc:first-child{border-top:0}
+.acc.off .acc-main > b{color:var(--muted)}
+.acc-main{display:grid;gap:3px;min-width:0}
+.acc-title{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.acc-main .meta{font-size:13.5px;color:var(--muted)}
+.acc-out{grid-column:1 / -1}
+.acc-out:empty{display:none}
+.linkbox{display:grid;gap:10px;background:var(--accent-soft);border-radius:10px;padding:12px}
+.linkbox > span{font-weight:600;word-break:break-all;color:var(--accent)}
+@media (max-width:620px){ .acc{grid-template-columns:1fr} }
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -529,6 +543,7 @@ dd{margin:0;font-weight:500}
     <div class="tabs" role="tablist" aria-label="Vista">
       <button class="tab" role="tab" aria-selected="true" data-view="book"><span class="full">Reservar turno</span><span class="short">Reservar</span></button>
       <button class="tab" role="tab" aria-selected="false" data-view="panel"><span class="full">Panel del consultorio</span><span class="short">Panel</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-view="cuentas" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg>Cuentas</button>
       <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Configuración</button>
     </div>
     <button class="btn btn-soft btn-sm login-top" id="loginTop" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Ingresar</button>
@@ -623,7 +638,17 @@ dd{margin:0;font-weight:500}
       <div class="logo" id="loginLogo" style="width:52px;height:52px;font-size:24px" aria-hidden="true">A</div>
       <h1>Acceso para el consultorio</h1>
       <p class="muted">Ingresá con el mail y la contraseña del consultorio para ver la agenda y la configuración.</p>
+      <div class="notice" id="noClinic" hidden><b>¿Querés pedir un turno?</b>Usá el link que te pasó tu consultorio. Esta pantalla es para que los profesionales ingresen a su agenda.</div>
       <div class="notice" id="demoHint" hidden><b>Versión de demostración</b>Mail: demo@consultorio.com · Contraseña: demo1234</div>
+      <form id="setupForm" novalidate hidden>
+        <div class="notice"><b>Primera vez: creá tu cuenta de administrador</b>Con esta cuenta vas a crear las cuentas de cada consultorio. El código de instalación es el que pusiste en Cloudflare (SETUP_CODE).</div>
+        <label for="s-code">Código de instalación<input id="s-code" autocomplete="off"></label>
+        <label for="s-nombre">Tu nombre o empresa<input id="s-nombre" placeholder="Ej. Alt Soluciones"></label>
+        <label for="s-email">Tu mail<input id="s-email" type="email" autocomplete="username"></label>
+        <label for="s-pass">Contraseña (mínimo 8 caracteres)<input id="s-pass" type="password" autocomplete="new-password"></label>
+        <p class="err" id="s-err" role="alert"></p>
+        <button class="btn btn-primary" type="submit">Crear cuenta de administrador</button>
+      </form>
       <form id="loginForm" novalidate>
         <label for="l-email">Mail<input id="l-email" type="email" autocomplete="username" inputmode="email"></label>
         <label for="l-pass">Contraseña<input id="l-pass" type="password" autocomplete="current-password"></label>
@@ -632,6 +657,14 @@ dd{margin:0;font-weight:500}
       </form>
       <button class="linkbtn" type="button" id="l-back">← Volver a reservar turno</button>
     </section>
+  </div>
+</main>
+
+<!-- ===================== CUENTAS (administrador) ===================== -->
+<main id="view-cuentas" hidden>
+  <div class="wrap">
+    <div class="ph"><h1>Cuentas de consultorios</h1></div>
+    <div class="cfg" id="cuentas"></div>
   </div>
 </main>
 
@@ -760,48 +793,76 @@ function saveCfg(){
   if (CLOUD){ cloudSaveCfg(); return; }
   try { localStorage.setItem(CFG_KEY, JSON.stringify(S)); } catch(_){}
 }
-/* =================== BASE DE DATOS (Supabase) ===================
-   Si config.js tiene los datos de Supabase, todo se guarda en internet.
-   Si no, la app funciona en modo demostración con datos en el navegador. */
-const TC = window.TURNOS_CONFIG || {};
-const CLOUD = !!(TC.supabaseUrl && TC.supabaseKey);
-let SB = null, SESSION = null, STAFF = false, RANGE = null, cfgTimer = null;
-const SB_LIB = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.9", "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"];
-function loadScript(src){ return new Promise((ok, bad) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = bad; document.head.appendChild(el); }); }
-async function loadSupabaseLib(){
-  for (const src of SB_LIB){ try { await loadScript(src); if (window.supabase && window.supabase.createClient) return; } catch(_){} }
-  throw new Error("No se pudo cargar la librería de Supabase");
+/* =================== SERVIDOR (Cloudflare) ===================
+   Si la web está publicada junto con el servidor (carpeta functions/), todo se
+   guarda en internet y cada consultorio entra con su cuenta.
+   Si no hay servidor (por ejemplo en GitHub Pages), funciona en modo demostración. */
+let SETUP = false, CLOUD = false, ME = null, STAFF = false, ADMIN = false, SLUG = "", RANGE = null, cfgTimer = null, LAST_SYNC = "", pollTimer = null;
+async function api(path, opts = {}){
+  const o = {method: opts.method || "GET", headers: {}, credentials: "same-origin", cache: "no-store"};
+  if (opts.body !== undefined){
+    if (opts.raw){ o.body = opts.body; o.headers["content-type"] = opts.type; }
+    else { o.body = JSON.stringify(opts.body); o.headers["content-type"] = "application/json"; }
+  }
+  if (o.method !== "GET") o.headers["x-turnos"] = "1";
+  const r = await fetch("api/" + path, o);
+  let data = null; try { data = await r.json(); } catch(_){}
+  if (!r.ok){ const e = new Error((data && data.message) || ("Error " + r.status)); e.code = data && data.error; e.status = r.status; throw e; }
+  return data;
+}
+async function detectBackend(){
+  try { const r = await fetch("api/salud", {cache: "no-store"}); if (!r.ok) return false; const j = await r.json(); return !!(j && j.ok === true); }
+  catch(_){ return false; }
 }
 const COLS = ["id","pro","date","start","dur","status","source","orderThumb"];
 function rowToB(r){ return Object.assign({}, r.datos || {}, {id:r.id, pro:r.pro, date:r.fecha, start:r.inicio, dur:r.dur, status:r.estado, source:r.origen}); }
 function bToDatos(b){ const d = {}; Object.keys(b).forEach(k => { if (!COLS.includes(k) && !k.startsWith("_")) d[k] = b[k]; }); return d; }
+function fixCfg(){ ["payments","coverage","services","pros"].forEach(k => { if (!S[k]) S[k] = clone(DEFAULTS[k]); }); if (!S.clinic) S.clinic = clone(DEFAULTS.clinic); if (!S.mode) S.mode = DEFAULTS.mode; }
 async function cloudLoadCfg(){
-  const {data, error} = await SB.from("config").select("data").eq("id", 1).maybeSingle();
-  if (error) throw error;
-  if (data && data.data && data.data.pros){ S = data.data; if (!S.payments) S.payments = clone(DEFAULTS.payments); return true; }
-  S = clone(DEFAULTS);
-  return false;
+  if (STAFF){
+    const r = await api("config");
+    if (r.data && r.data.pros){ S = r.data; fixCfg(); return true; }
+    S = clone(DEFAULTS); S.clinic.name = r.nombre || S.clinic.name;
+    await api("config", {method: "PUT", body: {data: S}});
+    toast("Cargamos una configuración de ejemplo. Cambiala desde Configuración.");
+    return false;
+  }
+  const r = await api("c/" + encodeURIComponent(SLUG) + "/config");
+  if (r.data && r.data.pros){ S = r.data; fixCfg(); }
+  else { S = clone(DEFAULTS); S.pros = []; S.services = []; S.clinic.name = r.nombre; S.clinic.sub = ""; }
+  return true;
 }
 function cloudSaveCfg(){
-  if (!STAFF){ toast("Ingresá como consultorio para guardar cambios."); return; }
+  if (!STAFF){ toast("Ingresá con tu cuenta para guardar cambios."); return; }
   clearTimeout(cfgTimer);
   cfgTimer = setTimeout(async () => {
-    const {error} = await SB.from("config").upsert({id:1, data:S, updated_at:new Date().toISOString()});
-    if (error) toast("No se pudo guardar la configuración: " + error.message);
+    try { await api("config", {method: "PUT", body: {data: S}}); }
+    catch(ex){ toast("No se pudo guardar la configuración: " + ex.message); }
   }, 500);
 }
+function mergeRows(rows){
+  let nuevos = [];
+  rows.forEach(r => {
+    if (r.actualizado && r.actualizado > LAST_SYNC) LAST_SYNC = r.actualizado;
+    const nb = rowToB(r), i = DB.bookings.findIndex(b => b.id === nb.id);
+    if (i >= 0) DB.bookings[i] = Object.assign(DB.bookings[i], nb);
+    else if (!DB.bookings.some(b => b.id < 0 && b.pro === nb.pro && b.date === nb.date && b.start === nb.start)){ DB.bookings.push(nb); nuevos.push(nb); }
+  });
+  return nuevos;
+}
 async function cloudLoadBookings(center){
-  const c = center || TODAY(), from = addDays(c, -45), to = addDays(c, 120);
+  const c = center || TODAY();
   if (STAFF){
-    const {data, error} = await SB.from("turnos").select("*").gte("fecha", from).lte("fecha", to).order("fecha").order("inicio");
-    if (error) throw error;
-    const fresh = data.map(rowToB), keep = (DB && DB.bookings || []).filter(b => b.date < from || b.date > to);
-    DB = {seededOn:TODAY(), bookings: keep.concat(fresh)};
+    const from = addDays(c, -60), to = addDays(c, 400);
+    const rows = await api(`turnos?desde=${from}&hasta=${to}`);
+    const keep = (DB && DB.bookings || []).filter(b => b.date < from || b.date > to);
+    DB = {seededOn: TODAY(), bookings: keep};
+    if (!LAST_SYNC) LAST_SYNC = new Date(Date.now() - 1000).toISOString();
+    mergeRows(rows);
     RANGE = RANGE ? {from: from < RANGE.from ? from : RANGE.from, to: to > RANGE.to ? to : RANGE.to} : {from, to};
   } else {
-    const {data, error} = await SB.rpc("ocupados", {desde: TODAY(), hasta: addDays(TODAY(), Math.max(14, Number(C().daysAhead) || 14))});
-    if (error) throw error;
-    DB = {seededOn:TODAY(), bookings: data.map((r, i) => ({id:-(i + 1), pro:r.pro, date:r.fecha, start:r.inicio, dur:r.dur, status:"ocupado", items:[]}))};
+    const rows = await api(`c/${encodeURIComponent(SLUG)}/ocupados?desde=${TODAY()}&hasta=${addDays(TODAY(), Math.max(14, Number(C().daysAhead) || 14))}`);
+    DB = {seededOn: TODAY(), bookings: rows.map((r, i) => ({id: -(i + 1), pro: r.pro, date: r.fecha, start: r.inicio, dur: r.dur, status: "ocupado", items: []}))};
   }
 }
 async function ensureRange(date){
@@ -811,55 +872,59 @@ async function ensureRange(date){
 // Guarda en internet un turno nuevo o modificado (en modo demo no hace nada)
 async function sync(b){
   if (!CLOUD || !STAFF || !b) return;
-  const row = {pro:b.pro, fecha:b.date, inicio:b.start, dur:b.dur, estado:b.status, origen:b.source || "manual", datos:bToDatos(b)};
-  if (b.id < 0 || b._new){
-    const tmp = b.id, {data, error} = await SB.from("turnos").insert(row).select().single();
-    if (error){ toast("No se pudo guardar el turno: " + error.message); DB.bookings = DB.bookings.filter(x => x !== b); renderPanel(); return; }
-    b.id = data.id; delete b._new;
-    if ($("drawer").classList.contains("show") && $("dBody").querySelector(`[data-id="${tmp}"]`)) openBooking(b.id);
-    renderPanel();
-  } else {
-    const {error} = await SB.from("turnos").update(row).eq("id", b.id);
-    if (error) toast("No se pudo guardar el cambio: " + error.message);
+  const row = {pro: b.pro, fecha: b.date, inicio: b.start, dur: b.dur, estado: b.status, origen: b.source || "manual", datos: bToDatos(b)};
+  try {
+    if (b.id < 0 || b._new){
+      const tmp = b.id, r = await api("turnos", {method: "POST", body: row});
+      b.id = r.id; delete b._new;
+      if (r.actualizado > LAST_SYNC) LAST_SYNC = r.actualizado;
+      if ($("drawer").classList.contains("show") && $("dBody").querySelector(`[data-id="${tmp}"]`)) openBooking(b.id);
+      renderPanel();
+    } else {
+      const r = await api("turnos/" + b.id, {method: "PATCH", body: row});
+      if (r.actualizado > LAST_SYNC) LAST_SYNC = r.actualizado;
+    }
+  } catch(ex){
+    toast("No se pudo guardar: " + ex.message);
+    if (b.id < 0){ DB.bookings = DB.bookings.filter(x => x !== b); renderPanel(); }
   }
 }
 let tmpId = -1;
 const newId = () => CLOUD ? (tmpId -= 1) : DB.nextId++;
+// Revisa cada 20 segundos si entraron turnos nuevos
 function realtime(){
-  if (!CLOUD || !STAFF) return;
-  SB.channel("turnos").on("postgres_changes", {event:"*", schema:"public", table:"turnos"}, ev => {
-    if (ev.eventType === "DELETE"){ DB.bookings = DB.bookings.filter(b => b.id !== ev.old.id); }
-    else {
-      const nb = rowToB(ev.new), i = DB.bookings.findIndex(b => b.id === nb.id);
-      if (i < 0 && DB.bookings.some(b => b.id < 0 && b.pro === nb.pro && b.date === nb.date && b.start === nb.start)) return; // lo está guardando este mismo dispositivo
-      if (i >= 0) DB.bookings[i] = Object.assign(DB.bookings[i], nb);
-      else { DB.bookings.push(nb); if (ev.eventType === "INSERT" && nb.source === "web") toast("Nuevo turno: " + (nb.name || "") + " · " + fmtLong(nb.date) + " " + nb.start + " h"); }
-    }
-    if (!$("view-panel").hidden) renderPanel();
-  }).subscribe();
+  if (!CLOUD || !STAFF || pollTimer) return;
+  const tick = async () => {
+    if (document.hidden) return;
+    try {
+      const rows = await api("turnos?cambios=" + encodeURIComponent(LAST_SYNC));
+      if (!rows.length) return;
+      const nuevos = mergeRows(rows).filter(b => b.source === "web");
+      if (nuevos.length) toast(nuevos.length === 1 ? "Nuevo turno: " + (nuevos[0].name || "") + " · " + fmtLong(nuevos[0].date) + " " + nuevos[0].start + " h" : nuevos.length + " turnos nuevos");
+      if (!$("view-panel").hidden) renderPanel();
+    } catch(_){}
+  };
+  pollTimer = setInterval(tick, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
 }
 async function uploadOrder(file){
-  let blob = file, ext = "pdf", type = file.type;
+  let blob = file, type = file.type;
   if (file.type.startsWith("image/")){
     blob = await new Promise(res => {
       const url = URL.createObjectURL(file), img = new Image();
-      img.onload = () => { const k = Math.min(1, 1800 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
         c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url); c.toBlob(b => res(b || file), "image/jpeg", 0.78); };
+        URL.revokeObjectURL(url); c.toBlob(b => res(b || file), "image/jpeg", 0.75); };
       img.onerror = () => { URL.revokeObjectURL(url); res(file); };
       img.src = url;
     });
-    ext = "jpg"; type = "image/jpeg";
+    type = "image/jpeg";
   }
-  const path = `${TODAY()}/${uid("o")}.${ext}`;
-  const {error} = await SB.storage.from("ordenes").upload(path, blob, {contentType:type, upsert:false});
-  if (error) throw error;
-  return path;
+  if (blob.size > 1900000) throw Object.assign(new Error("La orden pesa más de 1,9 MB. Probá con una foto."), {code: "archivo_muy_grande"});
+  const r = await api(`c/${encodeURIComponent(SLUG)}/orden`, {method: "POST", body: blob, raw: true, type});
+  return {id: r.id, pdf: type === "application/pdf"};
 }
-async function orderUrl(path){
-  const {data, error} = await SB.storage.from("ordenes").createSignedUrl(path, 3600);
-  return error ? null : data.signedUrl;
-}
+const orderUrl = id => "api/orden/" + encodeURIComponent(id);
 
 function saveDB(){
   if (CLOUD) return;
@@ -1052,7 +1117,7 @@ function renderPick(){
         <span><b>${esc(p.name)}</b><span class="sp">${esc(p.role)}</span>
         <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en las próximas semanas"}</span></span>
         </button>`;
-    }).join("") || `<div class="empty">Todavía no hay profesionales cargados. Agregalos desde Configuración.</div>`;
+    }).join("") || `<div class="empty">${STAFF ? "Todavía no hay profesionales cargados. Agregalos desde Configuración." : "Este consultorio todavía no publicó su agenda online."}</div>`;
   } else {
     const list = studyList();
     h = list.map(s => {
@@ -1062,7 +1127,7 @@ function renderPick(){
         <span><b>${esc(s.name)}</b><span class="sp">${s.dur} min · ${ps.length > 1 ? ps.length + " profesionales" : esc(ps[0].name)}${s.order ? " · con orden médica" : ""}</span>
         <span class="next ${n?"":"none"}">${n ? "Próximo turno: " + relDay(n.off, n.date) + " " + toT(n.m) : "Sin turnos en las próximas semanas"}</span></span>
         </button>`;
-    }).join("") || `<div class="empty">No hay estudios cargados. Agregalos desde Configuración.</div>`;
+    }).join("") || `<div class="empty">${STAFF ? "No hay estudios cargados. Agregalos desde Configuración." : "Por ahora no hay estudios para reservar online."}</div>`;
   }
   $("pickList").innerHTML = h;
 }
@@ -1274,15 +1339,15 @@ $("formArea").addEventListener("submit", async e => {
     const btn = e.target.querySelector('button[type="submit"]');
     UI.saving = true; btn.disabled = true; btn.textContent = "Guardando turno…";
     try {
-      if (b.orderSent){ btn.textContent = "Subiendo la orden…"; b.orderPath = await uploadOrder(UI.orderFile); b.orderThumb = null; }
+      if (b.orderSent){ btn.textContent = "Subiendo la orden…"; const o = await uploadOrder(UI.orderFile); b.orderPath = o.id; b.orderPdf = o.pdf; b.orderThumb = null; }
       btn.textContent = "Guardando turno…";
-      const {data, error} = await SB.rpc("reservar", {t:{pro:b.pro, fecha:b.date, inicio:b.start, dur:b.dur, datos:bToDatos(b)}});
-      if (error) throw error;
+      const data = await api(`c/${encodeURIComponent(SLUG)}/reservar`, {method: "POST", body: {pro: b.pro, fecha: b.date, inicio: b.start, dur: b.dur, datos: bToDatos(b)}});
       b.id = data.id; b.code = data.code;
     } catch(ex){
       UI.saving = false; btn.disabled = false; btn.textContent = "Reservar turno";
-      const m = String(ex && ex.message || "");
-      if (m.includes("horario_ocupado") || m.includes("fuera_de_horario")){
+      const m = String(ex && ex.code || "");
+      if (m === "archivo_muy_grande") return err(ex.message);
+      if (["horario_ocupado", "fuera_de_horario", "dia_anulado"].includes(m)){
         err("Ese horario se acaba de ocupar. Elegí otro, por favor.");
         try { await cloudLoadBookings(); } catch(_){}
         UI.time = null; renderCal(); return;
@@ -1462,7 +1527,7 @@ function openBooking(id){
       ${b.note ? `<dt>Comentario</dt><dd>${esc(b.note)}</dd>` : ""}
       ${b.status === "confirmado" ? `<dt>Recordatorio</dt><dd>${b.reminded ? "Enviado" : "No enviado"}</dd>` : ""}
     </dl>
-    ${b.orderPath ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><div id="orderView" data-path="${esc(b.orderPath)}" class="muted" style="font-size:14px">Cargando la orden…</div></div>` : ""}
+    ${b.orderPath ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><div id="orderView" data-path="${esc(b.orderPath)}" data-pdf="${b.orderPdf ? 1 : 0}" class="muted" style="font-size:14px">Cargando la orden…</div></div>` : ""}
     ${!b.orderPath && b.orderThumb ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><a href="${b.orderThumb}" target="_blank" rel="noopener"><img class="order-img" src="${b.orderThumb}" alt="Foto de la orden médica de ${esc(b.name)}"></a></div>`
       : !b.orderPath && b.orderSent ? `<div class="notice"><b>Orden médica</b>El paciente la envió por foto. Buscala en el chat de WhatsApp del consultorio.</div>` : ""}
     ${ord && !b.order && (b.status === "pendiente" || b.status === "confirmado") ? `<div class="actions"><button class="btn btn-soft btn-sm" data-act="order" data-id="${b.id}">Marcar que trajo la orden</button></div>` : ""}
@@ -1473,10 +1538,9 @@ function openBooking(id){
 }
 async function fillOrderView(){
   const el = $("orderView"); if (!el || !CLOUD) return;
-  const path = el.dataset.path, url = await orderUrl(path);
+  const path = el.dataset.path, url = orderUrl(path);
   if (!document.contains(el)) return;
-  if (!url){ el.textContent = "No se pudo abrir la orden."; return; }
-  el.innerHTML = path.endsWith(".pdf") ? `<a class="btn btn-soft" href="${url}" target="_blank" rel="noopener">Abrir la orden (PDF)</a>`
+  el.innerHTML = el.dataset.pdf === "1" ? `<a class="btn btn-soft" href="${url}" target="_blank" rel="noopener">Abrir la orden (PDF)</a>`
     : `<a href="${url}" target="_blank" rel="noopener"><img class="order-img" src="${url}" alt="Foto de la orden médica"></a>`;
 }
 function openFree(pid, m){
@@ -1714,6 +1778,14 @@ function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length)
 function renderConfig(){
   const sm = isStudyMode(), c = C();
   $("cfg").innerHTML = `
+  ${CLOUD && STAFF ? `<section class="card">
+    <h2>Tu cuenta</h2>
+    <p class="hint">Este es el link para que tus pacientes reserven. Compartilo en WhatsApp, Instagram o Google.</p>
+    <div class="linkbox"><span>${esc(patientLink(SLUG))}</span>
+      <div class="actions"><button class="btn btn-primary btn-sm" type="button" data-copy="${esc(patientLink(SLUG))}">Copiar link</button>
+      <a class="btn btn-wa btn-sm" href="https://wa.me/?text=${encodeURIComponent("Reservá tu turno online en " + C().name + ": " + patientLink(SLUG))}" target="_blank" rel="noopener">${WA_ICON}Compartir</a>
+      <a class="btn btn-soft btn-sm" href="${esc(patientLink(SLUG))}" target="_blank" rel="noopener">Abrir</a></div></div>
+  </section>${myAccountCard()}` : ""}
   <section class="card">
     <h2>Tipo de agenda</h2>
     <p class="hint">Elegí cómo reservan los pacientes. Podés cambiarlo cuando quieras; los turnos ya dados se mantienen.</p>
@@ -2117,21 +2189,24 @@ function scrollToNow(){
 }
 function show(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-  const needLogin = !STAFF && (v === "panel" || v === "config");
-  ["book","panel","config"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
+  if (v === "book" && ADMIN) v = "cuentas";
+  const needLogin = (!STAFF && (v === "panel" || v === "config")) || (!ADMIN && v === "cuentas") || (CLOUD && v === "book" && !SLUG);
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
+  ["book","panel","config","cuentas"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
   $("view-login").hidden = !needLogin;
-  $("loginTop").hidden = STAFF || needLogin;
-  if (needLogin){ LOGIN_NEXT = v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
+  $("loginTop").hidden = STAFF || ADMIN || needLogin;
+  if (needLogin){ LOGIN_NEXT = v === "book" ? "panel" : v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
   if (v === "panel"){
     ensureRange(PANEL.date);
     if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = ["lista","grilla","calendario"].includes(v) ? v : (mobile() ? "lista" : "grilla"); }
     renderPanel(); scrollToNow();
-  } else if (v === "config"){ renderConfig(); } else { renderBook(); }
+  } else if (v === "config"){ renderConfig(); } else if (v === "cuentas"){ renderCuentas(); } else { renderBook(); }
   try { history.replaceState(null, "", "#" + (v === "book" ? "reservar" : v)); } catch(_){}
   window.scrollTo(0, 0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) show(t.dataset.view); });
-window.addEventListener("hashchange", () => { const h = location.hash.replace("#", ""); show(h === "panel" ? "panel" : h === "config" ? "config" : "book"); });
+const viewFromHash = () => { const h = location.hash.replace("#", ""); return ["panel","config","cuentas"].includes(h) ? h : "book"; };
+window.addEventListener("hashchange", () => show(viewFromHash()));
 let LOGIN_NEXT = "panel";
 $("staffLink").addEventListener("click", () => show("panel"));
 $("loginTop").addEventListener("click", () => show("panel"));
@@ -2146,40 +2221,167 @@ $("loginForm").addEventListener("submit", async e => {
     $("l-pass").value = ""; refreshAll(); applyRole(); show(LOGIN_NEXT); return;
   }
   $("l-btn").disabled = true; $("l-btn").textContent = "Ingresando…"; $("l-err").textContent = "";
-  const {data, error} = await SB.auth.signInWithPassword({email, password});
-  if (error){ $("l-btn").disabled = false; $("l-btn").textContent = "Ingresar"; $("l-err").textContent = "Mail o contraseña incorrectos."; return; }
-  SESSION = data.session;
-  try { await afterLogin(); } catch(ex){ $("l-err").textContent = "Ingresaste, pero no se pudieron cargar los datos: " + ex.message; }
-  $("l-btn").disabled = false; $("l-btn").textContent = "Ingresar"; $("l-pass").value = "";
-  if (STAFF) show(LOGIN_NEXT);
+  try {
+    const r = await api("login", {method: "POST", body: {email, clave: password}});
+    ME = r.yo; await afterLogin();
+    $("l-pass").value = "";
+    show(ADMIN ? "cuentas" : LOGIN_NEXT);
+  } catch(ex){ $("l-err").textContent = ex.message || "No se pudo ingresar."; }
+  $("l-btn").disabled = false; $("l-btn").textContent = "Ingresar";
 });
 $("logoutBtn").addEventListener("click", async () => {
   if (!CLOUD){ STAFF = false; try { localStorage.removeItem("demo-sesion"); } catch(_){} closeDrawer(); applyRole(); show("book"); return; }
-  try { await SB.auth.signOut(); } catch(_){} location.hash = "#reservar"; location.reload();
+  try { await api("logout", {method: "POST", body: {}}); } catch(_){}
+  location.href = location.pathname + (new URLSearchParams(location.search).get("c") ? location.search : "");
 });
 const DEMO_USER = {email:"demo@consultorio.com", pass:"demo1234"};
 async function afterLogin(){
-  const {data} = await SB.rpc("es_equipo");
-  STAFF = data === true;
-  if (!STAFF){ $("l-err").textContent = "Este usuario no está habilitado. Agregá su mail en la tabla «equipo» de Supabase."; await SB.auth.signOut(); SESSION = null; return; }
-  const had = await cloudLoadCfg();
-  if (!had){ await SB.from("config").upsert({id:1, data:S}); toast("Cargamos una configuración de ejemplo. Editala desde Configuración."); }
-  await cloudLoadBookings();
-  realtime();
+  ADMIN = !!ME && ME.rol === "admin";
+  STAFF = !!ME && ME.rol === "consultorio";
+  if (ADMIN){ S = clone(DEFAULTS); S.clinic.name = ME.nombre || "Administración"; S.clinic.sub = "Panel de administración"; delete S.clinic.logo; }
+  if (STAFF){
+    SLUG = ME.slug;
+    await cloudLoadCfg();
+    await cloudLoadBookings();
+    realtime();
+  }
   refreshAll(); applyRole();
 }
 function applyRole(){
-  document.querySelector(".tabs").hidden = !STAFF;
-  $("staffLink").hidden = STAFF;
-  $("loginTop").hidden = STAFF || !$("view-login").hidden;
+  const any = STAFF || ADMIN;
+  document.querySelector(".tabs").hidden = !any;
+  document.querySelectorAll(".tab").forEach(t => t.hidden = t.dataset.view === "cuentas" ? !ADMIN : !STAFF);
+  $("staffLink").hidden = any || (CLOUD && !SLUG);
+  $("loginTop").hidden = any || !$("view-login").hidden;
   $("resetBtn").hidden = CLOUD || !STAFF;
-  $("whoBox").hidden = !STAFF;
+  $("whoBox").hidden = !any;
   $("demoHint").hidden = CLOUD;
-  $("whoMail").textContent = CLOUD ? (SESSION && SESSION.user && SESSION.user.email || "") : "Demo";
+  $("l-back").hidden = CLOUD && !SLUG;
+  $("noClinic").hidden = !(CLOUD && !SLUG);
+  $("whoMail").textContent = CLOUD ? (ME ? ME.email : "") : "Demo";
+  $("setupForm").hidden = !SETUP; $("loginForm").hidden = SETUP;
+  if (SETUP){ $("noClinic").hidden = true; $("l-back").hidden = true; }
 }
 $("resetBtn").addEventListener("click", () => {
   DB = seed(); saveDB(); Object.assign(UI, {tab:"consultas", pro:null, svc:null, who:"any", motivo:null, extra:[]}); resetPick(); PANEL.date = TODAY();
   refreshAll(); toast("Se cargaron turnos de ejemplo nuevos.");
+});
+
+/* ================= CUENTAS (administrador) ================= */
+const baseUrl = () => location.origin + location.pathname;
+const patientLink = slug => baseUrl() + "?c=" + encodeURIComponent(slug);
+let ACCOUNTS = [], NEW_ACC = null;
+async function loadAccounts(){ try { ACCOUNTS = await api("admin/cuentas"); } catch(ex){ toast("No se pudieron cargar las cuentas: " + ex.message); } }
+function credsText(a, clave){
+  return `Hola! Ya tenés tu agenda de turnos online.\n\nIngresá en: ${baseUrl()}\nMail: ${a.email}\nContraseña: ${clave}\n\nLink para que tus pacientes reserven:\n${patientLink(a.slug)}\n\nTe recomiendo cambiar la contraseña desde Configuración → Tu cuenta.`;
+}
+function credsBox(a, clave, title){
+  const t = credsText(a, clave);
+  return `<div class="creds-box" role="status">
+    <b>${title}</b>
+    <dl><dt>Consultorio</dt><dd>${esc(a.nombre)}</dd><dt>Mail</dt><dd>${esc(a.email)}</dd><dt>Contraseña</dt><dd><span class="code big">${esc(clave)}</span></dd>
+      <dt>Link pacientes</dt><dd style="word-break:break-all">${esc(patientLink(a.slug))}</dd></dl>
+    <p class="muted" style="margin:0;font-size:13px">Esta contraseña se ve una sola vez. Copiala o mandala ahora.</p>
+    <div class="actions"><button class="btn btn-primary btn-sm" type="button" data-copy="${esc(t)}">Copiar datos</button>
+    <a class="btn btn-wa btn-sm" href="https://wa.me/?text=${encodeURIComponent(t)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a></div>
+  </div>`;
+}
+async function renderCuentas(){
+  const box = $("cuentas");
+  box.innerHTML = `<section class="card"><p class="muted" style="margin:0">Cargando cuentas…</p></section>`;
+  await loadAccounts();
+  const fmtD = iso => iso ? new Date(iso).toLocaleDateString("es-AR", {day:"numeric", month:"short", year:"numeric"}) : "nunca";
+  box.innerHTML = `
+  <section class="card">
+    <h2>Crear cuenta para un consultorio</h2>
+    <p class="hint">Se genera una contraseña que vas a ver una sola vez: copiala y mandásela al profesional. Cada consultorio tiene sus propios datos y su link para pacientes.</p>
+    <form id="newAcc" novalidate>
+      <div class="row2"><label for="na-nombre">Nombre del consultorio<input id="na-nombre" placeholder="Ej. Consultorio Dra. López"></label>
+      <label for="na-email">Mail del profesional<input id="na-email" type="email" inputmode="email" placeholder="Ej. dralopez@gmail.com"></label></div>
+      <label for="na-slug">Link para pacientes (opcional)<input id="na-slug" placeholder="se arma solo con el nombre"></label>
+      <p class="muted" style="font-size:13px;margin:-4px 0 0">Va a quedar: <b id="na-prev">${esc(baseUrl())}?c=nombre-del-consultorio</b></p>
+      <p class="err" id="na-err" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Crear cuenta</button>
+    </form>
+    <div id="newAccOut">${NEW_ACC ? credsBox(NEW_ACC.a, NEW_ACC.clave, "Cuenta creada") : ""}</div>
+  </section>
+  <section class="card">
+    <h2>Consultorios <span class="count ok">${ACCOUNTS.length}</span></h2>
+    <div class="rows">${ACCOUNTS.map(a => `<div class="acc ${a.activa ? "" : "off"}" data-acc="${a.id}">
+      <div class="acc-main"><div class="acc-title"><b>${esc(a.nombre)}</b><span class="pill ${a.activa ? "confirmado" : "ausente"}">${a.activa ? "Activa" : "Desactivada"}</span></div>
+        <span class="meta">${esc(a.email)} · ${a.turnos} turno${a.turnos === 1 ? "" : "s"} · último ingreso: ${fmtD(a.ultimo_ingreso)}</span>
+        <span class="meta" style="word-break:break-all">${esc(patientLink(a.slug))} <button class="linkbtn" type="button" data-copy="${esc(patientLink(a.slug))}">Copiar link</button></span></div>
+      <div class="actions"><button class="btn btn-soft btn-sm" type="button" data-accreset="${a.id}">Nueva contraseña</button>
+        <button class="btn ${a.activa ? "btn-danger" : "btn-soft"} btn-sm" type="button" data-acctoggle="${a.id}">${a.activa ? "Desactivar" : "Activar"}</button></div>
+      <div class="acc-out"></div>
+    </div>`).join("") || `<p class="muted" style="margin:0">Todavía no creaste ninguna cuenta.</p>`}</div>
+  </section>
+  ${myAccountCard()}`;
+}
+function myAccountCard(){
+  return `<section class="card">
+    <h2>Tu contraseña</h2>
+    <form id="pwForm" novalidate>
+      <div class="row2"><label for="pw-a">Contraseña actual<input id="pw-a" type="password" autocomplete="current-password"></label>
+      <label for="pw-n">Contraseña nueva<input id="pw-n" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></label></div>
+      <p class="err" id="pw-err" role="alert"></p>
+      <button class="btn btn-soft" type="submit">Cambiar contraseña</button>
+    </form>
+  </section>`;
+}
+async function copyText(t){ try { await navigator.clipboard.writeText(t); toast("Copiado."); } catch(_){ toast("No se pudo copiar. Seleccioná el texto y copialo."); } }
+document.addEventListener("click", async e => {
+  const cp = e.target.closest("[data-copy]"); if (cp){ copyText(cp.dataset.copy); return; }
+  const rs = e.target.closest("[data-accreset]");
+  if (rs){
+    if (!rs.classList.contains("armed")){ rs.classList.add("armed", "btn-danger"); rs.textContent = "¿Seguro? Tocá de nuevo"; setTimeout(() => { if (document.contains(rs)){ rs.classList.remove("armed", "btn-danger"); rs.textContent = "Nueva contraseña"; } }, 4000); return; }
+    try {
+      const id = Number(rs.dataset.accreset), r = await api("admin/cuentas/" + id, {method: "PATCH", body: {reiniciarClave: true}});
+      const a = ACCOUNTS.find(x => x.id === id);
+      rs.closest(".acc").querySelector(".acc-out").innerHTML = credsBox(a, r.clave, "Contraseña nueva");
+      rs.classList.remove("armed", "btn-danger"); rs.textContent = "Nueva contraseña";
+    } catch(ex){ toast(ex.message); }
+    return;
+  }
+  const tg = e.target.closest("[data-acctoggle]");
+  if (tg){
+    const id = Number(tg.dataset.acctoggle), a = ACCOUNTS.find(x => x.id === id);
+    if (a.activa && !tg.classList.contains("armed")){ tg.classList.add("armed"); tg.textContent = "¿Desactivar? Tocá de nuevo"; setTimeout(() => { if (document.contains(tg)){ tg.classList.remove("armed"); tg.textContent = "Desactivar"; } }, 4000); return; }
+    try { await api("admin/cuentas/" + id, {method: "PATCH", body: {activa: !a.activa}}); toast(a.activa ? "Cuenta desactivada: ya no puede ingresar y su link de turnos deja de funcionar." : "Cuenta activada."); NEW_ACC = null; renderCuentas(); }
+    catch(ex){ toast(ex.message); }
+  }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "na-nombre" || e.target.id === "na-slug"){
+    const v = $("na-slug").value.trim() || $("na-nombre").value.trim();
+    const sl = v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+    $("na-prev").textContent = sl ? patientLink(sl) : baseUrl() + "?c=nombre-del-consultorio";
+  }
+});
+document.addEventListener("submit", async e => {
+  if (e.target.id === "newAcc"){
+    e.preventDefault();
+    const nombre = $("na-nombre").value.trim(), email = $("na-email").value.trim(), slug = $("na-slug").value.trim();
+    if (!nombre){ $("na-err").textContent = "Escribí el nombre del consultorio."; return $("na-nombre").focus(); }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $("na-err").textContent = "Escribí un mail válido."; return $("na-email").focus(); }
+    const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Creando…";
+    try { const r = await api("admin/cuentas", {method: "POST", body: {nombre, email, slug}}); NEW_ACC = {a: r.cuenta, clave: r.clave}; await renderCuentas(); $("newAccOut").scrollIntoView({block: "center"}); toast("Cuenta creada."); }
+    catch(ex){ $("na-err").textContent = ex.message; btn.disabled = false; btn.textContent = "Crear cuenta"; }
+  }
+  if (e.target.id === "setupForm"){
+    e.preventDefault();
+    const body = {codigo: $("s-code").value.trim(), nombre: $("s-nombre").value.trim(), email: $("s-email").value.trim(), clave: $("s-pass").value};
+    if (!body.codigo || !body.email || body.clave.length < 8){ $("s-err").textContent = "Completá el código, el mail y una contraseña de al menos 8 caracteres."; return; }
+    try { const r = await api("setup", {method: "POST", body}); SETUP = false; ME = r.yo; await afterLogin(); show("cuentas"); toast("Listo. Ya podés crear las cuentas de los consultorios."); }
+    catch(ex){ $("s-err").textContent = ex.code === "codigo_incorrecto" ? "El código de instalación no coincide con el de Cloudflare." : ex.message; }
+  }
+  if (e.target.id === "pwForm"){
+    e.preventDefault();
+    const actual = $("pw-a").value, nueva = $("pw-n").value;
+    if (nueva.length < 8){ $("pw-err").textContent = "La contraseña nueva tiene que tener al menos 8 caracteres."; return; }
+    try { await api("clave", {method: "POST", body: {actual, nueva}}); $("pw-a").value = ""; $("pw-n").value = ""; $("pw-err").textContent = ""; toast("Contraseña cambiada."); }
+    catch(ex){ $("pw-err").textContent = ex.message; }
+  }
 });
 
 /* ---------- app instalable ---------- */
@@ -2199,25 +2401,29 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 }
 
 (async function init(){
-  const h = location.hash.replace("#","");
-  const start = h === "panel" ? "panel" : h === "config" ? "config" : "book";
+  const start = viewFromHash();
+  $("loading").hidden = false;
+  CLOUD = await detectBackend();
   if (CLOUD){
-    $("loading").hidden = false;
+    SLUG = new URLSearchParams(location.search).get("c") || "";
     try {
-      await loadSupabaseLib();
-      SB = window.supabase.createClient(TC.supabaseUrl, TC.supabaseKey, {auth:{persistSession:true, autoRefreshToken:true}});
-      const {data} = await SB.auth.getSession(); SESSION = data.session;
-      if (SESSION){ await afterLogin(); }
-      if (!STAFF){ await cloudLoadCfg(); await cloudLoadBookings(); }
-    } catch(ex){
-      document.body.insertAdjacentHTML("afterbegin", `<div class="cloud-banner" role="alert">No pudimos conectarnos con el sistema de turnos. Revisá tu conexión y recargá la página.</div>`);
+      try { SETUP = (await api("setup")).necesario === true; } catch(_){}
+      try { ME = (await api("yo")).yo; } catch(_){ ME = null; }
+      if (ME) await afterLogin();
+      if (!STAFF && SLUG){ await cloudLoadCfg(); await cloudLoadBookings(); }
       if (!S) S = clone(DEFAULTS);
-      DB = {seededOn:TODAY(), bookings:[]};
+      if (!DB) DB = {seededOn: TODAY(), bookings: []};
+    } catch(ex){
+      const msg = ex.code === "consultorio_inexistente" ? "No encontramos ese consultorio. Revisá el link que te pasaron." : "No pudimos conectarnos con el sistema de turnos. Revisá tu conexión y recargá la página.";
+      document.body.insertAdjacentHTML("afterbegin", `<div class="cloud-banner" role="alert">${msg}</div>`);
+      if (ex.code === "consultorio_inexistente") SLUG = "";
+      if (!S) S = clone(DEFAULTS);
+      DB = {seededOn: TODAY(), bookings: []};
     }
-    $("loading").hidden = true;
   } else { loadCfg(); loadDB(); try { STAFF = localStorage.getItem("demo-sesion") === "1"; } catch(_){} }
+  $("loading").hidden = true;
   refreshAll(); applyRole();
-  show(start);
+  show(ADMIN && start === "book" ? "cuentas" : start);
 })();
 </script>
 </body>

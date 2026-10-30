@@ -10,4 +10,5 @@ Sistema de turnos online para consultorios y centros de diagnóstico.
 La configuración de ejemplo está en el bloque `DEFAULTS` al inicio del `<script>` de `index.html`.
 
 - **App instalable (PWA):** se instala en el celular o la computadora desde el navegador.
-- **Base de datos:** se conecta a Supabase (gratis) siguiendo la [guía](GUIA-SUPABASE.md). Sin conectar, funciona en modo demostración (usuario `demo@consultorio.com`, clave `demo1234`).
+- **Online con cuentas:** publicado en Cloudflare Pages + D1 (gratis) siguiendo la [guía](GUIA-CLOUDFLARE.md). El administrador crea una cuenta por consultorio; cada uno tiene sus datos y su link para pacientes. El servidor está en `functions/api/[[path]].js`.
+- **Demostración:** en GitHub Pages (sin servidor) funciona en modo demo: usuario `demo@consultorio.com`, clave `demo1234`.
