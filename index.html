@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agenda de turnos para consultorios</title>
+<meta name="theme-color" content="#2c5fb8">
+<meta name="description" content="Reservá turnos y estudios online y gestioná la agenda del consultorio.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Turnos">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -289,6 +298,25 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .madd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .madd .madd-name{flex:2 1 180px;width:auto}
 .madd select,.madd .madd-price{flex:1 1 90px;width:auto}
+.ios-tip{background:var(--accent-soft);border-top:1px solid var(--line);font-size:14px}
+.ios-tip .wrap{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-top:8px;padding-bottom:8px}
+.ios-tip svg{width:16px;height:16px;vertical-align:-3px}
+.ios-tip .close{width:28px;height:28px;font-size:16px}
+@media (display-mode: standalone){ #installBtn{display:none !important} }
+.login{max-width:420px;margin:40px auto;padding:24px;display:grid;gap:12px}
+.login h1{font-size:26px}
+.login p{margin:0}
+.staff-link{padding-bottom:30px;text-align:center}
+.who-box{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.cloud-banner{background:var(--pend-bg);color:var(--ink);font-size:14px;text-align:center;padding:8px 12px}
+.loading{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:70;font-size:15px;color:var(--muted)}
+.logo.has-img{background:#fff;border:1px solid var(--line);padding:2px;overflow:hidden}
+.logo img{width:100%;height:100%;object-fit:contain;display:block}
+.logo-ed{display:flex;gap:14px;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.logo-prev{width:84px;height:84px;border-radius:14px;border:1px dashed var(--line);display:grid;place-items:center;background:#fff;flex:none;overflow:hidden}
+.logo-prev img{width:100%;height:100%;object-fit:contain}
+.logo-prev span{font-size:12px;color:#8a949b}
+.logo-ed label.btn{cursor:pointer}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -361,6 +389,7 @@ dd{margin:0;font-weight:500}
   .tab .full{display:none}
   .tab .short{display:inline}
   #resetBtn{display:none}
+  #whoMail{display:none}
   input,select,textarea{font-size:16px}
   .hero{padding:16px 0 12px}
   .hero h1{font-size:25px}
@@ -420,6 +449,7 @@ dd{margin:0;font-weight:500}
 </style>
 </head>
 <body>
+<div class="loading" id="loading" hidden>Cargando…</div>
 
 <header class="top">
   <div class="wrap">
@@ -432,7 +462,13 @@ dd{margin:0;font-weight:500}
       <button class="tab" role="tab" aria-selected="false" data-view="panel"><span class="full">Panel del consultorio</span><span class="short">Panel</span></button>
       <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Configuración</button>
     </div>
+    <span class="who-box" id="whoBox" hidden><span id="whoMail"></span><button class="btn btn-soft btn-sm" type="button" id="logoutBtn">Salir</button></span>
+    <button class="btn btn-primary btn-sm" id="installBtn" type="button" hidden>Instalar app</button>
     <button class="linkbtn" id="resetBtn" type="button">Restablecer turnos de ejemplo</button>
+  </div>
+  <div class="ios-tip" id="iosTip" hidden>
+    <div class="wrap"><span>Para instalar la app en tu iPhone: tocá <b>Compartir</b> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg> y después <b>Agregar a inicio</b>.</span>
+    <button class="close" id="iosTipClose" type="button" aria-label="Cerrar aviso">×</button></div>
   </div>
 </header>
 
@@ -455,6 +491,7 @@ dd{margin:0;font-weight:500}
       <div id="formArea"></div>
     </section>
   </div>
+  <div class="wrap staff-link"><button class="linkbtn" type="button" id="staffLink" hidden>Acceso para el consultorio</button></div>
 </main>
 
 <!-- ===================== PANEL ===================== -->
@@ -503,6 +540,25 @@ dd{margin:0;font-weight:500}
   </div>
 </main>
 
+<!-- ===================== INGRESO DEL CONSULTORIO ===================== -->
+<main id="view-login" hidden>
+  <div class="wrap">
+    <section class="card login">
+      <div class="logo" id="loginLogo" style="width:52px;height:52px;font-size:24px" aria-hidden="true">A</div>
+      <h1>Acceso para el consultorio</h1>
+      <p class="muted">Ingresá con el mail y la contraseña del consultorio para ver la agenda y la configuración.</p>
+      <div class="notice" id="demoHint" hidden><b>Versión de demostración</b>Mail: demo@consultorio.com · Contraseña: demo1234</div>
+      <form id="loginForm" novalidate>
+        <label for="l-email">Mail<input id="l-email" type="email" autocomplete="username" inputmode="email"></label>
+        <label for="l-pass">Contraseña<input id="l-pass" type="password" autocomplete="current-password"></label>
+        <p class="err" id="l-err" role="alert"></p>
+        <button class="btn btn-primary" type="submit" id="l-btn">Ingresar</button>
+      </form>
+      <button class="linkbtn" type="button" id="l-back">← Volver a reservar turno</button>
+    </section>
+  </div>
+</main>
+
 <!-- ===================== CONFIGURACIÓN ===================== -->
 <main id="view-config" hidden>
   <div class="wrap">
@@ -518,6 +574,7 @@ dd{margin:0;font-weight:500}
 </aside>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="config.js"></script>
 <script>
 /* =================================================================
    CONFIGURACIÓN DE EJEMPLO
@@ -623,8 +680,113 @@ function payText(){
   return "Aceptamos " + list + ".";
 }
 const aliasLine = () => S.payments.alias && S.payments.methods.includes("Transferencia") ? "Alias para transferencias: " + S.payments.alias : "";
-function saveCfg(){ try { localStorage.setItem(CFG_KEY, JSON.stringify(S)); } catch(_){} }
+function saveCfg(){
+  if (CLOUD){ cloudSaveCfg(); return; }
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(S)); } catch(_){}
+}
+/* =================== BASE DE DATOS (Supabase) ===================
+   Si config.js tiene los datos de Supabase, todo se guarda en internet.
+   Si no, la app funciona en modo demostración con datos en el navegador. */
+const TC = window.TURNOS_CONFIG || {};
+const CLOUD = !!(TC.supabaseUrl && TC.supabaseKey);
+let SB = null, SESSION = null, STAFF = false, RANGE = null, cfgTimer = null;
+const SB_LIB = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.9", "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"];
+function loadScript(src){ return new Promise((ok, bad) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = bad; document.head.appendChild(el); }); }
+async function loadSupabaseLib(){
+  for (const src of SB_LIB){ try { await loadScript(src); if (window.supabase && window.supabase.createClient) return; } catch(_){} }
+  throw new Error("No se pudo cargar la librería de Supabase");
+}
+const COLS = ["id","pro","date","start","dur","status","source","orderThumb"];
+function rowToB(r){ return Object.assign({}, r.datos || {}, {id:r.id, pro:r.pro, date:r.fecha, start:r.inicio, dur:r.dur, status:r.estado, source:r.origen}); }
+function bToDatos(b){ const d = {}; Object.keys(b).forEach(k => { if (!COLS.includes(k) && !k.startsWith("_")) d[k] = b[k]; }); return d; }
+async function cloudLoadCfg(){
+  const {data, error} = await SB.from("config").select("data").eq("id", 1).maybeSingle();
+  if (error) throw error;
+  if (data && data.data && data.data.pros){ S = data.data; if (!S.payments) S.payments = clone(DEFAULTS.payments); return true; }
+  S = clone(DEFAULTS);
+  return false;
+}
+function cloudSaveCfg(){
+  if (!STAFF){ toast("Ingresá como consultorio para guardar cambios."); return; }
+  clearTimeout(cfgTimer);
+  cfgTimer = setTimeout(async () => {
+    const {error} = await SB.from("config").upsert({id:1, data:S, updated_at:new Date().toISOString()});
+    if (error) toast("No se pudo guardar la configuración: " + error.message);
+  }, 500);
+}
+async function cloudLoadBookings(center){
+  const c = center || TODAY(), from = addDays(c, -45), to = addDays(c, 120);
+  if (STAFF){
+    const {data, error} = await SB.from("turnos").select("*").gte("fecha", from).lte("fecha", to).order("fecha").order("inicio");
+    if (error) throw error;
+    const fresh = data.map(rowToB), keep = (DB && DB.bookings || []).filter(b => b.date < from || b.date > to);
+    DB = {seededOn:TODAY(), bookings: keep.concat(fresh)};
+    RANGE = RANGE ? {from: from < RANGE.from ? from : RANGE.from, to: to > RANGE.to ? to : RANGE.to} : {from, to};
+  } else {
+    const {data, error} = await SB.rpc("ocupados", {desde: TODAY(), hasta: addDays(TODAY(), Math.max(14, Number(C().daysAhead) || 14))});
+    if (error) throw error;
+    DB = {seededOn:TODAY(), bookings: data.map((r, i) => ({id:-(i + 1), pro:r.pro, date:r.fecha, start:r.inicio, dur:r.dur, status:"ocupado", items:[]}))};
+  }
+}
+async function ensureRange(date){
+  if (!CLOUD || !STAFF || !RANGE || (date >= RANGE.from && date <= RANGE.to)) return;
+  try { await cloudLoadBookings(date); renderPanel(); } catch(e){ toast("No se pudieron cargar los turnos de esa fecha."); }
+}
+// Guarda en internet un turno nuevo o modificado (en modo demo no hace nada)
+async function sync(b){
+  if (!CLOUD || !STAFF || !b) return;
+  const row = {pro:b.pro, fecha:b.date, inicio:b.start, dur:b.dur, estado:b.status, origen:b.source || "manual", datos:bToDatos(b)};
+  if (b.id < 0 || b._new){
+    const tmp = b.id, {data, error} = await SB.from("turnos").insert(row).select().single();
+    if (error){ toast("No se pudo guardar el turno: " + error.message); DB.bookings = DB.bookings.filter(x => x !== b); renderPanel(); return; }
+    b.id = data.id; delete b._new;
+    if ($("drawer").classList.contains("show") && $("dBody").querySelector(`[data-id="${tmp}"]`)) openBooking(b.id);
+    renderPanel();
+  } else {
+    const {error} = await SB.from("turnos").update(row).eq("id", b.id);
+    if (error) toast("No se pudo guardar el cambio: " + error.message);
+  }
+}
+let tmpId = -1;
+const newId = () => CLOUD ? (tmpId -= 1) : DB.nextId++;
+function realtime(){
+  if (!CLOUD || !STAFF) return;
+  SB.channel("turnos").on("postgres_changes", {event:"*", schema:"public", table:"turnos"}, ev => {
+    if (ev.eventType === "DELETE"){ DB.bookings = DB.bookings.filter(b => b.id !== ev.old.id); }
+    else {
+      const nb = rowToB(ev.new), i = DB.bookings.findIndex(b => b.id === nb.id);
+      if (i < 0 && DB.bookings.some(b => b.id < 0 && b.pro === nb.pro && b.date === nb.date && b.start === nb.start)) return; // lo está guardando este mismo dispositivo
+      if (i >= 0) DB.bookings[i] = Object.assign(DB.bookings[i], nb);
+      else { DB.bookings.push(nb); if (ev.eventType === "INSERT" && nb.source === "web") toast("Nuevo turno: " + (nb.name || "") + " · " + fmtLong(nb.date) + " " + nb.start + " h"); }
+    }
+    if (!$("view-panel").hidden) renderPanel();
+  }).subscribe();
+}
+async function uploadOrder(file){
+  let blob = file, ext = "pdf", type = file.type;
+  if (file.type.startsWith("image/")){
+    blob = await new Promise(res => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => { const k = Math.min(1, 1800 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url); c.toBlob(b => res(b || file), "image/jpeg", 0.78); };
+      img.onerror = () => { URL.revokeObjectURL(url); res(file); };
+      img.src = url;
+    });
+    ext = "jpg"; type = "image/jpeg";
+  }
+  const path = `${TODAY()}/${uid("o")}.${ext}`;
+  const {error} = await SB.storage.from("ordenes").upload(path, blob, {contentType:type, upsert:false});
+  if (error) throw error;
+  return path;
+}
+async function orderUrl(path){
+  const {data, error} = await SB.storage.from("ordenes").createSignedUrl(path, 3600);
+  return error ? null : data.signedUrl;
+}
+
 function saveDB(){
+  if (CLOUD) return;
   try { localStorage.setItem(DB_KEY, JSON.stringify(DB)); }
   catch(_){ // sin espacio: se descartan las fotos más viejas
     const withPic = DB.bookings.filter(b => b.orderThumb);
@@ -942,7 +1104,7 @@ function updateOs(){
 function patientMsg(b){
   const p = pro(b.pro);
   return `Hola, reservé un turno en ${C().name}:\n\n• ${hasStudy(b.items) ? "Estudio" : "Consulta"}: ${itemsName(b.items)}\n• Profesional: ${p.name}\n• Día: ${fmtLong(b.date)}\n• Hora: ${b.start} h (${b.dur} min)\n• Paciente: ${b.name} · DNI ${b.dni}\n• Cobertura: ${covLine(b)}` +
-    (needsOrder(b.items) ? `\n• Orden médica: ${b.orderSent ? "les envío la foto en el próximo mensaje" : b.order ? "la llevo el día del turno" : "no la tengo todavía"}` : "") +
+    (needsOrder(b.items) ? `\n• Orden médica: ${b.orderPath ? "la cargué en la web con la reserva" : b.orderSent ? "les envío la foto en el próximo mensaje" : b.order ? "la llevo el día del turno" : "no la tengo todavía"}` : "") +
     (payLine(b) ? "\n• " + payLine(b) : "") +
     (b.first ? "\n• Primera vez en el centro" : "") + (b.note ? "\n• Comentario: " + b.note : "") + `\n\nCódigo de reserva: ${b.code}`;
 }
@@ -959,17 +1121,18 @@ function doneHtml(b){
     <div class="notice warn"><b>El día del turno traé</b>${esc(bringLine(b))}.${payLine(b) ? "\n" + esc(payLine(b)) + ". " + esc(payText()) : ""}${payLine(b) && aliasLine() ? "\n" + esc(aliasLine()) : ""}</div>
     <p class="sec-t">Mensaje para el consultorio</p>
     <div class="bubble">${esc(msg)}</div>
-    ${b.orderSent && UI.orderFile ? `<ol class="send-steps">
+    ${CLOUD && b.orderPath ? `<div class="notice"><b>La foto de la orden ya le llegó al consultorio</b>Quedó guardada junto con tu turno. Igual llevala el día del estudio.</div>` : ""}
+    ${!CLOUD && b.orderSent && UI.orderFile ? `<ol class="send-steps">
       <li><b>Enviá la reserva</b><span class="muted">Se abre el chat del consultorio con el mensaje listo.</span>
         <a class="btn btn-wa" href="${wa(C().whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar reserva por WhatsApp</a></li>
       <li><b>Enviá la foto de la orden</b><span class="muted">${canShareFiles() ? "Elegí WhatsApp y después el chat de " + esc(C().name) + ": va a aparecer primero." : "Desde la computadora: en el chat del consultorio tocá el clip 📎 y adjuntá la foto."}</span>
         ${canShareFiles() ? `<button class="btn btn-wa" type="button" id="shareOrder" data-id="${b.id}">${WA_ICON}Enviar foto de la orden</button>`
           : `<a class="btn btn-soft" href="${wa(C().whatsapp, "Hola, les envío la orden médica para el turno " + b.code + ".")}" target="_blank" rel="noopener">Abrir chat del consultorio</a>`}</li>
     </ol>
-    <div class="actions"><button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button></div>`
+    ${STAFF ? `<div class="actions"><button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button></div>` : ""}`
     : `<div class="actions">
       <a class="btn btn-wa" href="${wa(C().whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a>
-      <button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button>
+      ${STAFF ? `<button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button>` : ""}
     </div>`}
     <p class="muted" style="font-size:13px;margin:0"><button class="linkbtn" type="button" id="another">Reservar otro turno</button></p>
   </div>`;
@@ -1009,8 +1172,9 @@ $("formArea").addEventListener("change", async e => {
     if ($("b-later")) $("b-later").checked = false;
   }
 });
-$("formArea").addEventListener("submit", e => {
+$("formArea").addEventListener("submit", async e => {
   e.preventDefault();
+  if (UI.saving) return;
   const sel = selection(), p = pro(UI.slotPro);
   const name = $("b-name").value.trim(), phone = $("b-phone").value.trim(), dni = digits($("b-dni").value), os = $("b-os").value, aff = $("b-aff").value.trim();
   const items = sel.items.map(s => ({id:s.id, n:s.name}));
@@ -1024,11 +1188,33 @@ $("formArea").addEventListener("submit", e => {
   if (photoMode && !UI.orderFile && !$("b-later").checked) return err("Subí una foto de la orden médica, o marcá que la llevás el día del turno.", "b-file");
   if (needsOrder(items) && !photoMode && !$("b-order").checked) return err("Para los estudios necesitás orden médica. Marcá la casilla si ya la tenés.", "b-order");
   if (!fits(p, UI.date, UI.time, sel.dur)){ err("Ese horario se acaba de ocupar. Elegí otro."); UI.time = null; renderCal(); return; }
-  const b = {id:DB.nextId++, pro:p.id, date:UI.date, start:toT(UI.time), dur:sel.dur, status:"pendiente", name, phone, dni, os,
+  const b = {id:newId(), pro:p.id, date:UI.date, start:toT(UI.time), dur:sel.dur, status:"pendiente", name, phone, dni, os,
     plan: os === "Particular" ? "" : $("b-plan").value.trim(), aff: os === "Particular" ? "" : aff, order: needsOrder(items) ? (photoMode ? true : $("b-order").checked) : false,
     orderSent: photoMode && !!UI.orderFile, orderThumb: photoMode && UI.orderFile ? UI.orderThumb : null, orderName: photoMode && UI.orderFile ? UI.orderFile.name : "",
     items, first:$("b-first").checked, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
-  DB.bookings.push(b); saveDB();
+  if (CLOUD){
+    const btn = e.target.querySelector('button[type="submit"]');
+    UI.saving = true; btn.disabled = true; btn.textContent = "Guardando turno…";
+    try {
+      if (b.orderSent){ btn.textContent = "Subiendo la orden…"; b.orderPath = await uploadOrder(UI.orderFile); b.orderThumb = null; }
+      btn.textContent = "Guardando turno…";
+      const {data, error} = await SB.rpc("reservar", {t:{pro:b.pro, fecha:b.date, inicio:b.start, dur:b.dur, datos:bToDatos(b)}});
+      if (error) throw error;
+      b.id = data.id; b.code = data.code;
+    } catch(ex){
+      UI.saving = false; btn.disabled = false; btn.textContent = "Reservar turno";
+      const m = String(ex && ex.message || "");
+      if (m.includes("horario_ocupado") || m.includes("fuera_de_horario")){
+        err("Ese horario se acaba de ocupar. Elegí otro, por favor.");
+        try { await cloudLoadBookings(); } catch(_){}
+        UI.time = null; renderCal(); return;
+      }
+      return err("No pudimos guardar el turno. Revisá tu conexión y probá de nuevo, o escribinos por WhatsApp.");
+    }
+    UI.saving = false;
+  }
+  if (!DB.bookings.some(x => x.id === b.id)) DB.bookings.push(b);
+  saveDB();
   UI.done = b; UI.time = null; renderPick(); renderCal();
   if (mobile()) goTo($("formArea")); else $("formArea").scrollIntoView({block:"nearest"});
 });
@@ -1109,7 +1295,7 @@ function renderAgenda(){
       const blk = b.status === "bloqueo";
       const title = blk ? "Bloqueado" : b.name;
       const sub = blk ? (b.name || "") : (b.os || "Particular") + " · " + itemsName(b.items);
-      const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && b.orderSent ? " 📎" : "";
+      const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && (b.orderSent || b.orderPath) ? " 📎" : "";
       c += `<button class="ev st-${b.status}" type="button" data-id="${b.id}" style="top:${top}px;height:${ht}px" aria-label="${esc(b.start + " " + title + ", " + STATUS[b.status])}">
         <b><span class="num">${b.start}</span> ${esc(title)}${b.isNew ? " ●" : ""}${warn}</b>${ht > 34 ? `<span>${esc(sub)}</span>` : ""}</button>`;
     });
@@ -1165,7 +1351,7 @@ function openBooking(id){
   const b = DB.bookings.find(x => x.id === id); if (!b) return;
   const p = pro(b.pro);
   if (b.date !== PANEL.date){ PANEL.date = b.date; renderPanel(); }
-  if (b.isNew){ b.isNew = false; saveDB(); renderPanel(); }
+  if (b.isNew){ b.isNew = false; saveDB(); sync(b); renderPanel(); }
   if (b.status === "bloqueo"){
     openDrawer(p.name, "Horario bloqueado", `<dl><dt>Día</dt><dd>${fmtLong(b.date)}</dd><dt>Horario</dt><dd class="num">${b.start} – ${toT(toMin(b.start)+b.dur)}</dd><dt>Motivo</dt><dd>${esc(b.name || "—")}</dd></dl>
       <div class="actions"><button class="btn btn-soft" data-act="unblock" data-id="${b.id}">Quitar bloqueo</button></div>`);
@@ -1195,12 +1381,22 @@ function openBooking(id){
       ${b.note ? `<dt>Comentario</dt><dd>${esc(b.note)}</dd>` : ""}
       ${b.status === "confirmado" ? `<dt>Recordatorio</dt><dd>${b.reminded ? "Enviado" : "No enviado"}</dd>` : ""}
     </dl>
-    ${b.orderThumb ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><a href="${b.orderThumb}" target="_blank" rel="noopener"><img class="order-img" src="${b.orderThumb}" alt="Foto de la orden médica de ${esc(b.name)}"></a></div>`
-      : b.orderSent ? `<div class="notice"><b>Orden médica</b>El paciente la envió por foto. Buscala en el chat de WhatsApp del consultorio.</div>` : ""}
+    ${b.orderPath ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><div id="orderView" data-path="${esc(b.orderPath)}" class="muted" style="font-size:14px">Cargando la orden…</div></div>` : ""}
+    ${!b.orderPath && b.orderThumb ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><a href="${b.orderThumb}" target="_blank" rel="noopener"><img class="order-img" src="${b.orderThumb}" alt="Foto de la orden médica de ${esc(b.name)}"></a></div>`
+      : !b.orderPath && b.orderSent ? `<div class="notice"><b>Orden médica</b>El paciente la envió por foto. Buscala en el chat de WhatsApp del consultorio.</div>` : ""}
     ${ord && !b.order && (b.status === "pendiente" || b.status === "confirmado") ? `<div class="actions"><button class="btn btn-soft btn-sm" data-act="order" data-id="${b.id}">Marcar que trajo la orden</button></div>` : ""}
     ${acts ? `<div class="actions">${acts}</div>` : ""}
     ${b.status === "pendiente" || b.status === "confirmado" ? `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>
       <div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
+  fillOrderView();
+}
+async function fillOrderView(){
+  const el = $("orderView"); if (!el || !CLOUD) return;
+  const path = el.dataset.path, url = await orderUrl(path);
+  if (!document.contains(el)) return;
+  if (!url){ el.textContent = "No se pudo abrir la orden."; return; }
+  el.innerHTML = path.endsWith(".pdf") ? `<a class="btn btn-soft" href="${url}" target="_blank" rel="noopener">Abrir la orden (PDF)</a>`
+    : `<a href="${url}" target="_blank" rel="noopener"><img class="order-img" src="${url}" alt="Foto de la orden médica"></a>`;
 }
 function openFree(pid, m){
   const p = pro(pid), d = PANEL.date, sv = proSvcs(p);
@@ -1261,7 +1457,7 @@ function renderList(list){
       if (e.free){ run.push(e.m); return; }
       flush();
       const b = e.b, blk = b.status === "bloqueo";
-      const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && b.orderSent ? " 📎" : "";
+      const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && (b.orderSent || b.orderPath) ? " 📎" : "";
       h += `<button class="lrow st-${b.status}" type="button" data-id="${b.id}">
         <span class="lt num">${b.start}<small>${b.dur} min</small></span>
         <span class="lb"><b>${esc(blk ? "Bloqueado" : b.name)}${b.isNew ? " ●" : ""}${warn}</b><span>${esc(blk ? (b.name || "") : itemsName(b.items) + " · " + (b.os || "Particular"))}</span></span>
@@ -1279,7 +1475,7 @@ document.querySelector(".seg2").addEventListener("click", e => {
   PANEL.view = b.dataset.aview; try { localStorage.setItem("agenda-vista", PANEL.view); } catch(_){}
   renderAgenda(); if (PANEL.view === "grilla") scrollToNow();
 });
-$("wstrip").addEventListener("click", e => { const w = e.target.closest("[data-wd]"); if (!w) return; PANEL.date = w.dataset.wd; renderPanel(); if (PANEL.view === "grilla") scrollToNow(); });
+$("wstrip").addEventListener("click", e => { const w = e.target.closest("[data-wd]"); if (!w) return; PANEL.date = w.dataset.wd; renderPanel(); ensureRange(PANEL.date); if (PANEL.view === "grilla") scrollToNow(); });
 $("alist").addEventListener("click", e => {
   const r = e.target.closest(".lrow"); if (r){ openBooking(Number(r.dataset.id)); return; }
   const f = e.target.closest(".fchip"); if (f) openFree(f.dataset.pro, Number(f.dataset.m));
@@ -1303,10 +1499,10 @@ function submitManual(f){
   const items = ids.map(id => ({id, n:svc(id).name})), dur = ids.reduce((a, id) => a + svc(id).dur, 0);
   if (!fits(p, PANEL.date, m, dur)) return err(`No entra: el turno dura ${dur} min y se superpone con otro turno o termina fuera del horario de atención.`);
   const os = $("m-os").value;
-  const b = {id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
+  const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
     dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
     first:false, note:"", source:"manual", code:code(), reminded:false};
-  DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado.");
+  DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado."); sync(b);
 }
 
 /* ================= CONFIGURACIÓN ================= */
@@ -1373,6 +1569,12 @@ function renderConfig(){
   <section class="card">
     <h2>Datos del consultorio</h2>
     <p class="hint">Aparecen en la web y en los mensajes de WhatsApp. Se guardan solos.</p>
+    <div class="logo-ed">
+      <div class="logo-prev">${c.logo ? `<img src="${c.logo}" alt="Logo del consultorio">` : `<span>Sin logo</span>`}</div>
+      <div><b>Logo</b><p class="muted" style="margin:2px 0 8px;font-size:13.5px">Aparece arriba en la web y en la pantalla de ingreso. Mejor si es cuadrado, en PNG o JPG.</p>
+        <div class="actions"><label class="btn btn-soft btn-sm" for="logoFile">${c.logo ? "Cambiar logo" : "Subir logo"}<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>
+        ${c.logo ? `<button class="btn btn-danger btn-sm" type="button" data-cfg="logo-del">Quitar</button>` : ""}</div></div>
+    </div>
     <form id="clinicForm" novalidate style="gap:11px">
       <div class="row2"><label for="c-name">Nombre<input id="c-name" data-c="name" value="${esc(c.name)}"></label><label for="c-sub">Descripción corta<input id="c-sub" data-c="sub" value="${esc(c.sub)}"></label></div>
       <div class="row2"><label for="c-addr">Dirección<input id="c-addr" data-c="address" value="${esc(c.address)}"></label><label for="c-wa">WhatsApp del consultorio<input id="c-wa" data-c="whatsapp" value="${esc(c.whatsapp)}" inputmode="tel"></label></div>
@@ -1382,7 +1584,7 @@ function renderConfig(){
     </form>
   </section>
 
-  <p class="actions"><button class="linkbtn" type="button" onclick="document.getElementById('resetBtn').click()">Cargar turnos de ejemplo nuevos</button>
+  <p class="actions">${CLOUD ? "" : `<button class="linkbtn" type="button" onclick="document.getElementById('resetBtn').click()">Cargar turnos de ejemplo nuevos</button>`}
   <button class="linkbtn" type="button" data-cfg="reset-cfg">Volver a la configuración de ejemplo</button></p>`;
 }
 function diffLabel(sv, os){
@@ -1517,8 +1719,31 @@ function submitSvc(f){
   S.pros.forEach(p => { const has = p.services.includes(id); if (chosen.includes(p.id) && !has) p.services.push(id); if (!chosen.includes(p.id) && has) p.services = p.services.filter(x => x !== id); });
   saveCfg(); closeDrawer(); refreshAll(); toast(f.dataset.id ? "Cambios guardados." : "Agregado.");
 }
+function paintLogo(){
+  const letter = (C().name.trim().split(" ").pop() || "A")[0].toUpperCase();
+  ["logo", "loginLogo"].forEach(id => {
+    const el = $(id); if (!el) return;
+    el.classList.toggle("has-img", !!C().logo);
+    el.innerHTML = C().logo ? `<img src="${C().logo}" alt="">` : esc(letter);
+  });
+}
+function readLogo(file){
+  return new Promise((ok, bad) => {
+    if (!file || !file.type.startsWith("image/")) return bad(new Error("tipo"));
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 320 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      const jpg = file.type === "image/jpeg";
+      try { ok(c.toDataURL(jpg ? "image/jpeg" : "image/png", 0.88)); } catch(e){ bad(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); bad(new Error("imagen")); };
+    img.src = url;
+  });
+}
 function refreshAll(){
-  $("clinicName").textContent = C().name; $("clinicSub").textContent = C().sub; $("logo").textContent = (C().name.trim().split(" ").pop() || "A")[0].toUpperCase();
+  $("clinicName").textContent = C().name; $("clinicSub").textContent = C().sub; paintLogo();
   if (UI.pro && !pro(UI.pro)) UI.pro = null;
   if (UI.svc && !svc(UI.svc)) UI.svc = null;
   UI.extra = UI.extra.filter(svc);
@@ -1533,6 +1758,12 @@ function refreshAll(){
 $("cfg").addEventListener("change", e => {
   const t = e.target;
   if (t.name === "mode"){ S.mode = t.value; UI.tab = "consultas"; saveCfg(); refreshAll(); toast(t.value === "estudios" ? "Modo consultas y estudios activado." : "Modo agenda de turnos activado."); return; }
+  if (t.id === "logoFile"){
+    const f = t.files && t.files[0]; if (!f) return;
+    if (f.size > 5 * 1024 * 1024){ toast("La imagen es muy pesada (más de 5 MB). Probá con otra."); return; }
+    readLogo(f).then(d => { S.clinic.logo = d; saveCfg(); refreshAll(); toast("Logo guardado."); }).catch(() => toast("No se pudo leer la imagen. Probá con un PNG o JPG."));
+    return;
+  }
   if (t.dataset.price){ const sv = svc(t.dataset.price); sv.price = Math.max(0, Number(t.value) || 0); saveCfg(); S.coverage.forEach(c => { const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + c.n)}"]`); if (el) el.textContent = diffLabel(sv, c.n); }); toast("Valor guardado."); return; }
   if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
   if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
@@ -1543,9 +1774,9 @@ $("cfg").addEventListener("change", e => {
 $("cfg").addEventListener("submit", e => e.preventDefault());
 document.addEventListener("click", e => {
   const c = e.target.closest("[data-confirm]");
-  if (c){ const b = DB.bookings.find(x => x.id === Number(c.dataset.confirm)); b.status = "confirmado"; b.isNew = false; saveDB(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Turno confirmado. Se abrió WhatsApp con el mensaje para " + b.name.split(" ")[0] + "."); return; }
+  if (c){ const b = DB.bookings.find(x => x.id === Number(c.dataset.confirm)); b.status = "confirmado"; b.isNew = false; saveDB(); sync(b); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Turno confirmado. Se abrió WhatsApp con el mensaje para " + b.name.split(" ")[0] + "."); return; }
   const r = e.target.closest("[data-remind]");
-  if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; saveDB(); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
+  if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; saveDB(); sync(b); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
   const o = e.target.closest("[data-open]"); if (o){ openBooking(Number(o.dataset.open)); return; }
   const pd = e.target.closest("[data-paydel]");
   if (pd){ S.payments.methods = S.payments.methods.filter(x => x !== pd.dataset.paydel); saveCfg(); renderConfig(); toast("Quitado."); return; }
@@ -1558,13 +1789,14 @@ document.addEventListener("click", e => {
     if (k === "pro-edit") return openProEditor(g.dataset.id);
     if (k === "svc-new") return openSvcEditor(null);
     if (k === "svc-edit") return openSvcEditor(g.dataset.id);
+    if (k === "logo-del"){ delete S.clinic.logo; saveCfg(); refreshAll(); toast("Logo quitado."); return; }
     if (k === "pay-add"){ const v = $("pay-new").value.trim(); if (!v) return $("pay-new").focus(); if (S.payments.methods.some(x => x.toLowerCase() === v.toLowerCase())) return toast(v + " ya está en la lista."); S.payments.methods.push(v); saveCfg(); renderConfig(); toast(v + " agregado."); return; }
     if (k === "cov-add"){ const v = $("cov-new").value.trim(); if (!v) return $("cov-new").focus(); if (S.coverage.some(x => x.n.toLowerCase() === v.toLowerCase())) return toast(v + " ya está en la lista."); S.coverage.push({n:v}); saveCfg(); renderConfig(); $("cov-new").focus(); return; }
     if (k === "pro-del" || k === "svc-del" || k === "reset-cfg"){
       if (!g.classList.contains("armed")){ g.classList.add("armed"); g.dataset.label = g.textContent; g.textContent = "Tocá de nuevo para confirmar"; setTimeout(() => { if (document.contains(g)){ g.classList.remove("armed"); g.textContent = g.dataset.label; } }, 4000); return; }
       if (k === "pro-del"){ S.pros = S.pros.filter(p => p.id !== g.dataset.id); toast("Profesional eliminado."); }
       if (k === "svc-del"){ const id = g.dataset.id; S.services = S.services.filter(s => s.id !== id); S.pros.forEach(p => p.services = p.services.filter(x => x !== id)); toast("Eliminado."); }
-      if (k === "reset-cfg"){ S = clone(DEFAULTS); DB = seed(); saveDB(); toast("Se restauró la configuración de ejemplo."); }
+      if (k === "reset-cfg"){ S = clone(DEFAULTS); if (!CLOUD){ DB = seed(); saveDB(); } toast("Se restauró la configuración de ejemplo."); }
       saveCfg(); closeDrawer(); refreshAll(); return;
     }
   }
@@ -1572,13 +1804,13 @@ document.addEventListener("click", e => {
   const act = a.dataset.act;
   if (act === "block"){
     const p = pro(a.dataset.pro);
-    DB.bookings.push({id:DB.nextId++, pro:p.id, date:PANEL.date, start:toT(Number(a.dataset.m)), dur:p.step, status:"bloqueo", name:$("blk-r").value.trim() || "Bloqueado", items:[], source:"manual"});
-    saveDB(); closeDrawer(); renderPanel(); toast("Horario bloqueado. Ya no aparece disponible para reservar."); return;
+    const nb = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(Number(a.dataset.m)), dur:p.step, status:"bloqueo", name:$("blk-r").value.trim() || "Bloqueado", items:[], source:"manual"};
+    DB.bookings.push(nb); saveDB(); sync(nb); closeDrawer(); renderPanel(); toast("Horario bloqueado. Ya no aparece disponible para reservar."); return;
   }
   const b = DB.bookings.find(x => x.id === Number(a.dataset.id)); if (!b) return;
-  if (act === "unblock" || act === "cancel"){ b.status = "cancelado"; saveDB(); closeDrawer(); renderPanel(); toast(act === "cancel" ? "Turno cancelado. El horario volvió a estar disponible." : "Bloqueo quitado."); return; }
-  if (act === "order"){ b.order = true; saveDB(); renderPanel(); openBooking(b.id); return; }
-  b.status = act; saveDB(); renderPanel(); openBooking(b.id);
+  if (act === "unblock" || act === "cancel"){ b.status = "cancelado"; saveDB(); sync(b); closeDrawer(); renderPanel(); toast(act === "cancel" ? "Turno cancelado. El horario volvió a estar disponible." : "Bloqueo quitado."); return; }
+  if (act === "order"){ b.order = true; saveDB(); sync(b); renderPanel(); openBooking(b.id); return; }
+  b.status = act; saveDB(); sync(b); renderPanel(); openBooking(b.id);
 });
 $("dBody").addEventListener("click", e => {
   const ed = e.target.closest("[data-medit]");
@@ -1651,8 +1883,8 @@ $("dBody").addEventListener("change", e => {
 $("dClose").addEventListener("click", closeDrawer);
 $("scrim").addEventListener("click", closeDrawer);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("drawer").classList.contains("show")) closeDrawer(); });
-$("prevDay").addEventListener("click", () => { PANEL.date = addDays(PANEL.date, -1); renderPanel(); });
-$("nextDay").addEventListener("click", () => { PANEL.date = addDays(PANEL.date, 1); renderPanel(); });
+$("prevDay").addEventListener("click", () => { PANEL.date = addDays(PANEL.date, -1); renderPanel(); ensureRange(PANEL.date); });
+$("nextDay").addEventListener("click", () => { PANEL.date = addDays(PANEL.date, 1); renderPanel(); ensureRange(PANEL.date); });
 $("todayBtn").addEventListener("click", () => { PANEL.date = TODAY(); renderPanel(); scrollToNow(); });
 
 /* ---------- navegación ---------- */
@@ -1662,8 +1894,12 @@ function scrollToNow(){
 }
 function show(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-  ["book","panel","config"].forEach(k => $("view-" + k).hidden = k !== v);
+  const needLogin = !STAFF && (v === "panel" || v === "config");
+  ["book","panel","config"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
+  $("view-login").hidden = !needLogin;
+  if (needLogin){ LOGIN_NEXT = v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
   if (v === "panel"){
+    ensureRange(PANEL.date);
     if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = v === "lista" || v === "grilla" ? v : (mobile() ? "lista" : "grilla"); }
     renderPanel(); scrollToNow();
   } else if (v === "config"){ renderConfig(); } else { renderBook(); }
@@ -1671,16 +1907,91 @@ function show(v){
   window.scrollTo(0, 0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) show(t.dataset.view); });
+window.addEventListener("hashchange", () => { const h = location.hash.replace("#", ""); show(h === "panel" ? "panel" : h === "config" ? "config" : "book"); });
+let LOGIN_NEXT = "panel";
+$("staffLink").addEventListener("click", () => show("panel"));
+$("l-back").addEventListener("click", () => show("book"));
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = $("l-email").value.trim(), password = $("l-pass").value;
+  if (!email || !password){ $("l-err").textContent = "Escribí el mail y la contraseña."; return; }
+  if (!CLOUD){
+    if (email.toLowerCase() !== DEMO_USER.email || password !== DEMO_USER.pass){ $("l-err").textContent = "Mail o contraseña incorrectos."; return; }
+    STAFF = true; try { localStorage.setItem("demo-sesion", "1"); } catch(_){}
+    $("l-pass").value = ""; refreshAll(); applyRole(); show(LOGIN_NEXT); return;
+  }
+  $("l-btn").disabled = true; $("l-btn").textContent = "Ingresando…"; $("l-err").textContent = "";
+  const {data, error} = await SB.auth.signInWithPassword({email, password});
+  if (error){ $("l-btn").disabled = false; $("l-btn").textContent = "Ingresar"; $("l-err").textContent = "Mail o contraseña incorrectos."; return; }
+  SESSION = data.session;
+  try { await afterLogin(); } catch(ex){ $("l-err").textContent = "Ingresaste, pero no se pudieron cargar los datos: " + ex.message; }
+  $("l-btn").disabled = false; $("l-btn").textContent = "Ingresar"; $("l-pass").value = "";
+  if (STAFF) show(LOGIN_NEXT);
+});
+$("logoutBtn").addEventListener("click", async () => {
+  if (!CLOUD){ STAFF = false; try { localStorage.removeItem("demo-sesion"); } catch(_){} closeDrawer(); applyRole(); show("book"); return; }
+  try { await SB.auth.signOut(); } catch(_){} location.hash = "#reservar"; location.reload();
+});
+const DEMO_USER = {email:"demo@consultorio.com", pass:"demo1234"};
+async function afterLogin(){
+  const {data} = await SB.rpc("es_equipo");
+  STAFF = data === true;
+  if (!STAFF){ $("l-err").textContent = "Este usuario no está habilitado. Agregá su mail en la tabla «equipo» de Supabase."; await SB.auth.signOut(); SESSION = null; return; }
+  const had = await cloudLoadCfg();
+  if (!had){ await SB.from("config").upsert({id:1, data:S}); toast("Cargamos una configuración de ejemplo. Editala desde Configuración."); }
+  await cloudLoadBookings();
+  realtime();
+  refreshAll(); applyRole();
+}
+function applyRole(){
+  document.querySelector(".tabs").hidden = !STAFF;
+  $("staffLink").hidden = STAFF;
+  $("resetBtn").hidden = CLOUD || !STAFF;
+  $("whoBox").hidden = !STAFF;
+  $("demoHint").hidden = CLOUD;
+  $("whoMail").textContent = CLOUD ? (SESSION && SESSION.user && SESSION.user.email || "") : "Demo";
+}
 $("resetBtn").addEventListener("click", () => {
   DB = seed(); saveDB(); Object.assign(UI, {tab:"consultas", pro:null, svc:null, who:"any", motivo:null, extra:[]}); resetPick(); PANEL.date = TODAY();
   refreshAll(); toast("Se cargaron turnos de ejemplo nuevos.");
 });
 
-(function init(){
-  loadCfg(); loadDB();
-  refreshAll();
+/* ---------- app instalable ---------- */
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; $("installBtn").hidden = false; });
+window.addEventListener("appinstalled", () => { $("installBtn").hidden = true; toast("App instalada. Ya la tenés en la pantalla de inicio."); });
+$("installBtn").addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch(_){} installEvt = null; $("installBtn").hidden = true; });
+(function iosTip(){
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  let seen = false; try { seen = localStorage.getItem("ios-tip-visto") === "1"; } catch(_){}
+  if (ios && !standalone && !seen) $("iosTip").hidden = false;
+  $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
+})();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+
+(async function init(){
   const h = location.hash.replace("#","");
-  show(h === "panel" ? "panel" : h === "config" ? "config" : "book");
+  const start = h === "panel" ? "panel" : h === "config" ? "config" : "book";
+  if (CLOUD){
+    $("loading").hidden = false;
+    try {
+      await loadSupabaseLib();
+      SB = window.supabase.createClient(TC.supabaseUrl, TC.supabaseKey, {auth:{persistSession:true, autoRefreshToken:true}});
+      const {data} = await SB.auth.getSession(); SESSION = data.session;
+      if (SESSION){ await afterLogin(); }
+      if (!STAFF){ await cloudLoadCfg(); await cloudLoadBookings(); }
+    } catch(ex){
+      document.body.insertAdjacentHTML("afterbegin", `<div class="cloud-banner" role="alert">No pudimos conectarnos con el sistema de turnos. Revisá tu conexión y recargá la página.</div>`);
+      if (!S) S = clone(DEFAULTS);
+      DB = {seededOn:TODAY(), bookings:[]};
+    }
+    $("loading").hidden = true;
+  } else { loadCfg(); loadDB(); try { STAFF = localStorage.getItem("demo-sesion") === "1"; } catch(_){} }
+  refreshAll(); applyRole();
+  show(start);
 })();
 </script>
 </body>

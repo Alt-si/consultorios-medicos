@@ -9,4 +9,5 @@ Sistema de turnos online para consultorios y centros de diagnóstico.
 
 La configuración de ejemplo está en el bloque `DEFAULTS` al inicio del `<script>` de `index.html`.
 
-> Versión demo: los turnos se guardan en el navegador de quien abre la página.
+- **App instalable (PWA):** se instala en el celular o la computadora desde el navegador.
+- **Base de datos:** se conecta a Supabase (gratis) siguiendo la [guía](GUIA-SUPABASE.md). Sin conectar, funciona en modo demostración (usuario `demo@consultorio.com`, clave `demo1234`).
