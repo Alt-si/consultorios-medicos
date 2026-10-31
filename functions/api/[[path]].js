@@ -154,7 +154,10 @@ function datosMensaje(cfg, cuentaNombre, t){
   svcs.forEach(s => { if (s.prep) ind.push(s.prep); if (s.needs) ind.push("Necesitás: " + s.needs); });
   const orden = svcs.some(s => s.order), auth = ((cfg.coverage || []).find(c => c.n === os) || {}).auth;
   ind.push("Traé DNI" + (os !== "Particular" ? ", credencial de " + os : "") + (orden ? " y la orden médica" + (auth ? " autorizada" : "") : ""));
-  return [nombre, cl.name || cuentaNombre, fechaLarga(t.fecha) + ", " + t.inicio + " h", que, cl.address || "-", pago, ind.join(" · ")].map(x => limpio(x));
+  const inc = cfg.waIncl || {}, no = k => inc[k] === false;
+  const que2 = no("profesional") ? (svcs.map(s => s.name).join(" + ") || "Turno") : que;
+  return [nombre, cl.name || cuentaNombre, fechaLarga(t.fecha) + ", " + t.inicio + " h", que2, no("direccion") ? "—" : (cl.address || "-"),
+    no("monto") ? "—" : pago, no("indicaciones") ? "—" : ind.join(" · ")].map(x => limpio(x));
 }
 async function waEnviar(env, wa, cuerpo){
   if (!wa || !wa.phone_id || !wa.token) return {ok: false, error: "WhatsApp sin configurar"};

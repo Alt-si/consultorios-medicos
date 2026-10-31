@@ -429,6 +429,13 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .hb{padding:4px 14px 12px;font-size:14.5px;line-height:1.55}
 .hb ul,.hb ol{margin:8px 0 0;padding-left:20px;display:grid;gap:6px}
 .hb code{background:var(--sunk);padding:1px 5px;border-radius:4px;font-size:13px}
+.msg-ed{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;display:grid;gap:10px}
+.msg-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.msg-ed textarea{font-size:14px;line-height:1.45;min-height:240px;font-family:inherit}
+.vchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.vchip{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:3px 9px;font-size:12px;font-weight:600;cursor:pointer}
+.wa-incl{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+@media (max-width:760px){ .msg-cols{grid-template-columns:1fr} }
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -1513,19 +1520,47 @@ function renderSide(){
     + (rem.length > 8 ? `<p class="muted" style="font-size:13px;margin:8px 0 0">y ${rem.length - 8} más</p>` : "")
     : `<p class="muted" style="font-size:13.5px;margin:0">No hay turnos confirmados para mañana.</p>`;
 }
-function confirmMsg(b){
-  const p = pro(b.pro), prep = prepText(b.items);
-  return `Hola ${b.name.split(" ")[0]}, te confirmamos tu turno en ${C().name}:\n\n• ${itemsName(b.items)}\n• ${p.name}\n• ${fmtLong(b.date)}, ${b.start} h\n• ${C().address}\n• Cobertura: ${covLine(b)}` +
-    (payLine(b) ? `\n• ${payLine(b)}` : "") +
-    (payLine(b) && payLine(b) !== "Sin monto a abonar" && payText() ? `\n• ${payText()}` + (aliasLine() ? `\n• ${aliasLine()}` : "") : "") +
-    (prep ? `\n\nPreparación:\n${prep}` : "") +
-    (needsText(b.items) ? `\n\nPara este estudio necesitás:\n${needsText(b.items)}` : "") +
-    `\n\nTraé ${bringLine(b)}. Si no podés venir, avisanos respondiendo este mensaje así le damos el turno a otra persona.`;
+/* ---------- mensajes de WhatsApp editables ---------- */
+const MSG_DEF = {
+  conf: "Hola {nombre}, te confirmamos tu turno en {consultorio}:\n\n• {que}\n• {profesional}\n• {fecha}, {hora} h\n• {direccion}\n• Cobertura: {cobertura}\n• {monto}\n• {mediospago}\n• {alias}\n\nPreparación:\n{preparacion}\n\nPara este estudio necesitás:\n{necesitas}\n\nTraé {traer}. Si no podés venir, avisanos respondiendo este mensaje así le damos el turno a otra persona.",
+  rec: "Hola {nombre}, te recordamos tu turno de mañana a las {hora} h: {que} con {profesional}, en {direccion}.\n\nAcordate:\n{preparacion}\n\nNecesitás:\n{necesitas}\n\nTraé {traer}.\n{monto}.\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno."
+};
+const MSG_VARS = [["nombre","Nombre"],["paciente","Nombre y apellido"],["consultorio","Consultorio"],["fecha","Fecha"],["hora","Hora"],["profesional","Profesional"],["que","Consulta o estudio"],
+  ["direccion","Dirección"],["cobertura","Cobertura"],["monto","Monto a abonar"],["mediospago","Medios de pago"],["alias","Alias"],["preparacion","Preparación"],["necesitas","Necesitás"],["traer","Qué traer"],["codigo","Código"]];
+function msgVars(b){
+  const p = pro(b.pro) || {name: ""}, pl = payLine(b), cobra = pl && pl !== "Sin monto a abonar";
+  return {nombre: (b.name || "").split(" ")[0], paciente: b.name || "", consultorio: C().name, fecha: fmtLong(b.date), hora: b.start, profesional: p.name,
+    que: itemsName(b.items), direccion: C().address || "", cobertura: covLine(b), monto: pl || "", mediospago: cobra ? payText() : "",
+    alias: cobra ? aliasLine() : "", preparacion: prepText(b.items), necesitas: needsText(b.items), traer: bringLine(b), codigo: b.code || ""};
 }
-function reminderMsg(b){
-  const p = pro(b.pro), prep = prepText(b.items);
-  return `Hola ${b.name.split(" ")[0]}, te recordamos tu turno de mañana a las ${b.start} h: ${itemsName(b.items)} con ${p.name}, en ${C().address}.` +
-    (prep ? `\n\nAcordate:\n${prep}` : "") + (needsText(b.items) ? `\n\nNecesitás:\n${needsText(b.items)}` : "") + `\nTraé ${bringLine(b)}.` + (payLine(b) ? `\n${payLine(b)}.` : "") + `\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno.`;
+// Reemplaza los {datos}; si un dato no corresponde a este turno, se quita la línea entera.
+function fillMsg(tpl, b){
+  const v = msgVars(b), out = [];
+  String(tpl).split("\n").forEach(line => {
+    let vacio = false, conDato = false;
+    const l = line.replace(/\{(\w+)\}/g, (m, k) => { if (!(k in v)) return m; conDato = true; const x = String(v[k] || "").trim(); if (!x) vacio = true; return x; });
+    if (!vacio) out.push({l, conDato});
+  });
+  // títulos escritos a mano ("Preparación:") que quedaron sin contenido debajo
+  const res = out.filter((x, i) => x.conDato || !(/:\s*$/.test(x.l) && (i === out.length - 1 || !out[i + 1].l.trim()))).map(x => x.l);
+  return res.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+const msgTpl = k => (S.msgs && S.msgs[k]) || MSG_DEF[k];
+function confirmMsg(b){ return fillMsg(msgTpl("conf"), b); }
+function reminderMsg(b){ return fillMsg(msgTpl("rec"), b); }
+function sampleBooking(){
+  const st = S.services.find(x => x.kind === "estudio" && x.prep) || S.services[0], p = S.pros.find(x => st && x.services.includes(st.id)) || S.pros[0];
+  return {pro: p ? p.id : "", date: addDays(TODAY(), 1), start: "10:00", dur: 20, name: "Laura Gómez", phone: "", os: (S.coverage[0] || {}).n || "Particular",
+    items: st ? [{id: st.id, n: st.name}] : [], order: true, code: "K7Q2M"};
+}
+function msgEditor(k, title, hint){
+  return `<div class="msg-ed" data-msgk="${k}">
+    <div class="cfg-head"><div><b>${title}</b><p class="muted" style="margin:2px 0 0;font-size:13px">${hint}</p></div>
+      <button class="linkbtn" type="button" data-msgreset="${k}">Volver al texto original</button></div>
+    <div class="msg-cols"><div><textarea id="msg-${k}" rows="12" aria-label="${title}">${esc(msgTpl(k))}</textarea>
+      <div class="vchips">${MSG_VARS.map(([v, l]) => `<button type="button" class="vchip" data-ins="${v}" data-for="msg-${k}">${l}</button>`).join("")}</div></div>
+      <div><p class="sec-t" style="margin-bottom:6px">Así le llega (ejemplo)</p><div class="bubble" id="prev-${k}">${esc(fillMsg(msgTpl(k), sampleBooking()))}</div></div></div>
+  </div>`;
 }
 function renderPanel(){ renderKpis(); renderAgenda(); renderSide(); renderWaCard(); }
 function renderWaCard(){
@@ -1900,6 +1935,14 @@ function renderConfig(){
   </section>
 
   <section class="card">
+    <h2>Mensajes de WhatsApp</h2>
+    <p class="hint">Editá el texto que se le manda al paciente con los botones de WhatsApp. Tocá un dato para insertarlo donde está el cursor. Si un dato no corresponde a ese turno (por ejemplo la preparación en una consulta), esa línea se quita sola.</p>
+    ${msgEditor("conf", "Confirmación del turno", "Se envía al confirmar un turno.")}
+    ${msgEditor("rec", "Recordatorio", "Se envía el día anterior desde «Recordatorios para mañana».")}
+    ${CLOUD && STAFF ? `<p class="muted" style="font-size:13px;margin:10px 0 0">Los mensajes del <b>WhatsApp automático</b> usan las plantillas aprobadas por Meta: lo que se muestra en ellos se elige en <i>WhatsApp automático → Datos que se incluyen</i>.</p>` : ""}
+  </section>
+
+  <section class="card">
     <h2>Medios de pago</h2>
     <p class="hint">Se le muestran al paciente junto con el monto a abonar y van en el mensaje de confirmación.</p>
     <div class="checks" style="margin-bottom:12px">${[...new Set([...PAY_CATALOG, ...S.payments.methods])].map((m, i) => `<span class="check" style="justify-content:space-between"><label class="check" for="pm-${i}"><input type="checkbox" id="pm-${i}" data-pay="${esc(m)}" ${S.payments.methods.includes(m)?"checked":""}> ${esc(m)}</label>${PAY_CATALOG.includes(m) ? "" : `<button class="linkbtn" type="button" data-paydel="${esc(m)}" aria-label="Quitar ${esc(m)}">Quitar</button>`}</span>`).join("")}</div>
@@ -1967,6 +2010,9 @@ async function renderWaCfg(){
       <div class="row3"><label for="wa-pc">Plantilla de confirmación<input id="wa-pc" value="${esc(w.plantilla_conf)}"></label>
       <label for="wa-pr">Plantilla de recordatorio<input id="wa-pr" value="${esc(w.plantilla_rec)}"></label>
       <label for="wa-id">Idioma<input id="wa-id" value="${esc(w.idioma)}"></label></div>
+      <fieldset class="wa-incl"><legend>Datos que se incluyen en los mensajes automáticos</legend>
+        <div class="checks">${[["profesional","Profesional"],["direccion","Dirección"],["monto","Monto a abonar y medios de pago"],["indicaciones","Preparación, qué necesita y qué traer"]].map(([k, l]) => `<label class="check" for="wi-${k}"><input type="checkbox" id="wi-${k}" data-waincl="${k}" ${(S.waIncl || {})[k] === false ? "" : "checked"}> ${l}</label>`).join("")}</div>
+        <p class="muted" style="font-size:12.5px;margin:0">Lo que destildes se reemplaza por una raya (—) en el mensaje. Para cambiar el texto en sí, editá la plantilla en Meta.</p></fieldset>
       <label class="check" for="wa-ar"><input type="checkbox" id="wa-ar" ${w.al_reservar ? "checked" : ""}> Enviar la confirmación cuando se reserva o se agenda un turno</label>
       <label class="check" for="wa-re"><input type="checkbox" id="wa-re" ${w.recordatorio ? "checked" : ""}> Enviar el recordatorio el día anterior</label>
       <label class="check" for="wa-on"><input type="checkbox" id="wa-on" ${w.activo ? "checked" : ""}> <b>WhatsApp automático activado</b></label>
@@ -2174,6 +2220,7 @@ $("cfg").addEventListener("change", e => {
   if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
   if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
+  if (t.dataset.waincl){ S.waIncl = Object.assign({}, S.waIncl, {[t.dataset.waincl]: t.checked}); saveCfg(); toast("Guardado."); return; }
   if (t.id === "ask-aff"){ S.askAffiliate = t.checked; saveCfg(); toast(t.checked ? "Ahora se pide el número de afiliado al reservar." : "Ya no se pide el número de afiliado."); return; }
   if (t.dataset.covAuth != null){ S.coverage[Number(t.dataset.covAuth)].auth = t.checked; saveCfg(); return; }
   if (t.dataset.c){ const k = t.dataset.c; S.clinic[k] = t.type === "number" ? Math.max(Number(t.min || 0), Number(t.value) || 0) : t.value.trim(); saveCfg(); refreshAll(); toast("Guardado."); }
@@ -2597,7 +2644,8 @@ const HELP = {
       <li><b>Profesionales:</b> horario partido (dos franjas por día), un turno cada X minutos, obras sociales con las que trabaja y qué consultas o estudios atiende. Desde su ficha podés agregar, editar o borrar motivos.</li>
       <li><b>Consultas y estudios:</b> duración, precio particular, <i>preparación</i>, <i>«Para este estudio necesitás…»</i>, si pide orden médica (y foto de la orden) y si se puede <b>combinar</b> con otro en el mismo turno.</li>
       <li><b>Valores por obra social:</b> la tabla es interna. Al paciente solo le mostramos el monto final que abona.</li>
-      <li><b>Obras sociales:</b> marcá las que piden <b>orden autorizada</b>.</li>
+      <li><b>Obras sociales:</b> marcá las que piden <b>orden autorizada</b> y si querés pedir el <b>número de afiliado</b>.</li>
+      <li><b>Mensajes de WhatsApp:</b> editá el texto de la confirmación y del recordatorio. Tocá un dato (nombre, fecha, monto, preparación…) para insertarlo y mirá la vista previa.</li>
       <li><b>Datos del consultorio:</b> anticipación mínima para reservar y cuántos días hacia adelante se pueden ver (hasta un año).</li></ul>`)}
     ${CLOUD ? H("WhatsApp automático (opcional)", `<ul>
       <li>Si lo activás, al paciente le llega <b>solo</b> la confirmación al reservar y el <b>recordatorio</b> el día anterior con los botones <i>Confirmo</i> y <i>Necesito cambiarlo</i>.</li>
@@ -2659,6 +2707,22 @@ document.addEventListener("input", e => {
   });
 });
 try { if (localStorage.getItem("ayuda-vista") !== "1") $("helpBtn").classList.add("pulse"); } catch(_){}
+
+let msgTimer = null;
+document.addEventListener("input", e => {
+  const t = e.target; if (!t.id || !t.id.startsWith("msg-")) return;
+  const k = t.id.slice(4); S.msgs = S.msgs || {};
+  S.msgs[k] = t.value === MSG_DEF[k] ? null : t.value;
+  $("prev-" + k).textContent = fillMsg(t.value, sampleBooking());
+  clearTimeout(msgTimer); msgTimer = setTimeout(() => saveCfg(), 600);
+});
+document.addEventListener("click", e => {
+  const ins = e.target.closest("[data-ins]");
+  if (ins){ const ta = $(ins.dataset.for), tok = "{" + ins.dataset.ins + "}", a = ta.selectionStart ?? ta.value.length, z = ta.selectionEnd ?? a;
+    ta.value = ta.value.slice(0, a) + tok + ta.value.slice(z); ta.focus(); ta.selectionStart = ta.selectionEnd = a + tok.length; ta.dispatchEvent(new Event("input", {bubbles: true})); return; }
+  const rs = e.target.closest("[data-msgreset]");
+  if (rs){ const k = rs.dataset.msgreset, ta = $("msg-" + k); ta.value = MSG_DEF[k]; ta.dispatchEvent(new Event("input", {bubbles: true})); toast("Se restauró el texto original."); }
+});
 
 /* ---------- app instalable ---------- */
 let installEvt = null;
