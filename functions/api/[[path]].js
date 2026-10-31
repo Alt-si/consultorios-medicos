@@ -444,6 +444,19 @@ export async function onRequest(ctx){
         if (!t) return fallo(404, "no_existe");
         const out = {ok: true};
         if (typeof body.nombre === "string" && body.nombre.trim()) await db.prepare("UPDATE cuentas SET nombre = ? WHERE id = ?").bind(body.nombre.trim(), id).run();
+        if (typeof body.email === "string" && body.email.trim().toLowerCase() !== t.email){
+          const email = body.email.trim().toLowerCase();
+          if (!esMail(email)) return fallo(400, "mail_invalido", "El mail no es válido.");
+          if (await db.prepare("SELECT 1 FROM cuentas WHERE email = ? AND id <> ?").bind(email, id).first()) return fallo(409, "mail_repetido", "Ya hay otra cuenta con ese mail.");
+          await db.prepare("UPDATE cuentas SET email = ? WHERE id = ?").bind(email, id).run();
+        }
+        if (typeof body.slug === "string" && body.slug.trim()){
+          const slug = slugDe(body.slug);
+          if (slug !== t.slug){
+            if (await db.prepare("SELECT 1 FROM cuentas WHERE slug = ? AND id <> ?").bind(slug, id).first()) return fallo(409, "link_repetido", "Ese link ya lo usa otro consultorio.");
+            await db.prepare("UPDATE cuentas SET slug = ? WHERE id = ?").bind(slug, id).run();
+          }
+        }
         if (typeof body.activa === "boolean"){
           await db.prepare("UPDATE cuentas SET activa = ? WHERE id = ?").bind(body.activa ? 1 : 0, id).run();
           if (!body.activa) await db.prepare("DELETE FROM sesiones WHERE cuenta_id = ?").bind(id).run();
@@ -454,6 +467,7 @@ export async function onRequest(ctx){
           await db.prepare("DELETE FROM sesiones WHERE cuenta_id = ?").bind(id).run();
           out.clave = clave;
         }
+        out.cuenta = await db.prepare("SELECT id, email, nombre, slug, activa, creada, ultimo_ingreso FROM cuentas WHERE id = ?").bind(id).first();
         return json(out);
       }
       return fallo(404, "no_existe");

@@ -436,6 +436,17 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .vchip{border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:3px 9px;font-size:12px;font-weight:600;cursor:pointer}
 .wa-incl{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 @media (max-width:760px){ .msg-cols{grid-template-columns:1fr} }
+.send-card{display:grid;gap:10px}
+.switch{display:flex;gap:12px;align-items:center;cursor:pointer;font-weight:400;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .sw{width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.switch .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.switch input:checked + .sw{background:var(--wa)}
+.switch input:checked + .sw::after{left:21px}
+.switch input:focus-visible + .sw{outline:3px solid var(--accent);outline-offset:2px}
+.switch b{display:block;font-size:15px}
+.switch small{display:block;color:var(--muted);font-size:13px}
+.acc-edit{display:grid;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;background:var(--bg)}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -859,6 +870,7 @@ async function detectBackend(){
 const COLS = ["id","pro","date","start","dur","status","source","orderThumb"];
 function rowToB(r){ return Object.assign({}, r.datos || {}, {id:r.id, pro:r.pro, date:r.fecha, start:r.inicio, dur:r.dur, status:r.estado, source:r.origen}); }
 function bToDatos(b){ const d = {}; Object.keys(b).forEach(k => { if (!COLS.includes(k) && !k.startsWith("_")) d[k] = b[k]; }); return d; }
+const sendOn = k => !(S.waSend && S.waSend[k] === false);
 function fixCfg(){ ["payments","coverage","services","pros"].forEach(k => { if (!S[k]) S[k] = clone(DEFAULTS[k]); }); if (!S.clinic) S.clinic = clone(DEFAULTS.clinic); if (!S.mode) S.mode = DEFAULTS.mode; }
 async function cloudLoadCfg(){
   if (STAFF){
@@ -1510,11 +1522,12 @@ function renderSide(){
   const pend = DB.bookings.filter(b => b.status === "pendiente" && b.date >= t && live(b)).sort((a,b) => (a.date+a.start).localeCompare(b.date+b.start));
   $("pendCount").textContent = pend.length;
   $("pendList").innerHTML = pend.length ? pend.slice(0, 6).map(b => `<div class="li"><button class="open" data-open="${b.id}"><b>${esc(b.name)}${b.isNew ? ' <span class="pill pendiente">Nuevo</span>' : ""}</b><span class="muted">${esc(itemsName(b.items))} · ${relDay(Math.round((parse(b.date)-parse(t))/864e5), b.date)} ${b.start}</span></button>
-    <a class="btn btn-wa btn-sm" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">Confirmar</a></div>`).join("")
+    ${waOn() || !sendOn("conf") || !b.phone ? `<button class="btn btn-soft btn-sm" type="button" data-act="confirmado" data-id="${b.id}">Confirmar</button>` : `<a class="btn btn-wa btn-sm" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">Confirmar</a>`}</div>`).join("")
     + (pend.length > 6 ? `<p class="muted" style="font-size:13px;margin:8px 0 0">y ${pend.length - 6} más</p>` : "")
     : `<p class="muted" style="font-size:13.5px;margin:0">Todo confirmado.</p>`;
   const tm = addDays(t, 1);
   const rem = DB.bookings.filter(b => b.date === tm && b.status === "confirmado" && live(b)).sort((a,b) => a.start.localeCompare(b.start));
+  $("remCount").closest(".card").hidden = !sendOn("rec");
   $("remCount").textContent = rem.filter(b => !b.reminded).length;
   $("remList").innerHTML = rem.length ? rem.slice(0, 8).map(b => `<div class="li"><button class="open" data-open="${b.id}"><b>${esc(b.name)}</b><span class="muted num">${b.start} · ${esc(itemsName(b.items))}</span></button>
     ${b.reminded ? `<span class="sent">Enviado ✓</span>` : `<a class="btn btn-soft btn-sm" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">Recordar</a>`}</div>`).join("")
@@ -1601,9 +1614,9 @@ function openBooking(id){
     return;
   }
   let acts = "";
-  if (b.status === "pendiente") acts = waOn() ? `<button class="btn btn-primary" data-act="confirmado" data-id="${b.id}">Confirmar turno</button>`
+  if (b.status === "pendiente") acts = waOn() || !sendOn("conf") || !b.phone ? `<button class="btn btn-primary" data-act="confirmado" data-id="${b.id}">Confirmar turno</button>`
     : `<a class="btn btn-wa" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">${WA_ICON}Confirmar y avisar por WhatsApp</a>`;
-  if (b.status === "confirmado") acts = `${waOn() ? "" : `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>`}
+  if (b.status === "confirmado") acts = `${waOn() || !sendOn("rec") ? "" : `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>`}
       <button class="btn btn-soft" data-act="asistio" data-id="${b.id}">Asistió</button><button class="btn btn-soft" data-act="ausente" data-id="${b.id}">No asistió</button>`;
   if (b.status === "asistio" || b.status === "ausente") acts = `<button class="btn btn-soft" data-act="confirmado" data-id="${b.id}">Volver a “confirmado”</button>`;
   const ord = needsOrder(b.items);
@@ -1636,7 +1649,7 @@ function openBooking(id){
       : !b.orderPath && b.orderSent ? `<div class="notice"><b>Orden médica</b>El paciente la envió por foto. Buscala en el chat de WhatsApp del consultorio.</div>` : ""}
     ${ord && !b.order && (b.status === "pendiente" || b.status === "confirmado") ? `<div class="actions"><button class="btn btn-soft btn-sm" data-act="order" data-id="${b.id}">Marcar que trajo la orden</button></div>` : ""}
     ${acts ? `<div class="actions">${acts}</div>` : ""}
-    ${b.status === "pendiente" || b.status === "confirmado" ? `${waOn() ? "" : `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>`}
+    ${b.status === "pendiente" || b.status === "confirmado" ? `${waOn() || (b.status === "pendiente" ? !sendOn("conf") : !sendOn("rec")) ? "" : `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>`}
       <div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
   fillOrderView();
 }
@@ -1885,6 +1898,12 @@ function renderConfig(){
   setTimeout(() => { if (CLOUD && STAFF) renderWaCfg(); }, 0);
   const sm = isStudyMode(), c = C();
   $("cfg").innerHTML = `
+  <section class="card send-card">
+    <h2>Envíos por WhatsApp</h2>
+    <p class="hint">${waOn() ? "Con el WhatsApp automático activo, estos mensajes le llegan solos al paciente." : "Estos mensajes se mandan con un toque desde el panel (botones de WhatsApp)."} Apagá el que no quieras usar.</p>
+    <label class="switch" for="send-conf"><input type="checkbox" id="send-conf" data-send="conf" ${sendOn("conf") ? "checked" : ""}><span class="sw"></span><span><b>Confirmación del turno</b><small>${waOn() ? "Al reservar o cuando agendás un turno." : "Botón «Confirmar y avisar por WhatsApp»."}</small></span></label>
+    <label class="switch" for="send-rec"><input type="checkbox" id="send-rec" data-send="rec" ${sendOn("rec") ? "checked" : ""}><span class="sw"></span><span><b>Recordatorio el día anterior</b><small>${waOn() ? "Con los botones Confirmo / Necesito cambiarlo." : "Lista «Recordatorios para mañana» en el panel."}</small></span></label>
+  </section>
   ${CLOUD && STAFF ? `<section class="card">
     <h2>Tu cuenta</h2>
     <p class="hint">Este es el link para que tus pacientes reserven. Compartilo en WhatsApp, Instagram o Google.</p>
@@ -2014,8 +2033,7 @@ async function renderWaCfg(){
       <fieldset class="wa-incl"><legend>Datos que se incluyen en los mensajes automáticos</legend>
         <div class="checks">${[["profesional","Profesional"],["direccion","Dirección"],["monto","Monto a abonar y medios de pago"],["indicaciones","Preparación, qué necesita y qué traer"]].map(([k, l]) => `<label class="check" for="wi-${k}"><input type="checkbox" id="wi-${k}" data-waincl="${k}" ${(S.waIncl || {})[k] === false ? "" : "checked"}> ${l}</label>`).join("")}</div>
         <p class="muted" style="font-size:12.5px;margin:0">Lo que destildes se reemplaza por una raya (—) en el mensaje. Para cambiar el texto en sí, editá la plantilla en Meta.</p></fieldset>
-      <label class="check" for="wa-ar"><input type="checkbox" id="wa-ar" ${w.al_reservar ? "checked" : ""}> Enviar la confirmación cuando se reserva o se agenda un turno</label>
-      <label class="check" for="wa-re"><input type="checkbox" id="wa-re" ${w.recordatorio ? "checked" : ""}> Enviar el recordatorio el día anterior</label>
+      <p class="muted" style="font-size:13px;margin:0">Qué mensajes se mandan se elige arriba, en <b>Envíos por WhatsApp</b>.</p>
       <label class="check" for="wa-on"><input type="checkbox" id="wa-on" ${w.activo ? "checked" : ""}> <b>WhatsApp automático activado</b></label>
       <p class="err" id="wa-err" role="alert"></p>
       <button class="btn btn-primary" type="submit">Guardar</button>
@@ -2033,10 +2051,10 @@ document.addEventListener("submit", async e => {
   if (e.target.id !== "waForm") return;
   e.preventDefault();
   const body = {phone_id: $("wa-phone").value.trim(), plantilla_conf: $("wa-pc").value.trim(), plantilla_rec: $("wa-pr").value.trim(), idioma: $("wa-id").value.trim(),
-    hora_rec: Number($("wa-hora").value), al_reservar: $("wa-ar").checked, recordatorio: $("wa-re").checked, activo: $("wa-on").checked};
+    hora_rec: Number($("wa-hora").value), al_reservar: sendOn("conf"), recordatorio: sendOn("rec"), activo: $("wa-on").checked};
   if ($("wa-token").value.trim()) body.token = $("wa-token").value.trim();
   if ($("wa-secret").value.trim()) body.app_secret = $("wa-secret").value.trim();
-  try { WA = await api("whatsapp", {method: "PUT", body}); toast(WA.activo ? "WhatsApp automático activado." : "Guardado. WhatsApp automático apagado."); renderWaCfg(); if (waOn()) loadWaMsgs(); }
+  try { WA = await api("whatsapp", {method: "PUT", body}); toast(WA.activo ? "WhatsApp automático activado." : "Guardado. WhatsApp automático apagado."); renderConfig(); if (waOn()) loadWaMsgs(); }
   catch(ex){ $("wa-err").textContent = ex.message; }
 });
 document.addEventListener("click", async e => {
@@ -2208,7 +2226,7 @@ function refreshAll(){
 }
 
 /* eventos de configuración */
-$("cfg").addEventListener("change", e => {
+$("cfg").addEventListener("change", async e => {
   const t = e.target;
   if (t.name === "mode"){ S.mode = t.value; UI.tab = "consultas"; saveCfg(); refreshAll(); toast(t.value === "estudios" ? "Modo consultas y estudios activado." : "Modo agenda de turnos activado."); return; }
   if (t.id === "logoFile"){
@@ -2221,6 +2239,12 @@ $("cfg").addEventListener("change", e => {
   if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
   if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
+  if (t.dataset.send){
+    S.waSend = Object.assign({}, S.waSend, {[t.dataset.send]: t.checked}); saveCfg();
+    if (CLOUD && STAFF){ try { WA = await api("whatsapp", {method: "PUT", body: t.dataset.send === "conf" ? {al_reservar: t.checked} : {recordatorio: t.checked}}); } catch(_){} }
+    toast((t.dataset.send === "conf" ? "Confirmación" : "Recordatorio") + (t.checked ? " por WhatsApp activado." : " por WhatsApp desactivado."));
+    return;
+  }
   if (t.dataset.waincl){ S.waIncl = Object.assign({}, S.waIncl, {[t.dataset.waincl]: t.checked}); saveCfg(); toast("Guardado."); return; }
   if (t.id === "ask-aff"){ S.askAffiliate = t.checked; saveCfg(); toast(t.checked ? "Ahora se pide el número de afiliado al reservar." : "Ya no se pide el número de afiliado."); return; }
   if (t.dataset.covAuth != null){ S.coverage[Number(t.dataset.covAuth)].auth = t.checked; saveCfg(); return; }
@@ -2445,15 +2469,15 @@ const patientLink = slug => baseUrl() + "?c=" + encodeURIComponent(slug);
 let ACCOUNTS = [], NEW_ACC = null;
 async function loadAccounts(){ try { ACCOUNTS = await api("admin/cuentas"); } catch(ex){ toast("No se pudieron cargar las cuentas: " + ex.message); } }
 function credsText(a, clave){
-  return `Hola! Ya tenés tu agenda de turnos online.\n\nIngresá en: ${baseUrl()}\nMail: ${a.email}\nContraseña: ${clave}\n\nLink para que tus pacientes reserven:\n${patientLink(a.slug)}\n\nTe recomiendo cambiar la contraseña desde Configuración → Tu cuenta.`;
+  return `Hola! ${clave ? "Ya tenés tu agenda de turnos online." : "Te paso los datos de tu agenda de turnos online."}\n\nIngresá en: ${baseUrl()}\nMail: ${a.email}\nContraseña: ${clave || "la misma que ya tenías"}\n\nLink para que tus pacientes reserven:\n${patientLink(a.slug)}${clave ? "\n\nTe recomiendo cambiar la contraseña desde Configuración → Tu cuenta." : ""}`;
 }
 function credsBox(a, clave, title){
   const t = credsText(a, clave);
   return `<div class="creds-box" role="status">
     <b>${title}</b>
-    <dl><dt>Consultorio</dt><dd>${esc(a.nombre)}</dd><dt>Mail</dt><dd>${esc(a.email)}</dd><dt>Contraseña</dt><dd><span class="code big">${esc(clave)}</span></dd>
+    <dl><dt>Consultorio</dt><dd>${esc(a.nombre)}</dd><dt>Mail</dt><dd>${esc(a.email)}</dd><dt>Contraseña</dt><dd>${clave ? `<span class="code big">${esc(clave)}</span>` : `<span class="muted">sin cambios</span>`}</dd>
       <dt>Link pacientes</dt><dd style="word-break:break-all">${esc(patientLink(a.slug))}</dd></dl>
-    <p class="muted" style="margin:0;font-size:13px">Esta contraseña se ve una sola vez. Copiala o mandala ahora.</p>
+    ${clave ? `<p class="muted" style="margin:0;font-size:13px">Esta contraseña se ve una sola vez. Copiala o mandala ahora.</p>` : ""}
     <div class="actions"><button class="btn btn-primary btn-sm" type="button" data-copy="${esc(t)}">Copiar datos</button>
     <a class="btn btn-wa btn-sm" href="https://wa.me/?text=${encodeURIComponent(t)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a></div>
   </div>`;
@@ -2483,7 +2507,8 @@ async function renderCuentas(){
       <div class="acc-main"><div class="acc-title"><b>${esc(a.nombre)}</b><span class="pill ${a.activa ? "confirmado" : "ausente"}">${a.activa ? "Activa" : "Desactivada"}</span></div>
         <span class="meta">${esc(a.email)} · ${a.turnos} turno${a.turnos === 1 ? "" : "s"} · último ingreso: ${fmtD(a.ultimo_ingreso)}</span>
         <span class="meta" style="word-break:break-all">${esc(patientLink(a.slug))} <button class="linkbtn" type="button" data-copy="${esc(patientLink(a.slug))}">Copiar link</button></span></div>
-      <div class="actions"><button class="btn btn-soft btn-sm" type="button" data-accreset="${a.id}">Nueva contraseña</button>
+      <div class="actions"><button class="btn btn-primary btn-sm" type="button" data-accedit="${a.id}">Editar y reenviar</button>
+        <button class="btn btn-soft btn-sm" type="button" data-accreset="${a.id}">Nueva contraseña</button>
         <button class="btn ${a.activa ? "btn-danger" : "btn-soft"} btn-sm" type="button" data-acctoggle="${a.id}">${a.activa ? "Desactivar" : "Activar"}</button></div>
       <div class="acc-out"></div>
     </div>`).join("") || `<p class="muted" style="margin:0">Todavía no creaste ninguna cuenta.</p>`}</div>
@@ -2522,6 +2547,36 @@ document.addEventListener("click", async e => {
     try { await api("admin/cuentas/" + id, {method: "PATCH", body: {activa: !a.activa}}); toast(a.activa ? "Cuenta desactivada: ya no puede ingresar y su link de turnos deja de funcionar." : "Cuenta activada."); NEW_ACC = null; renderCuentas(); }
     catch(ex){ toast(ex.message); }
   }
+});
+document.addEventListener("click", e => {
+  const ed = e.target.closest("[data-accedit]"); if (!ed) return;
+  const a = ACCOUNTS.find(x => x.id === Number(ed.dataset.accedit)), out = ed.closest(".acc").querySelector(".acc-out");
+  if (out.querySelector(".acc-edit")){ out.innerHTML = ""; return; }
+  out.innerHTML = `<form class="acc-edit" data-id="${a.id}" novalidate>
+    <div class="row2"><label>Nombre del consultorio<input name="nombre" value="${esc(a.nombre)}"></label><label>Mail del profesional<input name="email" type="email" value="${esc(a.email)}"></label></div>
+    <label>Link para pacientes<input name="slug" value="${esc(a.slug)}"></label>
+    <p class="muted" style="font-size:12.5px;margin:-4px 0 0">Si cambiás el link, el anterior deja de funcionar: el consultorio tiene que compartir el nuevo.</p>
+    <label class="check"><input type="checkbox" name="nueva"> Generar una contraseña nueva (la anterior deja de funcionar)</label>
+    <p class="err" role="alert"></p>
+    <div class="actions"><button class="btn btn-primary btn-sm" type="submit">Guardar y preparar mensaje</button><button class="btn btn-soft btn-sm" type="button" data-acccancel>Cancelar</button></div>
+  </form>`;
+  out.querySelector("input[name=nombre]").focus();
+});
+document.addEventListener("click", e => { const c = e.target.closest("[data-acccancel]"); if (c) c.closest(".acc-out").innerHTML = ""; });
+document.addEventListener("submit", async e => {
+  const f = e.target.closest(".acc-edit"); if (!f) return;
+  e.preventDefault();
+  const id = Number(f.dataset.id), body = {nombre: f.nombre.value.trim(), email: f.email.value.trim(), slug: f.slug.value.trim(), reiniciarClave: f.nueva.checked};
+  if (!body.nombre) return f.querySelector(".err").textContent = "Escribí el nombre del consultorio.";
+  try {
+    const r = await api("admin/cuentas/" + id, {method: "PATCH", body});
+    const i = ACCOUNTS.findIndex(x => x.id === id); if (r.cuenta) ACCOUNTS[i] = Object.assign(ACCOUNTS[i], r.cuenta);
+    const a = Object.assign({}, ACCOUNTS[i]);
+    await renderCuentas();
+    const box = document.querySelector(`.acc[data-acc="${id}"] .acc-out`);
+    if (box){ box.innerHTML = credsBox(a, r.clave || null, r.clave ? "Datos guardados · contraseña nueva" : "Datos guardados"); box.scrollIntoView({block: "nearest"}); }
+    toast("Cambios guardados. Mandale los datos por WhatsApp o copialos.");
+  } catch(ex){ f.querySelector(".err").textContent = ex.message; }
 });
 document.addEventListener("input", e => {
   if (e.target.id === "na-nombre" || e.target.id === "na-slug"){
@@ -2646,6 +2701,7 @@ const HELP = {
       <li><b>Consultas y estudios:</b> duración, precio particular, <i>preparación</i>, <i>«Para este estudio necesitás…»</i>, si pide orden médica (y foto de la orden) y si se puede <b>combinar</b> con otro en el mismo turno.</li>
       <li><b>Valores por obra social:</b> la tabla es interna. Al paciente solo le mostramos el monto final que abona.</li>
       <li><b>Obras sociales:</b> marcá las que piden <b>orden autorizada</b> y si querés pedir el <b>número de afiliado</b>.</li>
+      <li><b>Envíos por WhatsApp:</b> prendé o apagá la confirmación y el recordatorio. Apagados, no se mandan (ni los automáticos ni los botones del panel).</li>
       <li><b>Mensajes de WhatsApp:</b> editá el texto de la confirmación y del recordatorio. Tocá un dato (nombre, fecha, monto, preparación…) para insertarlo y mirá la vista previa.</li>
       <li><b>Datos del consultorio:</b> anticipación mínima para reservar y cuántos días hacia adelante se pueden ver (hasta un año).</li></ul>`)}
     ${CLOUD ? H("WhatsApp automático (opcional)", `<ul>
@@ -2669,6 +2725,7 @@ const HELP = {
       <li>Tocá <b>Crear cuenta</b>: aparece la <b>contraseña una sola vez</b>.</li>
       <li>Tocá <b>Enviar por WhatsApp</b> o <b>Copiar datos</b>: le llega el link para ingresar, su mail, su contraseña y el link para sus pacientes.</li></ol>`, true)}
     ${H("Manejar las cuentas", `<ul>
+      <li><b>Editar y reenviar:</b> cambiá el nombre, el mail o el link del consultorio (y si querés, generá una contraseña nueva). Al guardar aparece el mensaje con los datos para mandarlo por WhatsApp o copiarlo.</li>
       <li><b>Nueva contraseña:</b> si un profesional la olvidó. La anterior deja de funcionar.</li>
       <li><b>Desactivar:</b> no puede ingresar y su link de turnos deja de funcionar. Sus datos se guardan; podés <b>Activar</b> de nuevo cuando quieras.</li>
       <li>Ves cuántos turnos tiene cada uno y cuándo ingresó por última vez.</li></ul>`)}
