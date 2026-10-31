@@ -1276,7 +1276,7 @@ function updateOs(){
   if (!$("b-os")) return;
   const p = pro(UI.slotPro), os = $("b-os").value, sel = selection();
   const items = sel.items.map(s => ({id:s.id, n:s.name})), f = payFor(items, os), price = f.total;
-  $("osExtra").style.display = os === "Particular" ? "none" : "";
+  $("osExtra").style.display = os === "Particular" || !S.askAffiliate ? "none" : "";
   let n = "";
   if (!covers(p, os)) n = `<div class="notice bad"><b>${esc(p.name)} no atiende por ${esc(os)}</b>Podés elegir «Particular»${UI.tab === "estudios" && UI.who === "any" ? " o volver al paso 2 y elegir otro horario" : ""}.</div>`;
   else if (os === "Particular") n = `<div class="notice warn"><b>Monto a abonar: ${money(price)}</b>Se abona el día del turno. ${esc(payText())}</div>`;
@@ -1372,13 +1372,13 @@ $("formArea").addEventListener("submit", async e => {
   if (dni.length < 7 || dni.length > 8) return err("Escribí tu DNI, solo números.", "b-dni");
   if (digits(phone).length < 8) return err("Escribí un WhatsApp válido, con código de área.", "b-phone");
   if (!covers(p, os)) return err("Elegí «Particular» o una cobertura que acepte " + p.name + ".", "b-os");
-  if (os !== "Particular" && !aff) return err("Escribí tu número de afiliado de " + os + ".", "b-aff");
+  if (S.askAffiliate && os !== "Particular" && !aff) return err("Escribí tu número de afiliado de " + os + ".", "b-aff");
   const photoMode = needsOrder(items) && wantsPhoto(items);
   if (photoMode && !UI.orderFile && !$("b-later").checked) return err("Subí una foto de la orden médica, o marcá que la llevás el día del turno.", "b-file");
   if (needsOrder(items) && !photoMode && !$("b-order").checked) return err("Para los estudios necesitás orden médica. Marcá la casilla si ya la tenés.", "b-order");
   if (!fits(p, UI.date, UI.time, sel.dur)){ err("Ese horario se acaba de ocupar. Elegí otro."); UI.time = null; renderCal(); return; }
   const b = {id:newId(), pro:p.id, date:UI.date, start:toT(UI.time), dur:sel.dur, status:"pendiente", name, phone, dni, os,
-    plan: os === "Particular" ? "" : $("b-plan").value.trim(), aff: os === "Particular" ? "" : aff, order: needsOrder(items) ? (photoMode ? true : $("b-order").checked) : false,
+    plan: os === "Particular" || !S.askAffiliate ? "" : $("b-plan").value.trim(), aff: os === "Particular" || !S.askAffiliate ? "" : aff, order: needsOrder(items) ? (photoMode ? true : $("b-order").checked) : false,
     orderSent: photoMode && !!UI.orderFile, orderThumb: photoMode && UI.orderFile ? UI.orderThumb : null, orderName: photoMode && UI.orderFile ? UI.orderFile.name : "",
     items, first:$("b-first").checked, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
   if (CLOUD){
@@ -1624,7 +1624,7 @@ function openFree(pid, m){
       <div class="row2"><label for="m-dni">DNI<input id="m-dni" inputmode="numeric"></label>
       <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
       <div class="row2"><label for="m-os">Cobertura<select id="m-os"><option>Particular</option>${S.coverage.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
-      <label for="m-aff">Nº de afiliado<input id="m-aff" inputmode="numeric"></label></div>
+      ${S.askAffiliate ? `<label for="m-aff">Nº de afiliado<input id="m-aff" inputmode="numeric"></label>` : ""}</div>
       ${waOn() ? `<label class="check" for="m-avisar"><input type="checkbox" id="m-avisar" checked> Enviarle la confirmación por WhatsApp</label>` : ""}
       <label class="check" for="m-order"><input type="checkbox" id="m-order" checked> Trae orden médica (si es estudio)</label>
       <p class="err" id="m-err" role="alert"></p>
@@ -1838,7 +1838,7 @@ function submitManual(f){
   if (!fits(p, PANEL.date, m, dur)) return err(`No entra: el turno dura ${dur} min y se superpone con otro turno o termina fuera del horario de atención.`);
   const os = $("m-os").value;
   const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
-    dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
+    dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" || !$("m-aff") ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
     first:false, note:"", source:"manual", code:code(), reminded:false, _avisar: $("m-avisar") ? $("m-avisar").checked : true};
   DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado." + (waOn() && b.phone && b._avisar ? " Le enviamos la confirmación por WhatsApp." : "")); sync(b);
 }
@@ -1919,6 +1919,7 @@ function renderConfig(){
   <section class="card">
     <h2>Obras sociales y prepagas</h2>
     <p class="hint">Marcá las que piden orden autorizada para estudios. Con cuáles trabaja cada profesional se elige en su ficha.</p>
+    <label class="check" for="ask-aff" style="margin-bottom:12px"><input type="checkbox" id="ask-aff" ${S.askAffiliate ? "checked" : ""}> Pedir número de afiliado al reservar <span class="muted" style="font-weight:400">(si está apagado, el paciente solo elige su obra social)</span></label>
     <div class="covs">${S.coverage.map((cv, i) => `<span class="cov">${esc(cv.n)}<label for="cv-${i}"><input type="checkbox" id="cv-${i}" data-cov-auth="${i}" ${cv.auth?"checked":""}> autorización</label><button type="button" data-cov-del="${i}" aria-label="Quitar ${esc(cv.n)}">×</button></span>`).join("")}</div>
     <div class="addrow"><input id="cov-new" placeholder="Agregar obra social o prepaga"><button class="btn btn-soft" type="button" data-cfg="cov-add">Agregar</button></div>
   </section>
@@ -2173,6 +2174,7 @@ $("cfg").addEventListener("change", e => {
   if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
   if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
+  if (t.id === "ask-aff"){ S.askAffiliate = t.checked; saveCfg(); toast(t.checked ? "Ahora se pide el número de afiliado al reservar." : "Ya no se pide el número de afiliado."); return; }
   if (t.dataset.covAuth != null){ S.coverage[Number(t.dataset.covAuth)].auth = t.checked; saveCfg(); return; }
   if (t.dataset.c){ const k = t.dataset.c; S.clinic[k] = t.type === "number" ? Math.max(Number(t.min || 0), Number(t.value) || 0) : t.value.trim(); saveCfg(); refreshAll(); toast("Guardado."); }
 });
