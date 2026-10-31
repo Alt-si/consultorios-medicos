@@ -1258,7 +1258,8 @@ function renderForm(){
         <label for="b-dni">DNI<input id="b-dni" inputmode="numeric" placeholder="Ej. 30123456"></label>
       </div>
       <label for="b-phone">WhatsApp<input id="b-phone" type="tel" autocomplete="tel" placeholder="Ej. 11 5555-1234"></label>
-      <label for="b-os">Cobertura<select id="b-os"><option>Particular</option>${S.coverage.map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
+      <label for="b-os">Cobertura<select id="b-os"><option>Particular</option>${S.coverage.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
+      ${S.coverage.some(c => covers(p, c.n)) ? "" : `<p class="muted" style="font-size:13px;margin:-6px 0 0">${esc(p.name)} atiende solo en forma particular.</p>`}
       <div class="row2" id="osExtra">
         <label for="b-plan">Plan (opcional)<input id="b-plan" placeholder="Ej. 210"></label>
         <label for="b-aff">Nº de afiliado<input id="b-aff" inputmode="numeric" placeholder="Como figura en la credencial"></label>
