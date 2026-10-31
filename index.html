@@ -412,6 +412,23 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .kv code{background:var(--sunk);padding:4px 8px;border-radius:6px;word-break:break-all;font-size:12.5px}
 .wa-st .pill{margin:2px 0}
 @media (max-width:620px){ .kv{grid-template-columns:1fr} }
+.help-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--accent);display:grid;place-items:center;cursor:pointer;padding:0;position:relative;flex:none}
+.help-btn svg{width:20px;height:20px}
+.help-btn:hover{background:var(--accent-soft)}
+.help-btn.pulse::after{content:"";position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--wa);border:2px solid var(--surface)}
+.help-tabs{width:100%}
+.help-tabs button{flex:1}
+.help-search input{font-size:15px}
+.hintro{margin:0 0 4px;color:var(--muted);font-size:14.5px}
+.hs{border:1px solid var(--line);border-radius:10px;margin-top:8px;background:var(--surface)}
+.hs summary{cursor:pointer;padding:11px 14px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.hs summary::-webkit-details-marker{display:none}
+.hs summary::after{content:"+";color:var(--accent);font-size:18px;line-height:1}
+.hs[open] summary::after{content:"–"}
+.hs[open] summary{border-bottom:1px solid var(--line)}
+.hb{padding:4px 14px 12px;font-size:14.5px;line-height:1.55}
+.hb ul,.hb ol{margin:8px 0 0;padding-left:20px;display:grid;gap:6px}
+.hb code{background:var(--sunk);padding:1px 5px;border-radius:4px;font-size:13px}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -562,6 +579,7 @@ dd{margin:0;font-weight:500}
       <button class="tab" role="tab" aria-selected="false" data-view="cuentas" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg>Cuentas</button>
       <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Configuración</button>
     </div>
+    <button class="help-btn" id="helpBtn" type="button" aria-label="Ayuda y tutorial" title="Ayuda y tutorial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
     <button class="btn btn-soft btn-sm login-top" id="loginTop" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Ingresar</button>
     <span class="who-box" id="whoBox" hidden><span id="whoMail"></span><button class="btn btn-soft btn-sm" type="button" id="logoutBtn">Salir</button></span>
     <button class="btn btn-primary btn-sm" id="installBtn" type="button" hidden>Instalar app</button>
@@ -2507,6 +2525,138 @@ document.addEventListener("submit", async e => {
   try { await api("whatsapp/responder", {method: "POST", body: {telefono: f.dataset.tel, texto}}); toast("Respuesta enviada."); await loadWaMsgs(); }
   catch(ex){ f.querySelector(".err").textContent = ex.message; btn.disabled = false; }
 });
+
+/* ================= AYUDA Y TUTORIAL ================= */
+const H = (titulo, cuerpo, abierto) => `<details class="hs" ${abierto ? "open" : ""}><summary>${titulo}</summary><div class="hb">${cuerpo}</div></details>`;
+const HELP = {
+  pacientes: {label: "Pacientes", html: () => `
+    <p class="hintro">Así reservan los pacientes desde el link del consultorio. <b>No necesitan registrarse.</b></p>
+    ${H("1. Elegir qué necesitás", `<ul>
+      <li>Arriba elegí <b>Consultas médicas</b> o <b>Estudios</b> (si el consultorio hace estudios).</li>
+      <li>En consultas tocá el <b>profesional</b>; en estudios tocá el <b>estudio</b> (ecografía, mamografía…).</li>
+      <li>Cada opción muestra el <b>próximo turno libre</b>.</li></ul>`, true)}
+    ${H("2. Elegir día y horario", `<ul>
+      <li>Si el estudio lo hacen varios profesionales, elegí <b>¿Con quién?</b> o dejá <b>Indistinto</b> para ver el primer turno libre de cualquiera.</li>
+      <li>En consultas, elegí el <b>motivo</b>.</li>
+      <li>¿Necesitás otro estudio el mismo día? Tocá <b>Agregar al turno</b> y se hacen los dos seguidos.</li>
+      <li>En la tira de días ves cuántos horarios libres hay. Los ocupados aparecen tachados.</li></ul>`)}
+    ${H("3. Completar tus datos", `<ul>
+      <li>Nombre, DNI y WhatsApp.</li>
+      <li><b>Cobertura:</b> elegí tu obra social o prepaga, o «Particular». Te mostramos el <b>monto a abonar</b>.</li>
+      <li>Si es un estudio, ves la <b>preparación</b> (ayuno, vejiga llena…) y qué tenés que llevar.</li>
+      <li>Si pide orden médica, <b>sacale una foto</b> y subila: le llega al consultorio con tu turno.</li></ul>`)}
+    ${H("4. Después de reservar", `<ul>
+      <li>Te damos un <b>código de reserva</b> y la preparación para que la tengas a mano.</li>
+      <li>Tocá <b>Enviar por WhatsApp</b> para avisarle al consultorio, o, si el consultorio tiene WhatsApp automático, te llega solo el mensaje con todos los datos.</li>
+      <li>El día anterior te puede llegar un <b>recordatorio</b> para que confirmes que vas.</li>
+      <li>Para <b>cancelar o cambiar</b> el turno, respondé el WhatsApp del consultorio.</li></ul>`)}
+    ${H("¿Cómo la instalo en el celular?", installHelp())}` },
+
+  consultorio: {label: "Consultorio", html: () => `
+    <p class="hintro">Todo lo que puede hacer el consultorio. Arriba tenés tres pestañas: <b>Reservar turno</b> (lo que ven tus pacientes), <b>Panel</b> (tu agenda) y <b>Configuración</b>.</p>
+    ${H("Primeros pasos (hacelo una vez)", `<ol class="steps-h">
+      <li><b>Cambiá tu contraseña:</b> Configuración → <i>Tu contraseña</i>.</li>
+      <li><b>Datos del consultorio:</b> nombre, dirección, WhatsApp y <b>logo</b>.</li>
+      <li><b>Tipo de agenda:</b> <i>Agenda de turnos</i> (solo profesionales) o <i>Consultas y estudios</i>.</li>
+      <li><b>Profesionales:</b> agregá a cada uno con sus días, horarios e intervalo entre turnos.</li>
+      <li><b>Consultas y estudios:</b> duración, precio, preparación y si piden orden médica.</li>
+      <li><b>Obras sociales y valores:</b> cargá cuánto paga cada una para que el paciente vea lo que abona.</li>
+      <li><b>Medios de pago</b> que aceptás.</li>
+      <li><b>Compartí tu link</b> para pacientes: Configuración → <i>Tu cuenta</i> → Copiar o Compartir.</li>
+      <li><b>Instalá la app</b> en tu celular (ver abajo).</li></ol>`, true)}
+    ${H("El panel: tu agenda", `<ul>
+      <li><b>Arriba:</b> turnos del día, pendientes de confirmar, ocupación de la semana y estudios.</li>
+      <li><b>Menú de profesionales:</b> mirá la agenda de uno o de todos.</li>
+      <li><b>Vistas:</b> <i>Lista</i> (simple, ideal en el celular), <i>Grilla</i> (columnas por profesional y horas) y <i>Calendario</i> (mes o los 12 meses).</li>
+      <li><b>Tira de la semana:</b> tocá un día para ir a él. Las flechas ‹ › cambian de día.</li>
+      <li><b>Colores:</b> amarillo = pendiente · verde = confirmado · gris = asistió · rojo = no asistió · rayado = bloqueado.</li>
+      <li><b>Símbolos:</b> ● nuevo · ⚠ estudio sin orden médica · 📎 subió la foto de la orden · ✓ confirmó por WhatsApp · ↺ pidió cambiar el turno.</li></ul>`)}
+    ${H("Atender un turno", `<ul>
+      <li>Tocá el turno para abrir su <b>ficha</b>: datos del paciente, cobertura, orden médica y cuánto cobrar (valor, cuánto paga la obra social y cuánto abona el paciente).</li>
+      <li><b>Confirmar:</b> lo pasa a confirmado y, si no tenés WhatsApp automático, abre WhatsApp con el mensaje listo.</li>
+      <li><b>Asistió / No asistió</b> el día del turno.</li>
+      <li><b>Cancelar turno:</b> libera el horario para otro paciente.</li>
+      <li>Si el paciente subió la <b>foto de la orden</b>, la ves en la ficha.</li></ul>`)}
+    ${H("Dar un turno a mano o bloquear un horario", `<ul>
+      <li>En <i>Lista</i> tocá un horario libre (los botoncitos con la hora). En <i>Grilla</i>, tocá el espacio libre.</li>
+      <li>Elegí uno o más estudios o motivos, cargá el paciente y su cobertura → <b>Agendar</b>.</li>
+      <li>O <b>Bloquear</b> ese horario (reunión, mantenimiento del equipo…): deja de aparecer para reservar.</li></ul>`)}
+    ${H("Pendientes y recordatorios", `<ul>
+      <li><b>Pendientes de confirmar:</b> las reservas nuevas, con el botón <i>Confirmar</i>.</li>
+      <li><b>Recordatorios para mañana:</b> tocá <i>Recordar</i> y se abre WhatsApp con el mensaje (preparación y monto incluidos).</li>
+      <li>Con el <b>WhatsApp automático</b> activo, los recordatorios salen solos.</li>
+      <li>Los turnos nuevos te aparecen en menos de 20 segundos con un aviso.</li></ul>`)}
+    ${H("Feriados, vacaciones y días no laborables", `<ul>
+      <li>Panel → <i>Calendario</i> → tocá un día → <b>Anular días</b>. O usá el botón <i>Anular días</i> para elegir un rango (vacaciones).</li>
+      <li>Podés anular para <b>todo el consultorio</b> o para <b>un profesional</b>, con el motivo.</li>
+      <li>Si ya había turnos dados, te los lista con un botón para <b>avisarle a cada paciente</b>.</li>
+      <li>Para volver a habilitar: tocá el día → <i>Habilitar</i>, o Configuración → <i>Días no laborables</i>.</li></ul>`)}
+    ${H("Configuración en detalle", `<ul>
+      <li><b>Profesionales:</b> horario partido (dos franjas por día), un turno cada X minutos, obras sociales con las que trabaja y qué consultas o estudios atiende. Desde su ficha podés agregar, editar o borrar motivos.</li>
+      <li><b>Consultas y estudios:</b> duración, precio particular, <i>preparación</i>, <i>«Para este estudio necesitás…»</i>, si pide orden médica (y foto de la orden) y si se puede <b>combinar</b> con otro en el mismo turno.</li>
+      <li><b>Valores por obra social:</b> la tabla es interna. Al paciente solo le mostramos el monto final que abona.</li>
+      <li><b>Obras sociales:</b> marcá las que piden <b>orden autorizada</b>.</li>
+      <li><b>Datos del consultorio:</b> anticipación mínima para reservar y cuántos días hacia adelante se pueden ver (hasta un año).</li></ul>`)}
+    ${CLOUD ? H("WhatsApp automático (opcional)", `<ul>
+      <li>Si lo activás, al paciente le llega <b>solo</b> la confirmación al reservar y el <b>recordatorio</b> el día anterior con los botones <i>Confirmo</i> y <i>Necesito cambiarlo</i>.</li>
+      <li>Necesitás un <b>número exclusivo</b> y una cuenta de Meta. Meta cobra unos US$ 0,03 por mensaje.</li>
+      <li>Se configura en Configuración → <i>WhatsApp automático</i>, siguiendo la <a href="https://github.com/Alt-si/consultorios-medicos/blob/main/GUIA-WHATSAPP.md" target="_blank" rel="noopener">guía paso a paso</a>.</li>
+      <li>Las respuestas de los pacientes aparecen en Panel → <i>Mensajes de WhatsApp</i> y se contestan desde ahí.</li>
+      <li>Si no lo activás, todo funciona igual con los botones de WhatsApp manuales.</li></ul>`) : ""}
+    ${H("Instalar la app en el celular o la computadora", installHelp())}
+    ${H("Preguntas frecuentes", `<ul>
+      <li><b>¿Los pacientes ven los datos de otros?</b> No. Solo ven qué horarios están ocupados.</li>
+      <li><b>¿Dos personas pueden sacar el mismo turno?</b> No: si reservan a la vez, gana una y a la otra le pide elegir otro horario.</li>
+      <li><b>¿Qué pasa si cambio un precio?</b> Se usa para los turnos nuevos y en la ficha de cada turno.</li>
+      <li><b>¿Olvidé la contraseña?</b> Pedile al administrador una contraseña nueva.</li>
+      ${CLOUD ? "" : "<li><b>Versión de demostración:</b> los datos quedan solo en este navegador. Ingresá con demo@consultorio.com / demo1234.</li>"}</ul>`)}` },
+
+  admin: {label: "Administrador", html: () => `
+    <p class="hintro">Como administrador creás y manejás las cuentas de cada consultorio desde la pestaña <b>Cuentas</b>.</p>
+    ${H("Crear la cuenta de un consultorio", `<ol class="steps-h">
+      <li>Escribí el <b>nombre del consultorio</b> y el <b>mail del profesional</b>. El link para pacientes se arma solo (podés cambiarlo).</li>
+      <li>Tocá <b>Crear cuenta</b>: aparece la <b>contraseña una sola vez</b>.</li>
+      <li>Tocá <b>Enviar por WhatsApp</b> o <b>Copiar datos</b>: le llega el link para ingresar, su mail, su contraseña y el link para sus pacientes.</li></ol>`, true)}
+    ${H("Manejar las cuentas", `<ul>
+      <li><b>Nueva contraseña:</b> si un profesional la olvidó. La anterior deja de funcionar.</li>
+      <li><b>Desactivar:</b> no puede ingresar y su link de turnos deja de funcionar. Sus datos se guardan; podés <b>Activar</b> de nuevo cuando quieras.</li>
+      <li>Ves cuántos turnos tiene cada uno y cuándo ingresó por última vez.</li></ul>`)}
+    ${H("Publicación y mantenimiento", `<ul>
+      <li>La app está publicada en Cloudflare: <a href="https://github.com/Alt-si/consultorios-medicos/blob/main/GUIA-CLOUDFLARE.md" target="_blank" rel="noopener">guía de publicación</a>.</li>
+      <li>Cada cambio que se sube a GitHub se publica solo en 1 o 2 minutos.</li>
+      <li>Los recordatorios automáticos de WhatsApp necesitan la clave <code>CRON_KEY</code> en Cloudflare y en GitHub.</li></ul>`)}` }
+};
+function installHelp(){
+  return `<ul>
+    <li><b>Android (Chrome):</b> tocá <b>Instalar app</b> arriba, o el menú ⋮ → <i>Instalar aplicación</i>.</li>
+    <li><b>iPhone (Safari):</b> tocá <b>Compartir</b> → <i>Agregar a inicio</i>.</li>
+    <li><b>Computadora (Chrome o Edge):</b> el ícono de instalar en la barra de direcciones.</li>
+    <li>Queda con su ícono y se abre en pantalla completa. Se actualiza sola.</li></ul>`;
+}
+function openHelp(tab){
+  const tabs = ADMIN ? ["admin", "consultorio", "pacientes"] : STAFF ? ["consultorio", "pacientes"] : ["pacientes"];
+  const cur = tabs.includes(tab) ? tab : tabs[0];
+  openDrawer("Ayuda", "Cómo usar la agenda", `
+    ${tabs.length > 1 ? `<div class="seg2 help-tabs" role="group" aria-label="Tutorial para">${tabs.map(t => `<button type="button" data-helptab="${t}" aria-pressed="${t === cur}">${HELP[t].label}</button>`).join("")}</div>` : ""}
+    <label class="help-search" for="helpQ"><input id="helpQ" type="search" placeholder="Buscar en la ayuda (ej. vacaciones, obra social, foto)"></label>
+    <div id="helpBody">${HELP[cur].html()}</div>
+    ${!STAFF && !ADMIN ? `<div class="notice"><b>¿Sos profesional?</b>Tocá <i>Ingresar</i> arriba con el mail y la contraseña que te dio el administrador.</div>` : ""}`, true);
+  try { localStorage.setItem("ayuda-vista", "1"); } catch(_){}
+  $("helpBtn").classList.remove("pulse");
+}
+$("helpBtn").addEventListener("click", () => openHelp());
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-helptab]"); if (t) openHelp(t.dataset.helptab);
+});
+document.addEventListener("input", e => {
+  if (e.target.id !== "helpQ") return;
+  const q = e.target.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  document.querySelectorAll("#helpBody .hs").forEach(d => {
+    const txt = d.textContent.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const hit = !q || txt.includes(q); d.hidden = !hit; if (q && hit) d.open = true;
+  });
+});
+try { if (localStorage.getItem("ayuda-vista") !== "1") $("helpBtn").classList.add("pulse"); } catch(_){}
 
 /* ---------- app instalable ---------- */
 let installEvt = null;
