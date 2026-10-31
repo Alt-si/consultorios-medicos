@@ -396,6 +396,22 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .linkbox{display:grid;gap:10px;background:var(--accent-soft);border-radius:10px;padding:12px}
 .linkbox > span{font-weight:600;word-break:break-all;color:var(--accent)}
 @media (max-width:620px){ .acc{grid-template-columns:1fr} }
+.wam{border-top:1px solid var(--line);padding:8px 0;display:grid;gap:3px;font-size:13.5px}
+.wam:first-child{border-top:0}
+.wam.nuevo .wam-h b::before{content:"● ";color:var(--wa)}
+.wam.salida{opacity:.75}
+.wam-h{display:flex;justify-content:space-between;gap:8px}
+.wam-h .muted{font-size:12px;white-space:nowrap}
+.wam-t{white-space:pre-wrap;word-break:break-word}
+.wam .linkbtn{justify-self:start;padding:0}
+.wa-reply{display:grid;gap:6px;margin-top:4px}
+.wa-reply textarea{min-height:60px;font-size:14.5px}
+.wa-hook,.wa-test{border-top:1px solid var(--line);margin-top:14px;padding-top:12px;display:grid;gap:8px}
+.kv{display:grid;grid-template-columns:150px 1fr auto;gap:8px;align-items:center;font-size:13.5px}
+.kv span{color:var(--muted)}
+.kv code{background:var(--sunk);padding:4px 8px;border-radius:6px;word-break:break-all;font-size:12.5px}
+.wa-st .pill{margin:2px 0}
+@media (max-width:620px){ .kv{grid-template-columns:1fr} }
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -615,6 +631,7 @@ dd{margin:0;font-weight:500}
       </div></div>
       <aside class="side">
         <div class="card"><h3>Pendientes de confirmar <span class="count" id="pendCount">0</span></h3><div id="pendList"></div></div>
+        <div class="card" id="waCard" hidden><h3>Mensajes de WhatsApp <span class="count" id="waCount">0</span></h3><div id="waList"></div></div>
         <div class="card"><h3>Recordatorios para mañana <span class="count ok" id="remCount">0</span></h3><div id="remList"></div></div>
         <div class="card"><h3>Referencias</h3>
           <div class="keys">
@@ -624,7 +641,7 @@ dd{margin:0;font-weight:500}
             <div><i class="st-ausente"></i>No asistió</div>
             <div><i class="st-bloqueo"></i>Horario bloqueado</div>
           </div>
-          <p class="muted" style="font-size:12.5px;margin:10px 0 0">Hacé clic en un horario libre para agendar un turno manual o bloquearlo. ⚠ = estudio sin orden médica · 📎 = adjuntó foto de la orden.</p>
+          <p class="muted" style="font-size:12.5px;margin:10px 0 0">Hacé clic en un horario libre para agendar un turno manual o bloquearlo. ⚠ = estudio sin orden médica · 📎 = adjuntó foto de la orden · ✓ = el paciente confirmó por WhatsApp · ↺ = pidió cambiar el turno.</p>
         </div>
       </aside>
     </div>
@@ -797,7 +814,7 @@ function saveCfg(){
    Si la web está publicada junto con el servidor (carpeta functions/), todo se
    guarda en internet y cada consultorio entra con su cuenta.
    Si no hay servidor (por ejemplo en GitHub Pages), funciona en modo demostración. */
-let SETUP = false, CLOUD = false, ME = null, STAFF = false, ADMIN = false, SLUG = "", RANGE = null, cfgTimer = null, LAST_SYNC = "", pollTimer = null;
+let WA = null, WA_MSGS = [], SETUP = false, CLOUD = false, ME = null, STAFF = false, ADMIN = false, SLUG = "", RANGE = null, cfgTimer = null, LAST_SYNC = "", pollTimer = null;
 async function api(path, opts = {}){
   const o = {method: opts.method || "GET", headers: {}, credentials: "same-origin", cache: "no-store"};
   if (opts.body !== undefined){
@@ -875,7 +892,7 @@ async function sync(b){
   const row = {pro: b.pro, fecha: b.date, inicio: b.start, dur: b.dur, estado: b.status, origen: b.source || "manual", datos: bToDatos(b)};
   try {
     if (b.id < 0 || b._new){
-      const tmp = b.id, r = await api("turnos", {method: "POST", body: row});
+      const tmp = b.id, r = await api("turnos", {method: "POST", body: Object.assign(row, {avisar: b._avisar !== false})});
       b.id = r.id; delete b._new;
       if (r.actualizado > LAST_SYNC) LAST_SYNC = r.actualizado;
       if ($("drawer").classList.contains("show") && $("dBody").querySelector(`[data-id="${tmp}"]`)) openBooking(b.id);
@@ -891,12 +908,23 @@ async function sync(b){
 }
 let tmpId = -1;
 const newId = () => CLOUD ? (tmpId -= 1) : DB.nextId++;
+const waOn = () => CLOUD && STAFF && WA && WA.activo;
+async function loadWaMsgs(notify){
+  try {
+    const prev = new Set(WA_MSGS.map(m => m.id)), list = await api("whatsapp/mensajes");
+    const nuevos = list.filter(m => !prev.has(m.id) && m.sentido === "entrada" && !m.leido);
+    WA_MSGS = list;
+    if (notify && nuevos.length) toast("Mensaje de WhatsApp de " + (nuevos[0].nombre || "+" + nuevos[0].telefono) + ": " + nuevos[0].texto.slice(0, 60));
+    if (!$("view-panel").hidden) renderWaCard();
+  } catch(_){}
+}
 // Revisa cada 20 segundos si entraron turnos nuevos
 function realtime(){
   if (!CLOUD || !STAFF || pollTimer) return;
   const tick = async () => {
     if (document.hidden) return;
     try {
+      if (waOn()) loadWaMsgs(true);
       const rows = await api("turnos?cambios=" + encodeURIComponent(LAST_SYNC));
       if (!rows.length) return;
       const nuevos = mergeRows(rows).filter(b => b.source === "web");
@@ -1442,8 +1470,9 @@ function renderAgenda(){
       const title = blk ? "Bloqueado" : b.name;
       const sub = blk ? (b.name || "") : (b.os || "Particular") + " · " + itemsName(b.items);
       const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && (b.orderSent || b.orderPath) ? " 📎" : "";
+      const waMark = !blk && b.wantsChange ? " ↺" : !blk && b.patientConfirmed ? " ✓" : "";
       c += `<button class="ev st-${b.status}" type="button" data-id="${b.id}" style="top:${top}px;height:${ht}px" aria-label="${esc(b.start + " " + title + ", " + STATUS[b.status])}">
-        <b><span class="num">${b.start}</span> ${esc(title)}${b.isNew ? " ●" : ""}${warn}</b>${ht > 34 ? `<span>${esc(sub)}</span>` : ""}</button>`;
+        <b><span class="num">${b.start}</span> ${esc(title)}${b.isNew ? " ●" : ""}${warn}${waMark}</b>${ht > 34 ? `<span>${esc(sub)}</span>` : ""}</button>`;
     });
     if (showNow) c += `<div class="now" style="top:${y(now)}px"></div>`;
     h += c + `</div>`;
@@ -1480,7 +1509,21 @@ function reminderMsg(b){
   return `Hola ${b.name.split(" ")[0]}, te recordamos tu turno de mañana a las ${b.start} h: ${itemsName(b.items)} con ${p.name}, en ${C().address}.` +
     (prep ? `\n\nAcordate:\n${prep}` : "") + (needsText(b.items) ? `\n\nNecesitás:\n${needsText(b.items)}` : "") + `\nTraé ${bringLine(b)}.` + (payLine(b) ? `\n${payLine(b)}.` : "") + `\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno.`;
 }
-function renderPanel(){ renderKpis(); renderAgenda(); renderSide(); }
+function renderPanel(){ renderKpis(); renderAgenda(); renderSide(); renderWaCard(); }
+function renderWaCard(){
+  const card = $("waCard"); if (!card) return;
+  card.hidden = !waOn(); if (card.hidden) return;
+  const unread = WA_MSGS.filter(m => m.sentido === "entrada" && !m.leido).length;
+  $("waCount").textContent = unread; $("waCount").className = "count" + (unread ? "" : " ok");
+  const quien = tel => { const b = DB.bookings.filter(x => normPhone(x.phone) === tel).sort((a, c) => c.date.localeCompare(a.date))[0]; return b ? b.name : ""; };
+  const list = WA_MSGS.slice(0, 8);
+  $("waList").innerHTML = list.length ? list.map(m => `<div class="wam ${m.sentido} ${m.leido ? "" : "nuevo"}">
+      <div class="wam-h"><b>${esc(m.sentido === "salida" ? "Consultorio → +" + m.telefono : (quien(m.telefono) || m.nombre || "+" + m.telefono))}</b><span class="muted">${new Date(m.creado).toLocaleString("es-AR", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"})}</span></div>
+      <div class="wam-t">${esc(m.texto)}</div>
+      ${m.sentido === "entrada" ? `<button class="linkbtn" type="button" data-wareply="${esc(m.telefono)}">Responder</button>` : ""}
+    </div>`).join("") + (unread ? `<button class="linkbtn" type="button" data-waread>Marcar como leídos</button>` : "")
+    : `<p class="muted" style="font-size:13.5px;margin:0">Acá aparecen las respuestas de los pacientes.</p>`;
+}
 
 /* ---------- drawer ---------- */
 let lastFocus = null;
@@ -1504,8 +1547,9 @@ function openBooking(id){
     return;
   }
   let acts = "";
-  if (b.status === "pendiente") acts = `<a class="btn btn-wa" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">${WA_ICON}Confirmar y avisar por WhatsApp</a>`;
-  if (b.status === "confirmado") acts = `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>
+  if (b.status === "pendiente") acts = waOn() ? `<button class="btn btn-primary" data-act="confirmado" data-id="${b.id}">Confirmar turno</button>`
+    : `<a class="btn btn-wa" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">${WA_ICON}Confirmar y avisar por WhatsApp</a>`;
+  if (b.status === "confirmado") acts = `${waOn() ? "" : `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>`}
       <button class="btn btn-soft" data-act="asistio" data-id="${b.id}">Asistió</button><button class="btn btn-soft" data-act="ausente" data-id="${b.id}">No asistió</button>`;
   if (b.status === "asistio" || b.status === "ausente") acts = `<button class="btn btn-soft" data-act="confirmado" data-id="${b.id}">Volver a “confirmado”</button>`;
   const ord = needsOrder(b.items);
@@ -1525,14 +1569,20 @@ function openBooking(id){
         if (f.unknown) return `<dt>A cobrar</dt><dd class="muted">Falta cargar cuánto paga ${esc(b.os)}</dd>`;
         return `<dt>Valor</dt><dd>${money(f.total)}</dd><dt>Paga ${esc(b.os)}</dt><dd>${money(f.covered)}</dd><dt>Paciente abona</dt><dd><b>${money(f.pay)}</b></dd>`; })()}
       ${b.note ? `<dt>Comentario</dt><dd>${esc(b.note)}</dd>` : ""}
-      ${b.status === "confirmado" ? `<dt>Recordatorio</dt><dd>${b.reminded ? "Enviado" : "No enviado"}</dd>` : ""}
+      ${b.status === "confirmado" && !waOn() ? `<dt>Recordatorio</dt><dd>${b.reminded ? "Enviado" : "No enviado"}</dd>` : ""}
+      ${waOn() && b.phone ? `<dt>WhatsApp automático</dt><dd class="wa-st">
+        ${b.waConf ? '<span class="pill confirmado">Confirmación enviada</span>' : b.waConfErr ? `<span class="pill ausente">Confirmación no enviada</span><br><span class="muted" style="font-size:12.5px">${esc(b.waConfErr)}</span>` : '<span class="pill bloqueo">Confirmación pendiente</span>'}
+        ${b.waRec ? '<br><span class="pill confirmado">Recordatorio enviado</span>' : b.waRecErr ? `<br><span class="pill ausente">Recordatorio no enviado</span><br><span class="muted" style="font-size:12.5px">${esc(b.waRecErr)}</span>` : ""}
+        ${b.patientConfirmed ? '<br><span class="pill confirmado">✓ El paciente confirmó que viene</span>' : ""}
+        ${b.wantsChange ? '<br><span class="pill pendiente">↺ El paciente pidió cambiar el turno</span>' : ""}</dd>` : ""}
     </dl>
+    ${b.wantsChange ? `<div class="notice warn"><b>El paciente pidió reprogramar</b>Escribile para darle otro horario y después cancelá este turno.</div>` : ""}
     ${b.orderPath ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><div id="orderView" data-path="${esc(b.orderPath)}" data-pdf="${b.orderPdf ? 1 : 0}" class="muted" style="font-size:14px">Cargando la orden…</div></div>` : ""}
     ${!b.orderPath && b.orderThumb ? `<div><p class="sec-t" style="margin-bottom:6px">Orden médica</p><a href="${b.orderThumb}" target="_blank" rel="noopener"><img class="order-img" src="${b.orderThumb}" alt="Foto de la orden médica de ${esc(b.name)}"></a></div>`
       : !b.orderPath && b.orderSent ? `<div class="notice"><b>Orden médica</b>El paciente la envió por foto. Buscala en el chat de WhatsApp del consultorio.</div>` : ""}
     ${ord && !b.order && (b.status === "pendiente" || b.status === "confirmado") ? `<div class="actions"><button class="btn btn-soft btn-sm" data-act="order" data-id="${b.id}">Marcar que trajo la orden</button></div>` : ""}
     ${acts ? `<div class="actions">${acts}</div>` : ""}
-    ${b.status === "pendiente" || b.status === "confirmado" ? `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>
+    ${b.status === "pendiente" || b.status === "confirmado" ? `${waOn() ? "" : `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>`}
       <div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
   fillOrderView();
 }
@@ -1557,6 +1607,7 @@ function openFree(pid, m){
       <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
       <div class="row2"><label for="m-os">Cobertura<select id="m-os"><option>Particular</option>${S.coverage.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
       <label for="m-aff">Nº de afiliado<input id="m-aff" inputmode="numeric"></label></div>
+      ${waOn() ? `<label class="check" for="m-avisar"><input type="checkbox" id="m-avisar" checked> Enviarle la confirmación por WhatsApp</label>` : ""}
       <label class="check" for="m-order"><input type="checkbox" id="m-order" checked> Trae orden médica (si es estudio)</label>
       <p class="err" id="m-err" role="alert"></p>
       <button class="btn btn-primary" type="submit">Agendar como confirmado</button>
@@ -1715,9 +1766,10 @@ function renderList(list){
       flush();
       const b = e.b, blk = b.status === "bloqueo";
       const warn = !blk && needsOrder(b.items) && !b.order ? " ⚠" : !blk && (b.orderSent || b.orderPath) ? " 📎" : "";
+      const waMark = !blk && b.wantsChange ? " ↺" : !blk && b.patientConfirmed ? " ✓" : "";
       h += `<button class="lrow st-${b.status}" type="button" data-id="${b.id}">
         <span class="lt num">${b.start}<small>${b.dur} min</small></span>
-        <span class="lb"><b>${esc(blk ? "Bloqueado" : b.name)}${b.isNew ? " ●" : ""}${warn}</b><span>${esc(blk ? (b.name || "") : itemsName(b.items) + " · " + (b.os || "Particular"))}</span></span>
+        <span class="lb"><b>${esc(blk ? "Bloqueado" : b.name)}${b.isNew ? " ●" : ""}${warn}${waMark}</b><span>${esc(blk ? (b.name || "") : itemsName(b.items) + " · " + (b.os || "Particular"))}</span></span>
         <span class="pill ${b.status}">${STATUS[b.status]}</span></button>`;
     });
     flush();
@@ -1769,13 +1821,14 @@ function submitManual(f){
   const os = $("m-os").value;
   const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
     dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
-    first:false, note:"", source:"manual", code:code(), reminded:false};
-  DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado."); sync(b);
+    first:false, note:"", source:"manual", code:code(), reminded:false, _avisar: $("m-avisar") ? $("m-avisar").checked : true};
+  DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado." + (waOn() && b.phone && b._avisar ? " Le enviamos la confirmación por WhatsApp." : "")); sync(b);
 }
 
 /* ================= CONFIGURACIÓN ================= */
 function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]); return l.length ? l.join(", ") : "Sin horarios"; }
 function renderConfig(){
+  setTimeout(() => { if (CLOUD && STAFF) renderWaCfg(); }, 0);
   const sm = isStudyMode(), c = C();
   $("cfg").innerHTML = `
   ${CLOUD && STAFF ? `<section class="card">
@@ -1785,7 +1838,9 @@ function renderConfig(){
       <div class="actions"><button class="btn btn-primary btn-sm" type="button" data-copy="${esc(patientLink(SLUG))}">Copiar link</button>
       <a class="btn btn-wa btn-sm" href="https://wa.me/?text=${encodeURIComponent("Reservá tu turno online en " + C().name + ": " + patientLink(SLUG))}" target="_blank" rel="noopener">${WA_ICON}Compartir</a>
       <a class="btn btn-soft btn-sm" href="${esc(patientLink(SLUG))}" target="_blank" rel="noopener">Abrir</a></div></div>
-  </section>${myAccountCard()}` : ""}
+  </section>
+  <section class="card" id="waCfg"><h2>WhatsApp automático</h2><p class="muted" style="margin:0">Cargando…</p></section>
+  ${myAccountCard()}` : ""}
   <section class="card">
     <h2>Tipo de agenda</h2>
     <p class="hint">Elegí cómo reservan los pacientes. Podés cambiarlo cuando quieras; los turnos ya dados se mantienen.</p>
@@ -1877,6 +1932,53 @@ function diffLabel(sv, os){
   const d = (Number(sv.price) || 0) - Number(v);
   return d > 0 ? "paciente " + money(d) : "sin diferencia";
 }
+async function renderWaCfg(){
+  const box = $("waCfg"); if (!box) return;
+  try { WA = await api("whatsapp"); } catch(ex){ box.innerHTML = `<h2>WhatsApp automático</h2><p class="err">No se pudo cargar: ${esc(ex.message)}</p>`; return; }
+  const w = WA, hook = location.origin + "/api/wa/" + encodeURIComponent(SLUG) + "/webhook";
+  box.innerHTML = `
+    <div class="cfg-head"><div><h2>WhatsApp automático <span class="pill ${w.activo ? "confirmado" : "bloqueo"}">${w.activo ? "Activo" : "Apagado"}</span></h2>
+      <p class="hint">Con la API oficial de WhatsApp, al paciente le llega solo: la <b>confirmación</b> al reservar (turno, preparación y monto a abonar según su obra social) y el <b>recordatorio</b> el día anterior con los botones <i>Confirmo</i> y <i>Necesito cambiarlo</i>. Se necesita un número exclusivo y una cuenta de Meta: seguí la <a href="https://github.com/Alt-si/consultorios-medicos/blob/main/GUIA-WHATSAPP.md" target="_blank" rel="noopener">guía paso a paso</a>.</p></div></div>
+    ${w.ultimo_error ? `<div class="notice bad"><b>Último error de WhatsApp</b>${esc(w.ultimo_error)}</div>` : ""}
+    <form id="waForm" novalidate>
+      <div class="row2"><label for="wa-phone">Identificador del número (Phone number ID)<input id="wa-phone" inputmode="numeric" value="${esc(w.phone_id)}" placeholder="Ej. 123456789012345"></label>
+      <label for="wa-token">Token de acceso permanente<input id="wa-token" type="password" autocomplete="off" placeholder="${w.tieneToken ? "•••••••• guardado (dejalo vacío para no cambiarlo)" : "Pegá el token"}"></label></div>
+      <div class="row2"><label for="wa-secret">Clave secreta de la app (App secret)<input id="wa-secret" type="password" autocomplete="off" placeholder="${w.tieneSecreto ? "•••••••• guardada" : "Para recibir las respuestas"}"></label>
+      <label for="wa-hora">Hora del recordatorio (día anterior)<select id="wa-hora">${Array.from({length: 16}, (_, i) => i + 6).map(h => `<option value="${h}" ${w.hora_rec === h ? "selected" : ""}>${pad(h)}:00 h</option>`).join("")}</select></label></div>
+      <div class="row3"><label for="wa-pc">Plantilla de confirmación<input id="wa-pc" value="${esc(w.plantilla_conf)}"></label>
+      <label for="wa-pr">Plantilla de recordatorio<input id="wa-pr" value="${esc(w.plantilla_rec)}"></label>
+      <label for="wa-id">Idioma<input id="wa-id" value="${esc(w.idioma)}"></label></div>
+      <label class="check" for="wa-ar"><input type="checkbox" id="wa-ar" ${w.al_reservar ? "checked" : ""}> Enviar la confirmación cuando se reserva o se agenda un turno</label>
+      <label class="check" for="wa-re"><input type="checkbox" id="wa-re" ${w.recordatorio ? "checked" : ""}> Enviar el recordatorio el día anterior</label>
+      <label class="check" for="wa-on"><input type="checkbox" id="wa-on" ${w.activo ? "checked" : ""}> <b>WhatsApp automático activado</b></label>
+      <p class="err" id="wa-err" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Guardar</button>
+    </form>
+    <div class="wa-hook"><p class="sec-t">Para conectar las respuestas (webhook de Meta)</p>
+      <div class="kv"><span>URL de devolución</span><code>${esc(hook)}</code><button class="linkbtn" type="button" data-copy="${esc(hook)}">Copiar</button></div>
+      <div class="kv"><span>Token de verificación</span><code>${esc(w.verify_token)}</code><button class="linkbtn" type="button" data-copy="${esc(w.verify_token)}">Copiar</button></div>
+      <p class="muted" style="font-size:13px;margin:0">En Meta, suscribite al campo <b>messages</b>.</p></div>
+    <div class="wa-test"><p class="sec-t">Probar</p>
+      <div class="addrow"><input id="wa-tel" type="tel" placeholder="Tu celular, ej. 11 5555-1234" aria-label="Celular para la prueba">
+      <button class="btn btn-soft" type="button" data-watest="confirmacion">Probar confirmación</button><button class="btn btn-soft" type="button" data-watest="recordatorio">Probar recordatorio</button></div>
+      <p class="err" id="wa-terr" role="alert"></p></div>`;
+}
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "waForm") return;
+  e.preventDefault();
+  const body = {phone_id: $("wa-phone").value.trim(), plantilla_conf: $("wa-pc").value.trim(), plantilla_rec: $("wa-pr").value.trim(), idioma: $("wa-id").value.trim(),
+    hora_rec: Number($("wa-hora").value), al_reservar: $("wa-ar").checked, recordatorio: $("wa-re").checked, activo: $("wa-on").checked};
+  if ($("wa-token").value.trim()) body.token = $("wa-token").value.trim();
+  if ($("wa-secret").value.trim()) body.app_secret = $("wa-secret").value.trim();
+  try { WA = await api("whatsapp", {method: "PUT", body}); toast(WA.activo ? "WhatsApp automático activado." : "Guardado. WhatsApp automático apagado."); renderWaCfg(); if (waOn()) loadWaMsgs(); }
+  catch(ex){ $("wa-err").textContent = ex.message; }
+});
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-watest]"); if (!t) return;
+  $("wa-terr").textContent = "";
+  try { await api("whatsapp/prueba", {method: "POST", body: {telefono: $("wa-tel").value, tipo: t.dataset.watest}}); toast("Mensaje de prueba enviado. Revisá tu WhatsApp."); }
+  catch(ex){ $("wa-terr").textContent = ex.message; }
+});
 function hoursEditor(p){
   return `<div class="hours-ed">` + DOWS.map(([d, l]) => {
     const r = (p.hours[d] || []), on = r.length > 0, a = r[0] || ["",""], b = r[1] || ["",""];
@@ -2243,6 +2345,8 @@ async function afterLogin(){
     SLUG = ME.slug;
     await cloudLoadCfg();
     await cloudLoadBookings();
+    try { WA = await api("whatsapp"); } catch(_){ WA = null; }
+    if (waOn()) loadWaMsgs();
     realtime();
   }
   refreshAll(); applyRole();
@@ -2382,6 +2486,26 @@ document.addEventListener("submit", async e => {
     try { await api("clave", {method: "POST", body: {actual, nueva}}); $("pw-a").value = ""; $("pw-n").value = ""; $("pw-err").textContent = ""; toast("Contraseña cambiada."); }
     catch(ex){ $("pw-err").textContent = ex.message; }
   }
+});
+
+document.addEventListener("click", async e => {
+  const rd = e.target.closest("[data-waread]");
+  if (rd){ try { await api("whatsapp/leidos", {method: "POST", body: {}}); WA_MSGS.forEach(m => m.leido = 1); renderWaCard(); } catch(_){} return; }
+  const rp = e.target.closest("[data-wareply]");
+  if (rp){
+    const tel = rp.dataset.wareply, box = rp.closest(".wam");
+    if (box.querySelector("form")) return;
+    box.insertAdjacentHTML("beforeend", `<form class="wa-reply" data-tel="${esc(tel)}"><textarea aria-label="Respuesta" placeholder="Escribí la respuesta…"></textarea><div class="actions"><button class="btn btn-wa btn-sm" type="submit">Enviar</button></div><p class="err"></p></form>`);
+    box.querySelector("textarea").focus();
+  }
+});
+document.addEventListener("submit", async e => {
+  const f = e.target.closest(".wa-reply"); if (!f) return;
+  e.preventDefault();
+  const texto = f.querySelector("textarea").value.trim(); if (!texto) return;
+  const btn = f.querySelector("button"); btn.disabled = true;
+  try { await api("whatsapp/responder", {method: "POST", body: {telefono: f.dataset.tel, texto}}); toast("Respuesta enviada."); await loadWaMsgs(); }
+  catch(ex){ f.querySelector(".err").textContent = ex.message; btn.disabled = false; }
 });
 
 /* ---------- app instalable ---------- */

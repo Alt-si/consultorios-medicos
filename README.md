@@ -11,4 +11,5 @@ La configuración de ejemplo está en el bloque `DEFAULTS` al inicio del `<scrip
 
 - **App instalable (PWA):** se instala en el celular o la computadora desde el navegador.
 - **Online con cuentas:** publicado en Cloudflare Pages + D1 (gratis) siguiendo la [guía](GUIA-CLOUDFLARE.md). El administrador crea una cuenta por consultorio; cada uno tiene sus datos y su link para pacientes. El servidor está en `functions/api/[[path]].js`.
+- **WhatsApp automático:** confirmación al reservar y recordatorio el día anterior con botones, usando la API oficial de WhatsApp con el número de cada consultorio. Ver [GUIA-WHATSAPP.md](GUIA-WHATSAPP.md).
 - **Demostración:** en GitHub Pages (sin servidor) funciona en modo demo: usuario `demo@consultorio.com`, clave `demo1234`.

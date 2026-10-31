@@ -1,0 +1,19 @@
+# Cada 15 minutos le pide al servidor que mande los recordatorios de WhatsApp del día siguiente.
+# Cada consultorio elige su hora en Configuración → WhatsApp automático. Si ya se mandaron, no se repiten.
+# Necesita el secreto CRON_KEY (Settings → Secrets and variables → Actions), igual al de Cloudflare.
+name: Recordatorios de WhatsApp
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar recordatorios
+        env:
+          KEY: ${{ secrets.CRON_KEY }}
+          URL: ${{ vars.APP_URL || 'https://consultorios-medicos.pages.dev' }}
+        run: |
+          if [ -z "$KEY" ]; then echo "Falta el secreto CRON_KEY: no se envía nada."; exit 0; fi
+          curl -sS --max-time 60 -H "x-cron-key: $KEY" "$URL/api/cron/recordatorios" || echo "El servidor no respondió."

@@ -36,7 +36,10 @@ En el proyecto `consultorios-medicos` → **Settings**:
 2. **Variables and Secrets** → **Add**
    - **Type:** *Secret* · **Variable name:** `SETUP_CODE`
    - **Value:** inventá un código (ej. `MiCodigo2026`) y guardalo → **Save**
-3. Andá a **Deployments** → en el último, tocá los **⋯** → **Retry deployment**
+3. (Para los recordatorios de WhatsApp) **Add** → *Secret* `CRON_KEY` = otra clave inventada.
+   Cargá la misma en GitHub → *Settings* → *Secrets and variables* → *Actions* → `CRON_KEY`.
+   Ver [GUIA-WHATSAPP.md](GUIA-WHATSAPP.md).
+4. Andá a **Deployments** → en el último, tocá los **⋯** → **Retry deployment**
    (para que tome la base de datos y el código).
 
 ## 5. Crear tu cuenta de administrador
