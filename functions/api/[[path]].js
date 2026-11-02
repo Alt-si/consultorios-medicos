@@ -179,13 +179,14 @@ function cuerpoPlantilla(wa, tipo, to, params, turnoId){
 async function waTurno(env, db, cuentaId, turnoId, tipo){
   const wa = await db.prepare("SELECT * FROM whatsapp WHERE cuenta_id = ? AND activo = 1").bind(cuentaId).first();
   if (!wa || (tipo === "confirmacion" && !wa.al_reservar) || (tipo === "recordatorio" && !wa.recordatorio)) return null;
+  const cfg = (await configDe(db, cuentaId)) || {};
+  if (cfg.waEnabled === false || (cfg.waSend && cfg.waSend[tipo === "recordatorio" ? "rec" : "conf"] === false)) return null;
   const row = await db.prepare("SELECT * FROM turnos WHERE id = ? AND cuenta_id = ?").bind(turnoId, cuentaId).first();
   if (!row || row.estado === "bloqueo" || row.estado === "cancelado") return null;
   const t = filaTurno(row), to = normTel(t.datos.phone);
   if (to.length < 10) return null;
   const ins = await db.prepare("INSERT OR IGNORE INTO wa_envios (turno_id, tipo, cuenta_id, estado, creado) VALUES (?, ?, ?, 'enviando', ?)").bind(turnoId, tipo, cuentaId, ahoraISO()).run();
   if (!ins.meta.changes) return null;                       // ya se mandó
-  const cfg = (await configDe(db, cuentaId)) || {};
   const cta = await db.prepare("SELECT nombre FROM cuentas WHERE id = ?").bind(cuentaId).first();
   const r = await waEnviar(env, wa, cuerpoPlantilla(wa, tipo, to, datosMensaje(cfg, cta && cta.nombre, t), turnoId));
   await db.prepare("UPDATE wa_envios SET estado = ?, msg_id = ?, error = ? WHERE turno_id = ? AND tipo = ?").bind(r.ok ? "enviado" : "error", r.id || null, r.error || null, turnoId, tipo).run();
@@ -269,6 +270,8 @@ async function reservar(db, cuenta, body, env, ctx){
   if (fecha < h || fecha > sumarDias(h, 400)) return fallo(400, "fecha_invalida");
   if (!String(datos.name || "").trim()) return fallo(400, "falta_nombre");
   const cfg = await configDe(db, cuenta.id);
+  if (cfg && cfg.onlineBooking === false) return fallo(403, "reservas_desactivadas", "Este consultorio no toma turnos online.");
+  if (Array.isArray(datos.items) && datos.items.length > 1) return fallo(400, "combinado_no_permitido", "Los turnos con más de un estudio los da el consultorio.");
   const p = cfg && Array.isArray(cfg.pros) && cfg.pros.find(x => x.id === pro);
   if (!p) return fallo(400, "profesional_inexistente");
   if ((cfg.daysOff || []).some(o => o.d === fecha && (!o.pro || o.pro === pro))) return fallo(409, "dia_anulado");

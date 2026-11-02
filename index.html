@@ -447,6 +447,11 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .switch b{display:block;font-size:15px}
 .switch small{display:block;color:var(--muted);font-size:13px}
 .acc-edit{display:grid;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;background:var(--bg)}
+.sub-switches{display:grid;gap:10px;margin-left:18px;padding-left:14px;border-left:3px solid var(--line)}
+.closed-box{padding-bottom:40px;position:relative;margin-top:-44px}
+.closed-card{max-width:620px;margin:0 auto;display:grid;gap:12px;justify-items:start;box-shadow:0 14px 34px -22px rgba(16,40,80,.45)}
+.closed-card h2{font-size:24px}
+.closed-card p{margin:0}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(10,16,20,.45);z-index:50;display:none}
 .scrim.show{display:block}
@@ -615,10 +620,11 @@ dd{margin:0;font-weight:500}
     <div class="wrap hero-in">
       <div class="hero-logo" id="heroLogo" hidden></div>
       <p class="hero-kicker" id="heroKicker"></p>
-      <h1>Reservá tu turno online</h1>
+      <h1 id="heroTitle">Reservá tu turno online</h1>
       <p class="hero-sub" id="heroSub"></p>
     </div>
   </section>
+  <div class="wrap closed-box" id="closedBox" hidden></div>
   <div class="wrap book">
     <section class="card pane" aria-labelledby="s1">
       <div class="step-h"><span class="step-n">1</span><h2 id="s1"></h2></div>
@@ -870,7 +876,9 @@ async function detectBackend(){
 const COLS = ["id","pro","date","start","dur","status","source","orderThumb"];
 function rowToB(r){ return Object.assign({}, r.datos || {}, {id:r.id, pro:r.pro, date:r.fecha, start:r.inicio, dur:r.dur, status:r.estado, source:r.origen}); }
 function bToDatos(b){ const d = {}; Object.keys(b).forEach(k => { if (!COLS.includes(k) && !k.startsWith("_")) d[k] = b[k]; }); return d; }
-const sendOn = k => !(S.waSend && S.waSend[k] === false);
+const waEnabled = () => S.waEnabled !== false;
+const onlineOn = () => S.onlineBooking !== false;
+const sendOn = k => waEnabled() && !(S.waSend && S.waSend[k] === false);
 function fixCfg(){ ["payments","coverage","services","pros"].forEach(k => { if (!S[k]) S[k] = clone(DEFAULTS[k]); }); if (!S.clinic) S.clinic = clone(DEFAULTS.clinic); if (!S.mode) S.mode = DEFAULTS.mode; }
 async function cloudLoadCfg(){
   if (STAFF){
@@ -945,7 +953,7 @@ async function sync(b){
 }
 let tmpId = -1;
 const newId = () => CLOUD ? (tmpId -= 1) : DB.nextId++;
-const waOn = () => CLOUD && STAFF && WA && WA.activo;
+const waOn = () => CLOUD && STAFF && WA && WA.activo && S.waEnabled !== false;
 async function loadWaMsgs(notify){
   try {
     const prev = new Set(WA_MSGS.map(m => m.id)), list = await api("whatsapp/mensajes");
@@ -1165,7 +1173,7 @@ function selection(){
 
 function renderPick(){
   const sm = isStudyMode();
-  $("heroSub").textContent = sm ? "Consultas médicas y estudios. Elegí día y horario disponible y te confirmamos por WhatsApp." : "Elegí profesional, día y horario disponible. Te confirmamos por WhatsApp.";
+  $("heroSub").textContent = (sm ? "Consultas médicas y estudios. Elegí día y horario disponible" : "Elegí profesional, día y horario disponible") + (waEnabled() ? " y te confirmamos por WhatsApp." : ".");
   $("heroKicker").textContent = C().name;
   $("s1").textContent = sm ? "¿Qué necesitás?" : "Elegí profesional";
   if (!sm) UI.tab = "consultas";
@@ -1207,7 +1215,7 @@ function renderOpts(){
   }
   const main = sel.items[0];
   const cand = prosFor(main.id).filter(p => UI.who === "any" || p.id === UI.who);
-  const addable = main.combo ? S.services.filter(s => s.kind === "estudio" && s.combo && !sel.items.some(i => i.id === s.id) && cand.some(p => sel.items.every(i => p.services.includes(i.id)) && p.services.includes(s.id))) : [];
+  const addable = STAFF ? S.services.filter(s => s.kind === "estudio" && !sel.items.some(i => i.id === s.id) && cand.some(p => sel.items.every(i => p.services.includes(i.id)) && p.services.includes(s.id))) : [];
   const all = prosFor(main.id);
   const whoHtml = all.length > 1 ? `<div><p class="sec-t" style="margin-bottom:6px">¿Con quién?</p><div class="chips" style="margin:0">
       <button class="chip" type="button" data-who="any" aria-pressed="${UI.who==="any"}">Indistinto (primer turno libre)</button>` +
@@ -1218,7 +1226,7 @@ function renderOpts(){
       <span class="ichip main">${esc(main.name)}</span>
       ${sel.items.slice(1).map(s => `<span class="ichip">+ ${esc(s.name)}<button type="button" data-rmx="${s.id}" aria-label="Quitar ${esc(s.name)}">×</button></span>`).join("")}
     </div></div>
-    ${addable.length ? `<div><label for="o-add">¿Necesitás otro estudio el mismo día? Lo hacemos en el mismo turno</label>
+    ${addable.length ? `<div><label for="o-add">Agregar otro estudio en el mismo turno <span class="tag acc">Solo consultorio</span></label>
       <div class="addrow" style="margin-top:4px"><select id="o-add">${addable.map(s => `<option value="${s.id}">${esc(s.name)} · ${s.dur} min</option>`).join("")}</select>
       <button class="btn btn-soft" type="button" id="o-addbtn">Agregar al turno</button></div></div>` : ""}
     <div class="total">Duración del turno: <b>${sel.dur} min</b>${sel.items.length > 1 ? " (" + sel.items.map(s => s.dur).join(" + ") + ")" : ""}${sel.pids.length ? "" : " · <b style='color:var(--bad)'>Ningún profesional hace estos estudios juntos</b>"}</div>
@@ -1324,14 +1332,14 @@ function doneHtml(b){
   return `<div class="form-wrap success">
     <div class="tick"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
     <h2>Turno reservado</h2>
-    <p style="margin:0">Tu horario quedó apartado. Enviá este mensaje por WhatsApp y el consultorio te lo confirma. Código <span class="code">${b.code}</span></p>
+    <p style="margin:0">Tu horario quedó apartado. ${waEnabled() ? "Enviá este mensaje por WhatsApp y el consultorio te lo confirma." : "El consultorio te va a confirmar el turno."} Código <span class="code">${b.code}</span></p>
     ${prep ? `<div class="notice"><b>Cómo prepararte</b>${esc(prep)}</div>` : ""}
     ${needsText(b.items) ? `<div class="notice"><b>Para este estudio necesitás</b>${esc(needsText(b.items))}</div>` : ""}
     <div class="notice warn"><b>El día del turno traé</b>${esc(bringLine(b))}.${payLine(b) ? "\n" + esc(payLine(b)) + ". " + esc(payText()) : ""}${payLine(b) && aliasLine() ? "\n" + esc(aliasLine()) : ""}</div>
-    <p class="sec-t">Mensaje para el consultorio</p>
-    <div class="bubble">${esc(msg)}</div>
+    ${waEnabled() ? `<p class="sec-t">Mensaje para el consultorio</p>
+    <div class="bubble">${esc(msg)}</div>` : ""}
     ${CLOUD && b.orderPath ? `<div class="notice"><b>La foto de la orden ya le llegó al consultorio</b>Quedó guardada junto con tu turno. Igual llevala el día del estudio.</div>` : ""}
-    ${!CLOUD && b.orderSent && UI.orderFile ? `<ol class="send-steps">
+    ${!CLOUD && b.orderSent && UI.orderFile && waEnabled() ? `<ol class="send-steps">
       <li><b>Enviá la reserva</b><span class="muted">Se abre el chat del consultorio con el mensaje listo.</span>
         <a class="btn btn-wa" href="${wa(C().whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar reserva por WhatsApp</a></li>
       <li><b>Enviá la foto de la orden</b><span class="muted">${canShareFiles() ? "Elegí WhatsApp y después el chat de " + esc(C().name) + ": va a aparecer primero." : "Desde la computadora: en el chat del consultorio tocá el clip 📎 y adjuntá la foto."}</span>
@@ -1340,13 +1348,30 @@ function doneHtml(b){
     </ol>
     ${STAFF ? `<div class="actions"><button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button></div>` : ""}`
     : `<div class="actions">
-      <a class="btn btn-wa" href="${wa(C().whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a>
+      ${waEnabled() ? `<a class="btn btn-wa" href="${wa(C().whatsapp, msg)}" target="_blank" rel="noopener">${WA_ICON}Enviar por WhatsApp</a>` : ""}
       ${STAFF ? `<button class="btn btn-soft" type="button" id="seePanel" data-id="${b.id}">Ver cómo le llega al consultorio</button>` : ""}
     </div>`}
     <p class="muted" style="font-size:13px;margin:0"><button class="linkbtn" type="button" id="another">Reservar otro turno</button></p>
   </div>`;
 }
-function renderBook(){ renderPick(); renderOpts(); renderCal(); }
+function renderBook(){
+  const closed = !onlineOn();
+  document.querySelector(".book").hidden = closed; $("closedBox").hidden = !closed;
+  $("heroTitle").textContent = closed ? "Pedí tu turno" : "Reservá tu turno online";
+  if (closed){
+    const tel = C().whatsapp ? "+" + normPhone(C().whatsapp) : "";
+    $("closedBox").innerHTML = `<section class="card pane closed-card">
+      <h2>Turnos por WhatsApp o en el consultorio</h2>
+      <p>${esc(C().name)} no toma turnos online por el momento. Para pedir un turno comunicate con el consultorio${STAFF ? " (los turnos se cargan desde el <b>Panel</b>)" : ""}.</p>
+      ${tel && waEnabled() ? `<a class="btn btn-wa" href="${wa(C().whatsapp, "Hola, quería pedir un turno.")}" target="_blank" rel="noopener">${WA_ICON}Escribir por WhatsApp</a>` : ""}
+      ${tel ? `<p class="muted" style="margin:0">Teléfono: ${esc(tel)}</p>` : ""}
+      ${C().address ? `<p class="muted" style="margin:0">Dirección: ${esc(C().address)}</p>` : ""}
+    </section>`;
+    $("heroSub").textContent = "";
+    return;
+  }
+  renderPick(); renderOpts(); renderCal();
+}
 
 $("kindChips").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b) return; UI.tab = b.dataset.tab; UI.extra = []; resetPick(); renderBook(); });
 const mobile = () => matchMedia("(max-width:980px)").matches;
@@ -1772,7 +1797,7 @@ function updOffWarn(){
   const ds = offDates(from, to);
   const bs = DB.bookings.filter(b => ds.includes(b.date) && live(b) && b.status !== "bloqueo" && b.status !== "asistio" && b.status !== "ausente" && (!pid || b.pro === pid))
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
-  $("of-warn").innerHTML = bs.length ? `<div class="notice warn"><b>Hay ${bs.length} turno${bs.length === 1 ? "" : "s"} dado${bs.length === 1 ? "" : "s"} en esos días</b>${bs.slice(0, 8).map(b => `${fmtDow(b.date)} ${parse(b.date).getDate()} · ${b.start} · ${esc(b.name || "")} <a href="${wa(b.phone, "Hola " + (b.name || "").split(" ")[0] + ", te escribimos de " + C().name + ": por un inconveniente no vamos a poder atenderte el " + fmtLong(b.date) + " a las " + b.start + " h. ¿Te parece si reprogramamos el turno?")}" target="_blank" rel="noopener">Avisar por WhatsApp</a>`).join("<br>")}${bs.length > 8 ? "<br>y " + (bs.length - 8) + " más" : ""}</div>` : "";
+  $("of-warn").innerHTML = bs.length ? `<div class="notice warn"><b>Hay ${bs.length} turno${bs.length === 1 ? "" : "s"} dado${bs.length === 1 ? "" : "s"} en esos días</b>${bs.slice(0, 8).map(b => `${fmtDow(b.date)} ${parse(b.date).getDate()} · ${b.start} · ${esc(b.name || "")} ${!waEnabled() ? "" : `<a href="${wa(b.phone, "Hola " + (b.name || "").split(" ")[0] + ", te escribimos de " + C().name + ": por un inconveniente no vamos a poder atenderte el " + fmtLong(b.date) + " a las " + b.start + " h. ¿Te parece si reprogramamos el turno?")}" target="_blank" rel="noopener">Avisar por WhatsApp</a>`}`).join("<br>")}${bs.length > 8 ? "<br>y " + (bs.length - 8) + " más" : ""}</div>` : "";
 }
 function submitOff(){
   const pid = $("of-pro").value || null, from = $("of-from").value, to = $("of-to").value || from, m = $("of-m").value.trim();
@@ -1895,14 +1920,19 @@ function submitManual(f){
 /* ================= CONFIGURACIÓN ================= */
 function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]); return l.length ? l.join(", ") : "Sin horarios"; }
 function renderConfig(){
-  setTimeout(() => { if (CLOUD && STAFF) renderWaCfg(); }, 0);
+  setTimeout(() => { if (CLOUD && STAFF && waEnabled()) renderWaCfg(); }, 0);
   const sm = isStudyMode(), c = C();
   $("cfg").innerHTML = `
   <section class="card send-card">
-    <h2>Envíos por WhatsApp</h2>
-    <p class="hint">${waOn() ? "Con el WhatsApp automático activo, estos mensajes le llegan solos al paciente." : "Estos mensajes se mandan con un toque desde el panel (botones de WhatsApp)."} Apagá el que no quieras usar.</p>
+    <h2>Funciones</h2>
+    <p class="hint">Prendé o apagá lo que quieras usar.</p>
+    <label class="switch" for="fn-online"><input type="checkbox" id="fn-online" data-fn="onlineBooking" ${onlineOn() ? "checked" : ""}><span class="sw"></span><span><b>Turnos online para pacientes</b><small>Los pacientes sacan turno solos desde tu link. Apagado, el link muestra cómo comunicarse y vos cargás los turnos desde el Panel.</small></span></label>
+    <label class="switch" for="fn-wa"><input type="checkbox" id="fn-wa" data-fn="waEnabled" ${waEnabled() ? "checked" : ""}><span class="sw"></span><span><b>WhatsApp</b><small>Botones y mensajes de WhatsApp en toda la agenda${CLOUD ? " (también el WhatsApp automático)" : ""}. Apagado, no se usa WhatsApp para nada.</small></span></label>
+    <div class="sub-switches" ${waEnabled() ? "" : "hidden"}>
+    <p class="muted" style="font-size:13px;margin:0">${waOn() ? "Con el WhatsApp automático activo, estos mensajes le llegan solos al paciente." : "Estos mensajes se mandan con un toque desde el panel."}</p>
     <label class="switch" for="send-conf"><input type="checkbox" id="send-conf" data-send="conf" ${sendOn("conf") ? "checked" : ""}><span class="sw"></span><span><b>Confirmación del turno</b><small>${waOn() ? "Al reservar o cuando agendás un turno." : "Botón «Confirmar y avisar por WhatsApp»."}</small></span></label>
     <label class="switch" for="send-rec"><input type="checkbox" id="send-rec" data-send="rec" ${sendOn("rec") ? "checked" : ""}><span class="sw"></span><span><b>Recordatorio el día anterior</b><small>${waOn() ? "Con los botones Confirmo / Necesito cambiarlo." : "Lista «Recordatorios para mañana» en el panel."}</small></span></label>
+    </div>
   </section>
   ${CLOUD && STAFF ? `<section class="card">
     <h2>Tu cuenta</h2>
@@ -1912,7 +1942,7 @@ function renderConfig(){
       <a class="btn btn-wa btn-sm" href="https://wa.me/?text=${encodeURIComponent("Reservá tu turno online en " + C().name + ": " + patientLink(SLUG))}" target="_blank" rel="noopener">${WA_ICON}Compartir</a>
       <a class="btn btn-soft btn-sm" href="${esc(patientLink(SLUG))}" target="_blank" rel="noopener">Abrir</a></div></div>
   </section>
-  <section class="card" id="waCfg"><h2>WhatsApp automático</h2><p class="muted" style="margin:0">Cargando…</p></section>
+  <section class="card" id="waCfg" ${waEnabled() ? "" : "hidden"}><h2>WhatsApp automático</h2><p class="muted" style="margin:0">Cargando…</p></section>
   ${myAccountCard()}` : ""}
   <section class="card">
     <h2>Tipo de agenda</h2>
@@ -1938,7 +1968,7 @@ function renderConfig(){
       <button class="btn btn-primary" type="button" data-cfg="svc-new">+ Agregar</button></div>
     <div class="rows">${S.services.map(s => { const ps = prosFor(s.id); return `<div class="rowi">
       <span class="av sq" style="${s.kind === "consulta" ? "background:var(--sunk);color:var(--ink)" : ""}">${esc(svcAbbr(s))}</span>
-      <div><b>${esc(s.name)} ${sm ? `<span class="tag ${s.kind === "estudio" ? "acc" : ""}">${s.kind === "estudio" ? "Estudio" : "Consulta"}</span>` : ""}${s.combo && sm && s.kind === "estudio" ? '<span class="tag">Combinable</span>' : ""}${s.order ? '<span class="tag">Orden médica' + (s.orderPhoto !== false ? " · foto" : "") + '</span>' : ""}</b>
+      <div><b>${esc(s.name)} ${sm ? `<span class="tag ${s.kind === "estudio" ? "acc" : ""}">${s.kind === "estudio" ? "Estudio" : "Consulta"}</span>` : ""}${s.order ? '<span class="tag">Orden médica' + (s.orderPhoto !== false ? " · foto" : "") + '</span>' : ""}</b>
       <span class="meta">${s.dur} min · ${money(s.price)} · ${ps.length ? "Lo atiende" + (ps.length > 1 ? "n" : "") + ": " + ps.map(p => esc(p.name)).join(", ") : "<span style='color:var(--bad)'>Ningún profesional asignado</span>"}</span></div>
       <button class="btn btn-soft btn-sm" type="button" data-cfg="svc-edit" data-id="${s.id}">Editar</button></div>`; }).join("") || `<div class="empty">No hay nada cargado.</div>`}</div>
   </section>
@@ -1954,7 +1984,7 @@ function renderConfig(){
       </tr>`).join("")}</tbody></table></div>` : `<div class="empty">Cargá consultas, estudios y obras sociales para completar los valores.</div>`}
   </section>
 
-  <section class="card">
+  <section class="card" ${waEnabled() ? "" : "hidden"}>
     <h2>Mensajes de WhatsApp</h2>
     <p class="hint">Editá el texto que se le manda al paciente con los botones de WhatsApp. Tocá un dato para insertarlo donde está el cursor. Si un dato no corresponde a ese turno (por ejemplo la preparación en una consulta), esa línea se quita sola.</p>
     ${msgEditor("conf", "Confirmación del turno", "Se envía al confirmar un turno.")}
@@ -2163,7 +2193,6 @@ function openSvcEditor(id){
       <label for="s-price">Precio particular<input id="s-price" type="number" min="0" step="500" value="${esc(s.price)}"></label></div>
       <label class="check" for="s-order"><input type="checkbox" id="s-order" ${s.order?"checked":""}> Requiere orden médica</label>
       <label class="check" for="s-ophoto" style="margin-left:26px" ${s.order ? "" : "hidden"}><input type="checkbox" id="s-ophoto" ${s.orderPhoto !== false ? "checked" : ""}> Pedir foto de la orden al reservar (se envía al WhatsApp del consultorio)</label>
-      ${sm ? `<label class="check" for="s-combo"><input type="checkbox" id="s-combo" ${s.combo?"checked":""}> Se puede combinar con otro estudio en el mismo turno</label>` : ""}
       <label for="s-prep">Preparación para el paciente (opcional)<textarea id="s-prep" placeholder="Ej. Ayuno de 6 horas.">${esc(s.prep || "")}</textarea></label>
       <label for="s-needs">Para este ${sm ? "estudio" : "turno"} necesitás… (opcional)<textarea id="s-needs" placeholder="Ej. Orden médica, estudios anteriores, análisis de sangre recientes.">${esc(s.needs || "")}</textarea></label>
       <p class="muted" style="font-size:13px;margin:-4px 0 0">Cuánto paga cada obra social se carga en Configuración → Valores por obra social.</p>
@@ -2177,12 +2206,13 @@ function openSvcEditor(id){
       </div>
     </form>`, true);
 }
+const s0combo = f => { const sv = f.dataset.id && svc(f.dataset.id); return sv ? !!sv.combo : false; };
 function submitSvc(f){
   const name = $("s-name").value.trim();
   if (!name){ $("s-name").focus(); $("s-err").textContent = "Escribí el nombre."; return; }
   const kindEl = document.querySelector('input[name="skind"]:checked');
   const data = {name, kind: kindEl ? kindEl.value : (f.dataset.id ? svc(f.dataset.id).kind : "consulta"), dur:Number($("s-dur").value), price:Number($("s-price").value) || 0,
-    order:$("s-order").checked, orderPhoto:$("s-ophoto").checked, combo: $("s-combo") ? $("s-combo").checked : false, prep:$("s-prep").value.trim(), needs:$("s-needs").value.trim()};
+    order:$("s-order").checked, orderPhoto:$("s-ophoto").checked, combo: s0combo(f), prep:$("s-prep").value.trim(), needs:$("s-needs").value.trim()};
   let id = f.dataset.id;
   if (id) Object.assign(svc(id), data); else { id = uid("s"); S.services.push({id, cov:{}, ...data}); }
   const chosen = [...document.querySelectorAll(".s-pro:checked")].map(i => i.value);
@@ -2239,6 +2269,12 @@ $("cfg").addEventListener("change", async e => {
   if (t.dataset.covamt){ const sv = svc(t.dataset.covamt), os = t.dataset.os; sv.cov = sv.cov || {}; if (t.value === "") delete sv.cov[os]; else sv.cov[os] = Math.max(0, Number(t.value) || 0); saveCfg(); const el = document.querySelector(`[data-diff="${CSS.escape(sv.id + "|" + os)}"]`); if (el) el.textContent = diffLabel(sv, os); return; }
   if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
+  if (t.dataset.fn){
+    S[t.dataset.fn] = t.checked; saveCfg(); renderConfig();
+    toast(t.dataset.fn === "onlineBooking" ? (t.checked ? "Turnos online activados: los pacientes pueden reservar desde tu link." : "Turnos online desactivados: el link muestra cómo comunicarse.")
+      : (t.checked ? "WhatsApp activado." : "WhatsApp desactivado en toda la agenda."));
+    return;
+  }
   if (t.dataset.send){
     S.waSend = Object.assign({}, S.waSend, {[t.dataset.send]: t.checked}); saveCfg();
     if (CLOUD && STAFF){ try { WA = await api("whatsapp", {method: "PUT", body: t.dataset.send === "conf" ? {al_reservar: t.checked} : {recordatorio: t.checked}}); } catch(_){} }
@@ -2643,7 +2679,6 @@ const HELP = {
     ${H("2. Elegir día y horario", `<ul>
       <li>Si el estudio lo hacen varios profesionales, elegí <b>¿Con quién?</b> o dejá <b>Indistinto</b> para ver el primer turno libre de cualquiera.</li>
       <li>En consultas, elegí el <b>motivo</b>.</li>
-      <li>¿Necesitás otro estudio el mismo día? Tocá <b>Agregar al turno</b> y se hacen los dos seguidos.</li>
       <li>En la tira de días ves cuántos horarios libres hay. Los ocupados aparecen tachados.</li></ul>`)}
     ${H("3. Completar tus datos", `<ul>
       <li>Nombre, DNI y WhatsApp.</li>
@@ -2684,7 +2719,7 @@ const HELP = {
       <li>Si el paciente subió la <b>foto de la orden</b>, la ves en la ficha.</li></ul>`)}
     ${H("Dar un turno a mano o bloquear un horario", `<ul>
       <li>En <i>Lista</i> tocá un horario libre (los botoncitos con la hora). En <i>Grilla</i>, tocá el espacio libre.</li>
-      <li>Elegí uno o más estudios o motivos, cargá el paciente y su cobertura → <b>Agendar</b>.</li>
+      <li>Elegí uno o más estudios o motivos (por ejemplo, <b>dos estudios en el mismo turno</b>: se suman las duraciones), cargá el paciente y su cobertura → <b>Agendar</b>. Los turnos con dos estudios solo los puede dar el consultorio.</li>
       <li>O <b>Bloquear</b> ese horario (reunión, mantenimiento del equipo…): deja de aparecer para reservar.</li></ul>`)}
     ${H("Pendientes y recordatorios", `<ul>
       <li><b>Pendientes de confirmar:</b> las reservas nuevas, con el botón <i>Confirmar</i>.</li>
@@ -2698,10 +2733,10 @@ const HELP = {
       <li>Para volver a habilitar: tocá el día → <i>Habilitar</i>, o Configuración → <i>Días no laborables</i>.</li></ul>`)}
     ${H("Configuración en detalle", `<ul>
       <li><b>Profesionales:</b> horario partido (dos franjas por día), un turno cada X minutos, obras sociales con las que trabaja y qué consultas o estudios atiende. Desde su ficha podés agregar, editar o borrar motivos.</li>
-      <li><b>Consultas y estudios:</b> duración, precio particular, <i>preparación</i>, <i>«Para este estudio necesitás…»</i>, si pide orden médica (y foto de la orden) y si se puede <b>combinar</b> con otro en el mismo turno.</li>
+      <li><b>Consultas y estudios:</b> duración, precio particular, <i>preparación</i>, <i>«Para este estudio necesitás…»</i> y si pide orden médica (y foto de la orden).</li>
       <li><b>Valores por obra social:</b> la tabla es interna. Al paciente solo le mostramos el monto final que abona.</li>
       <li><b>Obras sociales:</b> marcá las que piden <b>orden autorizada</b> y si querés pedir el <b>número de afiliado</b>.</li>
-      <li><b>Envíos por WhatsApp:</b> prendé o apagá la confirmación y el recordatorio. Apagados, no se mandan (ni los automáticos ni los botones del panel).</li>
+      <li><b>Funciones:</b> prendé o apagá los <b>turnos online</b> (si están apagados, tu link muestra cómo comunicarse) y el <b>WhatsApp</b> en toda la agenda; con WhatsApp prendido elegís si se mandan la confirmación y el recordatorio.</li>
       <li><b>Mensajes de WhatsApp:</b> editá el texto de la confirmación y del recordatorio. Tocá un dato (nombre, fecha, monto, preparación…) para insertarlo y mirá la vista previa.</li>
       <li><b>Datos del consultorio:</b> anticipación mínima para reservar y cuántos días hacia adelante se pueden ver (hasta un año).</li></ul>`)}
     ${CLOUD ? H("WhatsApp automático (opcional)", `<ul>
