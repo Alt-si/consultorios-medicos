@@ -417,6 +417,7 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .help-btn:hover{background:var(--accent-soft)}
 .help-btn.pulse::after{content:"";position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--wa);border:2px solid var(--surface)}
 .help-tabs{width:100%}
+.app-ver{font-size:12.5px;margin:6px 0 0;text-align:center}
 .help-wrap{display:grid;gap:8px}
 .help-tools{display:flex;gap:10px;align-items:center}
 .help-tools .help-q{flex:1;font-size:15px}
@@ -2824,7 +2825,8 @@ function helpBlock(cur){
 }
 function openHelp(tab){
   openDrawer("Ayuda", "Cómo usar la agenda", helpBlock(tab) +
-    (!STAFF && !ADMIN ? `<div class="notice"><b>¿Sos profesional?</b>Tocá <i>Ingresar</i> arriba con el mail y la contraseña que te dio el administrador.</div>` : ""), true);
+    (!STAFF && !ADMIN ? `<div class="notice"><b>¿Sos profesional?</b>Tocá <i>Ingresar</i> arriba con el mail y la contraseña que te dio el administrador.</div>` : "") +
+    `<p class="muted app-ver">Versión ${APP_VERSION}${ADMIN ? " · Entraste como administrador: las pestañas Panel, Funciones y Configuración son de cada consultorio." : ""}</p>`, true);
   try { localStorage.setItem("ayuda-vista", "1"); } catch(_){}
   $("helpBtn").classList.remove("pulse");
 }
@@ -2879,8 +2881,16 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
+const APP_VERSION = "19";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // Si hay una versión nueva, se instala y la página se recarga sola una vez
+  let recargada = false;
+  const habia = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (habia && !recargada){ recargada = true; location.reload(); } });
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).then(r => {
+    r.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) r.update().catch(() => {}); });
+  }).catch(() => {}));
 }
 
 (async function init(){
