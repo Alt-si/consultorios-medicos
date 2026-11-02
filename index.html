@@ -124,6 +124,7 @@ button{font:inherit;color:inherit}
 .who p{margin:0;font-size:13px;font-weight:600;color:var(--muted)}
 
 .opts{display:grid;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+#o-motivo.pick-me{border:2px solid var(--accent);background:var(--accent-soft);font-weight:600;color:var(--accent)}
 .combo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ichip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:4px 6px 4px 12px;font-size:13.5px;font-weight:600}
 .ichip button{border:0;background:transparent;color:inherit;cursor:pointer;width:22px;height:22px;border-radius:50%;font-size:15px;line-height:1}
@@ -1182,7 +1183,8 @@ function selection(){
   }
   const p = pro(UI.pro); if (!p) return null;
   const list = consultList(p); if (!list.length) return null;
-  const m = list.find(x => x.id === UI.motivo) || list[0];
+  const m = list.length === 1 ? list[0] : list.find(x => x.id === UI.motivo);
+  if (!m) return null;                      // falta elegir el motivo de consulta
   return {items:[m], pids:[p.id], dur:m.dur};
 }
 
@@ -1222,12 +1224,14 @@ function renderPick(){
 
 function renderOpts(){
   const sel = selection(), area = $("optsArea");
-  if (!sel){ area.innerHTML = ""; return; }
-  if (UI.tab === "consultas"){
-    const p = pro(UI.pro), list = consultList(p);
-    area.innerHTML = list.length > 1 ? `<div class="opts"><label for="o-motivo">Motivo de consulta<select id="o-motivo">${list.map(s => `<option value="${s.id}" ${sel.items[0].id===s.id?"selected":""}>${esc(s.name)} · ${s.dur} min</option>`).join("")}</select></label></div>` : "";
+  if (UI.tab === "consultas" && UI.pro && pro(UI.pro)){
+    const list = consultList(pro(UI.pro)), elegido = sel ? sel.items[0].id : "";
+    area.innerHTML = list.length > 1 ? `<div class="opts"><label for="o-motivo">Motivo de consulta<select id="o-motivo" class="${elegido ? "" : "pick-me"}">
+      <option value="" disabled ${elegido ? "" : "selected"}>Elegí el motivo de consulta</option>
+      ${list.map(s => `<option value="${s.id}" ${elegido === s.id ? "selected" : ""}>${esc(s.name)} · ${s.dur} min</option>`).join("")}</select></label></div>` : "";
     return;
   }
+  if (!sel){ area.innerHTML = ""; return; }
   const main = sel.items[0];
   const cand = prosFor(main.id).filter(p => UI.who === "any" || p.id === UI.who);
   const addable = STAFF ? S.services.filter(s => s.kind === "estudio" && !sel.items.some(i => i.id === s.id) && cand.some(p => sel.items.every(i => p.services.includes(i.id)) && p.services.includes(s.id))) : [];
@@ -1250,7 +1254,7 @@ function renderOpts(){
 
 function renderCal(){
   const area = $("calArea"), sel = selection();
-  if (!sel){ area.innerHTML = `<div class="empty">${UI.tab === "estudios" ? "Elegí un estudio" : "Elegí un profesional"} para ver los días y horarios disponibles.</div>`; $("formArea").innerHTML = ""; return; }
+  if (!sel){ area.innerHTML = `<div class="empty">${UI.tab === "estudios" ? "Elegí un estudio" : UI.pro && pro(UI.pro) ? "Elegí el motivo de consulta" : "Elegí un profesional"} para ver los días y horarios disponibles.</div>`; $("formArea").innerHTML = ""; return; }
   const days = [];
   for (let i = 0; i < C().daysAhead; i++){
     const d = addDays(TODAY(), i), av = availability(sel.pids, d, sel.dur);
@@ -2705,7 +2709,7 @@ const HELP = {
       <li>Cada opción muestra el <b>próximo turno libre</b>.</li></ul>`, true)}
     ${H("2. Elegir día y horario", `<ul>
       <li>Si el estudio lo hacen varios profesionales, elegí <b>¿Con quién?</b> o dejá <b>Indistinto</b> para ver el primer turno libre de cualquiera.</li>
-      <li>En consultas, elegí el <b>motivo</b>.</li>
+      <li>En consultas, elegí el <b>motivo de consulta</b> (es obligatorio): recién ahí aparecen los días y horarios.</li>
       <li>En la tira de días ves cuántos horarios libres hay. Los ocupados aparecen tachados.</li></ul>`)}
     ${H("3. Completar tus datos", `<ul>
       <li>Nombre, DNI y WhatsApp.</li>
@@ -2881,7 +2885,7 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
-const APP_VERSION = "19";
+const APP_VERSION = "20";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   // Si hay una versión nueva, se instala y la página se recarga sola una vez
   let recargada = false;
