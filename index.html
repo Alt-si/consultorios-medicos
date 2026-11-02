@@ -417,6 +417,11 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .help-btn:hover{background:var(--accent-soft)}
 .help-btn.pulse::after{content:"";position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:var(--wa);border:2px solid var(--surface)}
 .help-tabs{width:100%}
+.help-wrap{display:grid;gap:8px}
+.help-tools{display:flex;gap:10px;align-items:center}
+.help-tools .help-q{flex:1;font-size:15px}
+.tut-link{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--accent-soft);border-radius:12px;padding:10px 14px;font-size:14.5px}
+.tutorial-card{scroll-margin-top:90px}
 .help-tabs button{flex:1}
 .help-search input{font-size:15px}
 .hintro{margin:0 0 4px;color:var(--muted);font-size:14.5px}
@@ -1923,6 +1928,7 @@ function renderConfig(){
   setTimeout(() => { if (CLOUD && STAFF && waEnabled()) renderWaCfg(); }, 0);
   const sm = isStudyMode(), c = C();
   $("cfg").innerHTML = `
+  <div class="tut-link"><span>¿Primera vez? Mirá cómo funciona todo.</span><button class="btn btn-soft btn-sm" type="button" data-gotut>Ver el tutorial completo</button></div>
   <section class="card send-card">
     <h2>Funciones</h2>
     <p class="hint">Prendé o apagá lo que quieras usar.</p>
@@ -2034,6 +2040,8 @@ function renderConfig(){
       <label for="c-cur">Moneda<input id="c-cur" data-c="currency" value="${esc(c.currency)}"></label></div>
     </form>
   </section>
+
+  ${tutorialCard()}
 
   <p class="actions">${CLOUD ? "" : `<button class="linkbtn" type="button" onclick="document.getElementById('resetBtn').click()">Cargar turnos de ejemplo nuevos</button>`}
   <button class="linkbtn" type="button" data-cfg="reset-cfg">Volver a la configuración de ejemplo</button></p>`;
@@ -2549,7 +2557,8 @@ async function renderCuentas(){
       <div class="acc-out"></div>
     </div>`).join("") || `<p class="muted" style="margin:0">Todavía no creaste ninguna cuenta.</p>`}</div>
   </section>
-  ${myAccountCard()}`;
+  ${myAccountCard()}
+  ${tutorialCard()}`;
 }
 function myAccountCard(){
   return `<section class="card">
@@ -2776,25 +2785,39 @@ function installHelp(){
     <li><b>Computadora (Chrome o Edge):</b> el ícono de instalar en la barra de direcciones.</li>
     <li>Queda con su ícono y se abre en pantalla completa. Se actualiza sola.</li></ul>`;
 }
+const helpTabs = () => ADMIN ? ["admin", "consultorio", "pacientes"] : STAFF ? ["consultorio", "pacientes"] : ["pacientes"];
+// Bloque de tutorial reutilizable (botón ⓘ, Configuración y Cuentas)
+function helpBlock(cur){
+  const tabs = helpTabs(); cur = tabs.includes(cur) ? cur : tabs[0];
+  return `<div class="help-wrap">
+    ${tabs.length > 1 ? `<div class="seg2 help-tabs" role="group" aria-label="Tutorial para">${tabs.map(t => `<button type="button" data-htab="${t}" aria-pressed="${t === cur}">${HELP[t].label}</button>`).join("")}</div>` : ""}
+    <div class="help-tools"><input class="help-q" type="search" aria-label="Buscar en el tutorial" placeholder="Buscar en el tutorial (ej. vacaciones, obra social, foto)">
+      <button class="linkbtn" type="button" data-hall>Abrir todo</button></div>
+    <div class="help-body">${HELP[cur].html()}</div>
+  </div>`;
+}
 function openHelp(tab){
-  const tabs = ADMIN ? ["admin", "consultorio", "pacientes"] : STAFF ? ["consultorio", "pacientes"] : ["pacientes"];
-  const cur = tabs.includes(tab) ? tab : tabs[0];
-  openDrawer("Ayuda", "Cómo usar la agenda", `
-    ${tabs.length > 1 ? `<div class="seg2 help-tabs" role="group" aria-label="Tutorial para">${tabs.map(t => `<button type="button" data-helptab="${t}" aria-pressed="${t === cur}">${HELP[t].label}</button>`).join("")}</div>` : ""}
-    <label class="help-search" for="helpQ"><input id="helpQ" type="search" placeholder="Buscar en la ayuda (ej. vacaciones, obra social, foto)"></label>
-    <div id="helpBody">${HELP[cur].html()}</div>
-    ${!STAFF && !ADMIN ? `<div class="notice"><b>¿Sos profesional?</b>Tocá <i>Ingresar</i> arriba con el mail y la contraseña que te dio el administrador.</div>` : ""}`, true);
+  openDrawer("Ayuda", "Cómo usar la agenda", helpBlock(tab) +
+    (!STAFF && !ADMIN ? `<div class="notice"><b>¿Sos profesional?</b>Tocá <i>Ingresar</i> arriba con el mail y la contraseña que te dio el administrador.</div>` : ""), true);
   try { localStorage.setItem("ayuda-vista", "1"); } catch(_){}
   $("helpBtn").classList.remove("pulse");
 }
+const tutorialCard = () => `<section class="card tutorial-card"><h2>Tutorial completo</h2>
+  <p class="hint">Cómo funciona toda la agenda, paso a paso. Tocá cada tema para abrirlo. También lo tenés siempre en el botón ⓘ de arriba.</p>${helpBlock()}</section>`;
 $("helpBtn").addEventListener("click", () => openHelp());
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-helptab]"); if (t) openHelp(t.dataset.helptab);
+  const g = e.target.closest("[data-gotut]"); if (g){ const c = document.querySelector("#view-config .tutorial-card"); if (c){ const y = c.getBoundingClientRect().top + window.scrollY - (document.querySelector(".top").offsetHeight + 10); window.scrollTo(0, y); } return; }
+  const t = e.target.closest("[data-htab]");
+  if (t){ const w = t.closest(".help-wrap"); w.querySelectorAll("[data-htab]").forEach(b => b.setAttribute("aria-pressed", b === t));
+    w.querySelector(".help-body").innerHTML = HELP[t.dataset.htab].html(); w.querySelector(".help-q").value = ""; w.querySelector("[data-hall]").textContent = "Abrir todo"; return; }
+  const all = e.target.closest("[data-hall]");
+  if (all){ const w = all.closest(".help-wrap"), ds = w.querySelectorAll(".hs"), abrir = [...ds].some(d => !d.open);
+    ds.forEach(d => d.open = abrir); all.textContent = abrir ? "Cerrar todo" : "Abrir todo"; }
 });
 document.addEventListener("input", e => {
-  if (e.target.id !== "helpQ") return;
+  if (!e.target.classList.contains("help-q")) return;
   const q = e.target.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  document.querySelectorAll("#helpBody .hs").forEach(d => {
+  e.target.closest(".help-wrap").querySelectorAll(".hs").forEach(d => {
     const txt = d.textContent.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     const hit = !q || txt.includes(q); d.hidden = !hit; if (q && hit) d.open = true;
   });
