@@ -523,7 +523,7 @@ dd{margin:0;font-weight:500}
   .brand b{font-size:17px}
   .brand small{display:none}
   .logo{width:30px;height:30px;font-size:16px}
-  .tabs{order:3;width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
+  .tabs{order:3;width:100%;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
   .tab{justify-content:center;padding:9px 4px;font-size:13px}
   .tab svg{display:none}
   .tab .full{display:none}
@@ -605,7 +605,8 @@ dd{margin:0;font-weight:500}
       <button class="tab" role="tab" aria-selected="true" data-view="book"><span class="full">Reservar turno</span><span class="short">Reservar</span></button>
       <button class="tab" role="tab" aria-selected="false" data-view="panel"><span class="full">Panel del consultorio</span><span class="short">Panel</span></button>
       <button class="tab" role="tab" aria-selected="false" data-view="cuentas" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg>Cuentas</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Configuración</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="funciones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2.5" y="7" width="19" height="10" rx="5"/><circle cx="16.5" cy="12" r="3" fill="currentColor"/></svg>Funciones</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="full">Configuración</span><span class="short">Config.</span></button>
     </div>
     <button class="help-btn" id="helpBtn" type="button" aria-label="Ayuda y tutorial" title="Ayuda y tutorial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
     <button class="btn btn-soft btn-sm login-top" id="loginTop" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Ingresar</button>
@@ -729,6 +730,14 @@ dd{margin:0;font-weight:500}
   <div class="wrap">
     <div class="ph"><h1>Cuentas de consultorios</h1></div>
     <div class="cfg" id="cuentas"></div>
+  </div>
+</main>
+
+<!-- ===================== FUNCIONES ===================== -->
+<main id="view-funciones" hidden>
+  <div class="wrap">
+    <div class="ph"><h1>Funciones</h1></div>
+    <div class="cfg" id="fnBox"></div>
   </div>
 </main>
 
@@ -1924,13 +1933,9 @@ function submitManual(f){
 
 /* ================= CONFIGURACIÓN ================= */
 function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]); return l.length ? l.join(", ") : "Sin horarios"; }
-function renderConfig(){
-  setTimeout(() => { if (CLOUD && STAFF && waEnabled()) renderWaCfg(); }, 0);
-  const sm = isStudyMode(), c = C();
-  $("cfg").innerHTML = `
-  <div class="tut-link"><span>¿Primera vez? Mirá cómo funciona todo.</span><button class="btn btn-soft btn-sm" type="button" data-gotut>Ver el tutorial completo</button></div>
+function renderFunciones(){
+  $("fnBox").innerHTML = `
   <section class="card send-card">
-    <h2>Funciones</h2>
     <p class="hint">Prendé o apagá lo que quieras usar.</p>
     <label class="switch" for="fn-online"><input type="checkbox" id="fn-online" data-fn="onlineBooking" ${onlineOn() ? "checked" : ""}><span class="sw"></span><span><b>Turnos online para pacientes</b><small>Los pacientes sacan turno solos desde tu link. Apagado, el link muestra cómo comunicarse y vos cargás los turnos desde el Panel.</small></span></label>
     <label class="switch" for="fn-wa"><input type="checkbox" id="fn-wa" data-fn="waEnabled" ${waEnabled() ? "checked" : ""}><span class="sw"></span><span><b>WhatsApp</b><small>Botones y mensajes de WhatsApp en toda la agenda${CLOUD ? " (también el WhatsApp automático)" : ""}. Apagado, no se usa WhatsApp para nada.</small></span></label>
@@ -1940,6 +1945,14 @@ function renderConfig(){
     <label class="switch" for="send-rec"><input type="checkbox" id="send-rec" data-send="rec" ${sendOn("rec") ? "checked" : ""}><span class="sw"></span><span><b>Recordatorio el día anterior</b><small>${waOn() ? "Con los botones Confirmo / Necesito cambiarlo." : "Lista «Recordatorios para mañana» en el panel."}</small></span></label>
     </div>
   </section>
+  <p class="muted" style="font-size:13.5px;margin:0">Más detalles en el tutorial (botón ⓘ de arriba).</p>`;
+}
+function renderConfig(){
+  setTimeout(() => { if (CLOUD && STAFF && waEnabled()) renderWaCfg(); }, 0);
+  const sm = isStudyMode(), c = C();
+  $("cfg").innerHTML = `
+  <div class="tut-link"><span>¿Primera vez? Mirá cómo funciona todo.</span><button class="btn btn-soft btn-sm" type="button" data-gotut>Ver el tutorial completo</button></div>
+  <div class="tut-link"><span>Los <b>turnos online</b> y el <b>WhatsApp</b> se prenden o apagan en la pestaña <b>Funciones</b>.</span><button class="btn btn-soft btn-sm" type="button" data-view-go="funciones">Ir a Funciones</button></div>
   ${CLOUD && STAFF ? `<section class="card">
     <h2>Tu cuenta</h2>
     <p class="hint">Este es el link para que tus pacientes reserven. Compartilo en WhatsApp, Instagram o Google.</p>
@@ -2259,12 +2272,13 @@ function refreshAll(){
   if (UI.who !== "any" && !pro(UI.who)) UI.who = "any";
   resetPick();
   if (!$("view-config").hidden) renderConfig();
+  if (!$("view-funciones").hidden) renderFunciones();
   if (!$("view-panel").hidden) renderPanel();
   if (!$("view-book").hidden) renderBook();
 }
 
 /* eventos de configuración */
-$("cfg").addEventListener("change", async e => {
+async function onCfgChange(e){
   const t = e.target;
   if (t.name === "mode"){ S.mode = t.value; UI.tab = "consultas"; saveCfg(); refreshAll(); toast(t.value === "estudios" ? "Modo consultas y estudios activado." : "Modo agenda de turnos activado."); return; }
   if (t.id === "logoFile"){
@@ -2278,7 +2292,7 @@ $("cfg").addEventListener("change", async e => {
   if (t.dataset.pay){ const m = t.dataset.pay, L = S.payments.methods; if (t.checked && !L.includes(m)) L.push(m); if (!t.checked) S.payments.methods = L.filter(x => x !== m); S.payments.methods.sort((a, b) => { const ia = PAY_CATALOG.indexOf(a), ib = PAY_CATALOG.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); saveCfg(); renderConfig(); toast("Medios de pago guardados."); return; }
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
   if (t.dataset.fn){
-    S[t.dataset.fn] = t.checked; saveCfg(); renderConfig();
+    S[t.dataset.fn] = t.checked; saveCfg(); renderFunciones(); if (!$("view-config").hidden) renderConfig();
     toast(t.dataset.fn === "onlineBooking" ? (t.checked ? "Turnos online activados: los pacientes pueden reservar desde tu link." : "Turnos online desactivados: el link muestra cómo comunicarse.")
       : (t.checked ? "WhatsApp activado." : "WhatsApp desactivado en toda la agenda."));
     return;
@@ -2286,6 +2300,7 @@ $("cfg").addEventListener("change", async e => {
   if (t.dataset.send){
     S.waSend = Object.assign({}, S.waSend, {[t.dataset.send]: t.checked}); saveCfg();
     if (CLOUD && STAFF){ try { WA = await api("whatsapp", {method: "PUT", body: t.dataset.send === "conf" ? {al_reservar: t.checked} : {recordatorio: t.checked}}); } catch(_){} }
+    renderFunciones();
     toast((t.dataset.send === "conf" ? "Confirmación" : "Recordatorio") + (t.checked ? " por WhatsApp activado." : " por WhatsApp desactivado."));
     return;
   }
@@ -2293,7 +2308,9 @@ $("cfg").addEventListener("change", async e => {
   if (t.id === "ask-aff"){ S.askAffiliate = t.checked; saveCfg(); toast(t.checked ? "Ahora se pide el número de afiliado al reservar." : "Ya no se pide el número de afiliado."); return; }
   if (t.dataset.covAuth != null){ S.coverage[Number(t.dataset.covAuth)].auth = t.checked; saveCfg(); return; }
   if (t.dataset.c){ const k = t.dataset.c; S.clinic[k] = t.type === "number" ? Math.max(Number(t.min || 0), Number(t.value) || 0) : t.value.trim(); saveCfg(); refreshAll(); toast("Guardado."); }
-});
+}
+$("cfg").addEventListener("change", onCfgChange);
+$("fnBox").addEventListener("change", onCfgChange);
 $("cfg").addEventListener("submit", e => e.preventDefault());
 document.addEventListener("click", e => {
   const c = e.target.closest("[data-confirm]");
@@ -2428,9 +2445,9 @@ function scrollToNow(){
 function show(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   if (v === "book" && ADMIN) v = "cuentas";
-  const needLogin = (!STAFF && (v === "panel" || v === "config")) || (!ADMIN && v === "cuentas") || (CLOUD && v === "book" && !SLUG);
+  const needLogin = (!STAFF && (v === "panel" || v === "config" || v === "funciones")) || (!ADMIN && v === "cuentas") || (CLOUD && v === "book" && !SLUG);
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-  ["book","panel","config","cuentas"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
+  ["book","panel","funciones","config","cuentas"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
   $("view-login").hidden = !needLogin;
   $("loginTop").hidden = STAFF || ADMIN || needLogin;
   if (needLogin){ LOGIN_NEXT = v === "book" ? "panel" : v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
@@ -2438,12 +2455,12 @@ function show(v){
     ensureRange(PANEL.date);
     if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = ["lista","grilla","calendario"].includes(v) ? v : (mobile() ? "lista" : "grilla"); }
     renderPanel(); scrollToNow();
-  } else if (v === "config"){ renderConfig(); } else if (v === "cuentas"){ renderCuentas(); } else { renderBook(); }
+  } else if (v === "config"){ renderConfig(); } else if (v === "funciones"){ renderFunciones(); } else if (v === "cuentas"){ renderCuentas(); } else { renderBook(); }
   try { history.replaceState(null, "", "#" + (v === "book" ? "reservar" : v)); } catch(_){}
   window.scrollTo(0, 0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) show(t.dataset.view); });
-const viewFromHash = () => { const h = location.hash.replace("#", ""); return ["panel","config","cuentas"].includes(h) ? h : "book"; };
+const viewFromHash = () => { const h = location.hash.replace("#", ""); return ["panel","funciones","config","cuentas"].includes(h) ? h : "book"; };
 window.addEventListener("hashchange", () => show(viewFromHash()));
 let LOGIN_NEXT = "panel";
 $("staffLink").addEventListener("click", () => show("panel"));
@@ -2702,10 +2719,10 @@ const HELP = {
     ${H("¿Cómo la instalo en el celular?", installHelp())}` },
 
   consultorio: {label: "Consultorio", html: () => `
-    <p class="hintro">Todo lo que puede hacer el consultorio. Arriba tenés tres pestañas: <b>Reservar turno</b> (lo que ven tus pacientes), <b>Panel</b> (tu agenda) y <b>Configuración</b>.</p>
+    <p class="hintro">Todo lo que puede hacer el consultorio. Arriba tenés cuatro pestañas: <b>Reservar turno</b> (lo que ven tus pacientes), <b>Panel</b> (tu agenda), <b>Funciones</b> (prender o apagar turnos online y WhatsApp) y <b>Configuración</b>.</p>
     ${H("Primeros pasos (hacelo una vez)", `<ol class="steps-h">
       <li><b>Cambiá tu contraseña:</b> Configuración → <i>Tu contraseña</i>.</li>
-      <li><b>Elegí qué funciones usar:</b> Configuración → <i>Funciones</i>: si los pacientes pueden <b>reservar online</b> y si querés usar <b>WhatsApp</b>.</li>
+      <li><b>Elegí qué funciones usar:</b> la pestaña <i>Funciones</i> (al lado de Configuración): si los pacientes pueden <b>reservar online</b> y si querés usar <b>WhatsApp</b>.</li>
       <li><b>Datos del consultorio:</b> nombre, dirección, WhatsApp y <b>logo</b>.</li>
       <li><b>Tipo de agenda:</b> <i>Agenda de turnos</i> (solo profesionales) o <i>Consultas y estudios</i>.</li>
       <li><b>Profesionales:</b> agregá a cada uno con sus días, horarios e intervalo entre turnos.</li>
@@ -2714,7 +2731,7 @@ const HELP = {
       <li><b>Medios de pago</b> que aceptás.</li>
       <li><b>Compartí tu link</b> para pacientes: Configuración → <i>Tu cuenta</i> → Copiar o Compartir.</li>
       <li><b>Instalá la app</b> en tu celular (ver abajo).</li></ol>`, true)}
-    ${H("Funciones: turnos online y WhatsApp (prender o apagar)", `<p style="margin:8px 0 0">Están en <b>Configuración → Funciones</b>, arriba de todo. Cada una tiene un interruptor: <b>prendido (verde) = habilitado</b>, <b>apagado (gris) = deshabilitado</b>. Los cambios se guardan solos.</p><ul>
+    ${H("Funciones: turnos online y WhatsApp (prender o apagar)", `<p style="margin:8px 0 0">Están en la pestaña <b>Funciones</b>, al lado de <b>Configuración</b>. Cada una tiene un interruptor: <b>prendido (verde) = habilitado</b>, <b>apagado (gris) = deshabilitado</b>. Los cambios se guardan solos.</p><ul>
       <li><b>Turnos online para pacientes</b><br>
         <i>Prendido:</i> los pacientes ven la pantalla <b>Reservar turno</b> en tu link y sacan turno solos.<br>
         <i>Apagado:</i> los pacientes <b>no ven la parte de reservar</b>. Tu link muestra «Pedí tu turno» con tu WhatsApp, teléfono y dirección. Vos seguís cargando los turnos desde el <b>Panel</b>.</li>
@@ -2754,7 +2771,7 @@ const HELP = {
       <li><b>Consultas y estudios:</b> duración, precio particular, <i>preparación</i>, <i>«Para este estudio necesitás…»</i> y si pide orden médica (y foto de la orden).</li>
       <li><b>Valores por obra social:</b> la tabla es interna. Al paciente solo le mostramos el monto final que abona.</li>
       <li><b>Obras sociales:</b> marcá las que piden <b>orden autorizada</b> y si querés pedir el <b>número de afiliado</b>.</li>
-      <li><b>Funciones:</b> prendé o apagá los <b>turnos online</b> (si están apagados, tu link muestra cómo comunicarse) y el <b>WhatsApp</b> en toda la agenda; con WhatsApp prendido elegís si se mandan la confirmación y el recordatorio.</li>
+      <li><b>Funciones</b> (pestaña al lado de Configuración): prendé o apagá los <b>turnos online</b> (si están apagados, tu link muestra cómo comunicarse) y el <b>WhatsApp</b> en toda la agenda; con WhatsApp prendido elegís si se mandan la confirmación y el recordatorio.</li>
       <li><b>Mensajes de WhatsApp:</b> editá el texto de la confirmación y del recordatorio. Tocá un dato (nombre, fecha, monto, preparación…) para insertarlo y mirá la vista previa.</li>
       <li><b>Datos del consultorio:</b> anticipación mínima para reservar y cuántos días hacia adelante se pueden ver (hasta un año).</li></ul>`)}
     ${CLOUD ? H("WhatsApp automático (opcional)", `<ul>
@@ -2815,6 +2832,7 @@ const tutorialCard = () => `<section class="card tutorial-card"><h2>Tutorial com
   <p class="hint">Cómo funciona toda la agenda, paso a paso. Tocá cada tema para abrirlo. También lo tenés siempre en el botón ⓘ de arriba.</p>${helpBlock()}</section>`;
 $("helpBtn").addEventListener("click", () => openHelp());
 document.addEventListener("click", e => {
+  const vg = e.target.closest("[data-view-go]"); if (vg){ show(vg.dataset.viewGo); return; }
   const g = e.target.closest("[data-gotut]"); if (g){ const c = document.querySelector("#view-config .tutorial-card"); if (c){ const y = c.getBoundingClientRect().top + window.scrollY - (document.querySelector(".top").offsetHeight + 10); window.scrollTo(0, y); } return; }
   const t = e.target.closest("[data-htab]");
   if (t){ const w = t.closest(".help-wrap"); w.querySelectorAll("[data-htab]").forEach(b => b.setAttribute("aria-pressed", b === t));
