@@ -1312,7 +1312,7 @@ function renderForm(){
         <label class="check" for="b-later"><input type="checkbox" id="b-later"> No la tengo a mano, la llevo el día del turno</label>
       </fieldset>`
       : ord ? `<label class="check" for="b-order"><input type="checkbox" id="b-order"> Tengo la orden médica y la llevo el día del turno</label>` : ""}
-      <label class="check" for="b-first"><input type="checkbox" id="b-first"> Es mi primera vez en el centro</label>
+      ${S.askFirst !== false ? `<label class="check" for="b-first"><input type="checkbox" id="b-first"> Es mi primera vez en el centro</label>` : ""}
       <label for="b-note">Comentario (opcional)<textarea id="b-note" placeholder="Síntomas, estudios anteriores, preferencias…"></textarea></label>
       <p class="err" id="b-err" role="alert"></p>
       <button class="btn btn-primary" type="submit">Reservar turno</button>
@@ -1444,7 +1444,7 @@ $("formArea").addEventListener("submit", async e => {
   const b = {id:newId(), pro:p.id, date:UI.date, start:toT(UI.time), dur:sel.dur, status:"pendiente", name, phone, dni, os,
     plan: os === "Particular" || !S.askAffiliate ? "" : $("b-plan").value.trim(), aff: os === "Particular" || !S.askAffiliate ? "" : aff, order: needsOrder(items) ? (photoMode ? true : $("b-order").checked) : false,
     orderSent: photoMode && !!UI.orderFile, orderThumb: photoMode && UI.orderFile ? UI.orderThumb : null, orderName: photoMode && UI.orderFile ? UI.orderFile.name : "",
-    items, first:$("b-first").checked, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
+    items, first: $("b-first") ? $("b-first").checked : false, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
   if (CLOUD){
     const btn = e.target.querySelector('button[type="submit"]');
     UI.saving = true; btn.disabled = true; btn.textContent = "Guardando turno…";
@@ -1943,6 +1943,7 @@ function renderFunciones(){
   <section class="card send-card">
     <p class="hint">Prendé o apagá lo que quieras usar.</p>
     <label class="switch" for="fn-online"><input type="checkbox" id="fn-online" data-fn="onlineBooking" ${onlineOn() ? "checked" : ""}><span class="sw"></span><span><b>Turnos online para pacientes</b><small>Los pacientes sacan turno solos desde tu link. Apagado, el link muestra cómo comunicarse y vos cargás los turnos desde el Panel.</small></span></label>
+    <label class="switch" for="fn-first"><input type="checkbox" id="fn-first" data-fn="askFirst" ${S.askFirst !== false ? "checked" : ""}><span class="sw"></span><span><b>Preguntar «Es mi primera vez en el centro»</b><small>Casilla que ve el paciente al reservar. Si la marca, en el panel aparece la etiqueta «Primera vez».</small></span></label>
     <label class="switch" for="fn-wa"><input type="checkbox" id="fn-wa" data-fn="waEnabled" ${waEnabled() ? "checked" : ""}><span class="sw"></span><span><b>WhatsApp</b><small>Botones y mensajes de WhatsApp en toda la agenda${CLOUD ? " (también el WhatsApp automático)" : ""}. Apagado, no se usa WhatsApp para nada.</small></span></label>
     <div class="sub-switches" ${waEnabled() ? "" : "hidden"}>
     <p class="muted" style="font-size:13px;margin:0">${waOn() ? "Con el WhatsApp automático activo, estos mensajes le llegan solos al paciente." : "Estos mensajes se mandan con un toque desde el panel."}</p>
@@ -2298,6 +2299,7 @@ async function onCfgChange(e){
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
   if (t.dataset.fn){
     S[t.dataset.fn] = t.checked; saveCfg(); renderFunciones(); if (!$("view-config").hidden) renderConfig();
+    if (t.dataset.fn === "askFirst"){ toast(t.checked ? "Ahora se pregunta si es la primera vez en el centro." : "Ya no se pregunta si es la primera vez en el centro."); return; }
     toast(t.dataset.fn === "onlineBooking" ? (t.checked ? "Turnos online activados: los pacientes pueden reservar desde tu link." : "Turnos online desactivados: el link muestra cómo comunicarse.")
       : (t.checked ? "WhatsApp activado." : "WhatsApp desactivado en toda la agenda."));
     return;
@@ -2743,6 +2745,9 @@ const HELP = {
       <li><b>WhatsApp</b><br>
         <i>Prendido:</i> la agenda usa WhatsApp para confirmar y recordar turnos. Debajo elegís cuáles se mandan: <b>Confirmación del turno</b> y/o <b>Recordatorio el día anterior</b>.<br>
         <i>Apagado:</i> la agenda <b>no interactúa con WhatsApp</b>: no hay botones de WhatsApp en el panel, no se mandan confirmaciones ni recordatorios (tampoco los automáticos) y al paciente no se le pide escribir por WhatsApp.</li>
+      <li><b>Preguntar «Es mi primera vez en el centro»</b><br>
+        <i>Prendido:</i> al reservar, el paciente ve esa casilla; si la marca, en el panel el turno muestra la etiqueta <b>Primera vez</b>.<br>
+        <i>Apagado:</i> la casilla no aparece.</li>
       <li>Podés prenderlas y apagarlas cuando quieras (por ejemplo, apagar los turnos online durante las vacaciones).</li></ul>`)}
     ${H("El panel: tu agenda", `<ul>
       <li><b>Arriba:</b> turnos del día, pendientes de confirmar, ocupación de la semana y estudios.</li>
@@ -2885,7 +2890,7 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
-const APP_VERSION = "20";
+const APP_VERSION = "21";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   // Si hay una versión nueva, se instala y la página se recarga sola una vez
   let recargada = false;
