@@ -2705,6 +2705,7 @@ const HELP = {
     <p class="hintro">Todo lo que puede hacer el consultorio. Arriba tenés tres pestañas: <b>Reservar turno</b> (lo que ven tus pacientes), <b>Panel</b> (tu agenda) y <b>Configuración</b>.</p>
     ${H("Primeros pasos (hacelo una vez)", `<ol class="steps-h">
       <li><b>Cambiá tu contraseña:</b> Configuración → <i>Tu contraseña</i>.</li>
+      <li><b>Elegí qué funciones usar:</b> Configuración → <i>Funciones</i>: si los pacientes pueden <b>reservar online</b> y si querés usar <b>WhatsApp</b>.</li>
       <li><b>Datos del consultorio:</b> nombre, dirección, WhatsApp y <b>logo</b>.</li>
       <li><b>Tipo de agenda:</b> <i>Agenda de turnos</i> (solo profesionales) o <i>Consultas y estudios</i>.</li>
       <li><b>Profesionales:</b> agregá a cada uno con sus días, horarios e intervalo entre turnos.</li>
@@ -2713,6 +2714,14 @@ const HELP = {
       <li><b>Medios de pago</b> que aceptás.</li>
       <li><b>Compartí tu link</b> para pacientes: Configuración → <i>Tu cuenta</i> → Copiar o Compartir.</li>
       <li><b>Instalá la app</b> en tu celular (ver abajo).</li></ol>`, true)}
+    ${H("Funciones: turnos online y WhatsApp (prender o apagar)", `<p style="margin:8px 0 0">Están en <b>Configuración → Funciones</b>, arriba de todo. Cada una tiene un interruptor: <b>prendido (verde) = habilitado</b>, <b>apagado (gris) = deshabilitado</b>. Los cambios se guardan solos.</p><ul>
+      <li><b>Turnos online para pacientes</b><br>
+        <i>Prendido:</i> los pacientes ven la pantalla <b>Reservar turno</b> en tu link y sacan turno solos.<br>
+        <i>Apagado:</i> los pacientes <b>no ven la parte de reservar</b>. Tu link muestra «Pedí tu turno» con tu WhatsApp, teléfono y dirección. Vos seguís cargando los turnos desde el <b>Panel</b>.</li>
+      <li><b>WhatsApp</b><br>
+        <i>Prendido:</i> la agenda usa WhatsApp para confirmar y recordar turnos. Debajo elegís cuáles se mandan: <b>Confirmación del turno</b> y/o <b>Recordatorio el día anterior</b>.<br>
+        <i>Apagado:</i> la agenda <b>no interactúa con WhatsApp</b>: no hay botones de WhatsApp en el panel, no se mandan confirmaciones ni recordatorios (tampoco los automáticos) y al paciente no se le pide escribir por WhatsApp.</li>
+      <li>Podés prenderlas y apagarlas cuando quieras (por ejemplo, apagar los turnos online durante las vacaciones).</li></ul>`)}
     ${H("El panel: tu agenda", `<ul>
       <li><b>Arriba:</b> turnos del día, pendientes de confirmar, ocupación de la semana y estudios.</li>
       <li><b>Menú de profesionales:</b> mirá la agenda de uno o de todos.</li>
