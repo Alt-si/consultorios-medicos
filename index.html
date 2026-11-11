@@ -1581,6 +1581,7 @@ function renderSide(){
 /* ---------- mensajes de WhatsApp editables ---------- */
 const MSG_DEF = {
   conf: "Hola {nombre}, te confirmamos tu turno en {consultorio}:\n\n• {que}\n• {profesional}\n• {fecha}, {hora} h\n• {direccion}\n• Cobertura: {cobertura}\n• {monto}\n• {mediospago}\n• {alias}\n\nPreparación:\n{preparacion}\n\nPara este estudio necesitás:\n{necesitas}\n\nTraé {traer}. Si no podés venir, avisanos respondiendo este mensaje así le damos el turno a otra persona.",
+  agen: "Hola {nombre}, te agendamos un turno en {consultorio}:\n\n• {que}\n• {profesional}\n• {fecha}, {hora} h\n• {direccion}\n• {monto}\n• {mediospago}\n\nPreparación:\n{preparacion}\n\nPara este estudio necesitás:\n{necesitas}\n\nTraé {traer}. Si no podés venir, avisanos respondiendo este mensaje.",
   rec: "Hola {nombre}, te recordamos tu turno de mañana a las {hora} h: {que} con {profesional}, en {direccion}.\n\nAcordate:\n{preparacion}\n\nNecesitás:\n{necesitas}\n\nTraé {traer}.\n{monto}.\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno."
 };
 const MSG_VARS = [["nombre","Nombre"],["paciente","Nombre y apellido"],["consultorio","Consultorio"],["fecha","Fecha"],["hora","Hora"],["profesional","Profesional"],["que","Consulta o estudio"],
@@ -1604,6 +1605,7 @@ function fillMsg(tpl, b){
   return res.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 const msgTpl = k => (S.msgs && S.msgs[k]) || MSG_DEF[k];
+function agendaMsg(b){ return fillMsg(msgTpl("agen"), b); }
 function confirmMsg(b){ return fillMsg(msgTpl("conf"), b); }
 function reminderMsg(b){ return fillMsg(msgTpl("rec"), b); }
 function sampleBooking(){
@@ -1660,12 +1662,17 @@ function openBooking(id){
   let acts = "";
   if (b.status === "pendiente") acts = waOn() || !sendOn("conf") || !b.phone ? `<button class="btn btn-primary" data-act="confirmado" data-id="${b.id}">Confirmar turno</button>`
     : `<a class="btn btn-wa" data-confirm="${b.id}" href="${wa(b.phone, confirmMsg(b))}" target="_blank" rel="noopener">${WA_ICON}Confirmar y avisar por WhatsApp</a>`;
+  const avisoAgenda = !waOn() && sendOn("agen") && b.source === "manual" && (b.status === "confirmado" || b.status === "pendiente")
+    ? (b.phone ? `<div class="notice ${b.notified ? "" : "warn"} aviso-agenda"><b>${b.notified ? "Aviso enviado ✓" : (b._recien ? "Turno agendado. ¿Le avisás al paciente?" : "Avisar al paciente")}</b>
+        <a class="btn btn-wa btn-sm" data-notify="${b.id}" href="${wa(b.phone, agendaMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.notified ? "Volver a avisar" : "Avisar al paciente por WhatsApp"}</a></div>`
+      : `<div class="notice aviso-agenda"><b>Sin WhatsApp cargado</b>Para avisarle por WhatsApp, cargá su número al agendar.</div>`) : "";
   if (b.status === "confirmado") acts = `${waOn() || !sendOn("rec") ? "" : `<a class="btn btn-wa" data-remind="${b.id}" href="${wa(b.phone, reminderMsg(b))}" target="_blank" rel="noopener">${WA_ICON}${b.reminded ? "Reenviar recordatorio" : "Enviar recordatorio"}</a>`}
       <button class="btn btn-soft" data-act="asistio" data-id="${b.id}">Asistió</button><button class="btn btn-soft" data-act="ausente" data-id="${b.id}">No asistió</button>`;
   if (b.status === "asistio" || b.status === "ausente") acts = `<button class="btn btn-soft" data-act="confirmado" data-id="${b.id}">Volver a “confirmado”</button>`;
   const ord = needsOrder(b.items);
   openDrawer(p.name + " · " + p.role, b.name, `
     <div><span class="pill ${b.status}">${STATUS[b.status]}</span>${b.items.length > 1 ? ' <span class="tag acc">Turno combinado</span>' : ""}${b.first ? ' <span class="tag">Primera vez</span>' : ""}</div>
+    ${avisoAgenda}
     <dl>
       <dt>${hasStudy(b.items) ? "Estudios" : "Motivo"}</dt><dd>${b.items.map(i => esc(i.n)).join("<br>")}</dd>
       <dt>Día</dt><dd>${fmtLong(b.date)}</dd>
@@ -1696,6 +1703,7 @@ function openBooking(id){
     ${b.status === "pendiente" || b.status === "confirmado" ? `${waOn() || (b.status === "pendiente" ? !sendOn("conf") : !sendOn("rec")) ? "" : `<p class="sec-t">Mensaje que se envía al paciente</p><div class="bubble">${esc(b.status === "pendiente" ? confirmMsg(b) : reminderMsg(b))}</div>`}
       <div class="actions"><button class="btn btn-danger btn-sm" data-act="cancel" data-id="${b.id}">Cancelar turno y liberar horario</button></div>` : ""}`);
   fillOrderView();
+  delete b._recien;
 }
 async function fillOrderView(){
   const el = $("orderView"); if (!el || !CLOUD) return;
@@ -1718,7 +1726,7 @@ function openFree(pid, m){
       <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
       <div class="row2"><label for="m-os">Cobertura<select id="m-os"><option>Particular</option>${S.coverage.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
       ${S.askAffiliate ? `<label for="m-aff">Nº de afiliado<input id="m-aff" inputmode="numeric"></label>` : ""}</div>
-      ${waOn() ? `<label class="check" for="m-avisar"><input type="checkbox" id="m-avisar" checked> Enviarle la confirmación por WhatsApp</label>` : ""}
+      ${waOn() && sendOn("agen") ? `<label class="check" for="m-avisar"><input type="checkbox" id="m-avisar" checked> Enviarle la confirmación por WhatsApp</label>` : ""}
       <label class="check" for="m-order"><input type="checkbox" id="m-order" checked> Trae orden médica (si es estudio)</label>
       <p class="err" id="m-err" role="alert"></p>
       <button class="btn btn-primary" type="submit">Agendar como confirmado</button>
@@ -1932,7 +1940,7 @@ function submitManual(f){
   const os = $("m-os").value;
   const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
     dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" || !$("m-aff") ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
-    first:false, note:"", source:"manual", code:code(), reminded:false, _avisar: $("m-avisar") ? $("m-avisar").checked : true};
+    first:false, note:"", source:"manual", code:code(), reminded:false, _avisar: $("m-avisar") ? $("m-avisar").checked : (waOn() ? false : true), _recien: true};
   DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado." + (waOn() && b.phone && b._avisar ? " Le enviamos la confirmación por WhatsApp." : "")); sync(b);
 }
 
@@ -1948,6 +1956,7 @@ function renderFunciones(){
     <div class="sub-switches" ${waEnabled() ? "" : "hidden"}>
     <p class="muted" style="font-size:13px;margin:0">${waOn() ? "Con el WhatsApp automático activo, estos mensajes le llegan solos al paciente." : "Estos mensajes se mandan con un toque desde el panel."}</p>
     <label class="switch" for="send-conf"><input type="checkbox" id="send-conf" data-send="conf" ${sendOn("conf") ? "checked" : ""}><span class="sw"></span><span><b>Confirmación del turno</b><small>${waOn() ? "Al reservar o cuando agendás un turno." : "Botón «Confirmar y avisar por WhatsApp»."}</small></span></label>
+    <label class="switch" for="send-agen"><input type="checkbox" id="send-agen" data-send="agen" ${sendOn("agen") ? "checked" : ""}><span class="sw"></span><span><b>Aviso cuando agendás un turno</b><small>${waOn() ? "Al cargar un turno a mano, se le manda solo al paciente el día, la hora y el profesional." : "Al cargar un turno a mano, la ficha ofrece «Avisar al paciente por WhatsApp» con el día, la hora y el profesional."}</small></span></label>
     <label class="switch" for="send-rec"><input type="checkbox" id="send-rec" data-send="rec" ${sendOn("rec") ? "checked" : ""}><span class="sw"></span><span><b>Recordatorio el día anterior</b><small>${waOn() ? "Con los botones Confirmo / Necesito cambiarlo." : "Lista «Recordatorios para mañana» en el panel."}</small></span></label>
     </div>
   </section>
@@ -2013,6 +2022,7 @@ function renderConfig(){
     <h2>Mensajes de WhatsApp</h2>
     <p class="hint">Editá el texto que se le manda al paciente con los botones de WhatsApp. Tocá un dato para insertarlo donde está el cursor. Si un dato no corresponde a ese turno (por ejemplo la preparación en una consulta), esa línea se quita sola.</p>
     ${msgEditor("conf", "Confirmación del turno", "Se envía al confirmar un turno.")}
+    ${msgEditor("agen", "Turno agendado por el consultorio", "Se ofrece al cargar un turno a mano desde el panel.")}
     ${msgEditor("rec", "Recordatorio", "Se envía el día anterior desde «Recordatorios para mañana».")}
     ${CLOUD && STAFF ? `<p class="muted" style="font-size:13px;margin:10px 0 0">Los mensajes del <b>WhatsApp automático</b> usan las plantillas aprobadas por Meta: lo que se muestra en ellos se elige en <i>WhatsApp automático → Datos que se incluyen</i>.</p>` : ""}
   </section>
@@ -2306,9 +2316,9 @@ async function onCfgChange(e){
   }
   if (t.dataset.send){
     S.waSend = Object.assign({}, S.waSend, {[t.dataset.send]: t.checked}); saveCfg();
-    if (CLOUD && STAFF){ try { WA = await api("whatsapp", {method: "PUT", body: t.dataset.send === "conf" ? {al_reservar: t.checked} : {recordatorio: t.checked}}); } catch(_){} }
+    if (CLOUD && STAFF && t.dataset.send !== "agen"){ try { WA = await api("whatsapp", {method: "PUT", body: t.dataset.send === "conf" ? {al_reservar: t.checked} : {recordatorio: t.checked}}); } catch(_){} }
     renderFunciones();
-    toast((t.dataset.send === "conf" ? "Confirmación" : "Recordatorio") + (t.checked ? " por WhatsApp activado." : " por WhatsApp desactivado."));
+    toast(({conf: "Confirmación", rec: "Recordatorio", agen: "Aviso al agendar"})[t.dataset.send] + (t.checked ? " por WhatsApp activado." : " por WhatsApp desactivado."));
     return;
   }
   if (t.dataset.waincl){ S.waIncl = Object.assign({}, S.waIncl, {[t.dataset.waincl]: t.checked}); saveCfg(); toast("Guardado."); return; }
@@ -2322,6 +2332,8 @@ $("cfg").addEventListener("submit", e => e.preventDefault());
 document.addEventListener("click", e => {
   const c = e.target.closest("[data-confirm]");
   if (c){ const b = DB.bookings.find(x => x.id === Number(c.dataset.confirm)); b.status = "confirmado"; b.isNew = false; saveDB(); sync(b); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Turno confirmado. Se abrió WhatsApp con el mensaje para " + b.name.split(" ")[0] + "."); return; }
+  const nt = e.target.closest("[data-notify]");
+  if (nt){ const b = DB.bookings.find(x => x.id === Number(nt.dataset.notify)); b.notified = true; saveDB(); sync(b); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Se abrió WhatsApp con el aviso para " + (b.name || "").split(" ")[0] + "."); return; }
   const r = e.target.closest("[data-remind]");
   if (r){ const b = DB.bookings.find(x => x.id === Number(r.dataset.remind)); b.reminded = true; saveDB(); sync(b); renderPanel(); if ($("drawer").classList.contains("show")) openBooking(b.id); toast("Recordatorio listo en WhatsApp para " + b.name.split(" ")[0] + "."); return; }
   const o = e.target.closest("[data-open]"); if (o){ openBooking(Number(o.dataset.open)); return; }
@@ -2765,6 +2777,7 @@ const HELP = {
     ${H("Dar un turno a mano o bloquear un horario", `<ul>
       <li>En <i>Lista</i> tocá un horario libre (los botoncitos con la hora). En <i>Grilla</i>, tocá el espacio libre.</li>
       <li>Elegí uno o más estudios o motivos (por ejemplo, <b>dos estudios en el mismo turno</b>: se suman las duraciones), cargá el paciente y su cobertura → <b>Agendar</b>. Los turnos con dos estudios solo los puede dar el consultorio.</li>
+      <li>Si está prendido <i>Funciones → WhatsApp → Aviso cuando agendás un turno</i>, la ficha del turno te ofrece <b>Avisar al paciente por WhatsApp</b> con el día, la hora, el profesional y las indicaciones (con WhatsApp automático, se manda solo).</li>
       <li>O <b>Bloquear</b> ese horario (reunión, mantenimiento del equipo…): deja de aparecer para reservar.</li></ul>`)}
     ${H("Pendientes y recordatorios", `<ul>
       <li><b>Pendientes de confirmar:</b> las reservas nuevas, con el botón <i>Confirmar</i>.</li>
@@ -2890,7 +2903,7 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
-const APP_VERSION = "21";
+const APP_VERSION = "22";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   // Si hay una versión nueva, se instala y la página se recarga sola una vez
   let recargada = false;
