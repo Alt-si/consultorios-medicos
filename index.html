@@ -454,6 +454,36 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .switch b{display:block;font-size:15px}
 .switch small{display:block;color:var(--muted);font-size:13px}
 .acc-edit{display:grid;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;background:var(--bg)}
+.pat-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pat-tools input{flex:1 1 220px;min-width:0}
+.pat-row{cursor:pointer}
+.pat-row:hover b{color:var(--accent)}
+.pat-count{font-size:13px;margin:8px 0 0}
+.fldlist{display:flex;flex-wrap:wrap;gap:6px}
+.fld{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 4px 3px 11px;font-size:13.5px}
+.fld.fixed{padding:3px 11px;color:var(--muted);background:var(--sunk)}
+.fld button{border:0;background:var(--sunk);color:var(--muted);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
+.fld button:hover{color:var(--bad)}
+.fldadd{display:flex;gap:8px;flex-wrap:wrap}
+.fldadd input{flex:2 1 160px;min-width:0}.fldadd select{flex:1 1 110px;min-width:0;width:auto}
+.fldadd .unit{flex:0 1 90px}
+.hsec{display:grid;gap:10px}
+.hsec-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hsec-h h3{margin:0;font-size:17px;flex:1}
+.hent{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.hent header{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-size:14px}
+.hent .hact{margin-left:auto;display:flex;gap:2px}
+.hvals{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.hv{background:var(--sunk);border-radius:8px;padding:5px 10px;font-size:14px}
+.hv small{display:block;color:var(--muted);font-size:11.5px;font-weight:600}
+.hnote{margin:8px 0 0;white-space:pre-wrap;font-size:14.5px;line-height:1.5}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.hform{border:1px solid var(--accent);border-radius:10px;padding:12px;background:var(--accent-soft)}
+.hform textarea{min-height:110px}
+.ptur{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.ptur.link{cursor:pointer}
+.ptur.link:hover b{color:var(--accent)}
+.pat-ext{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px}
 .sub-switches{display:grid;gap:10px;margin-left:18px;padding-left:14px;border-left:3px solid var(--line)}
 .closed-box{padding-bottom:40px;position:relative;margin-top:-44px}
 .closed-card{max-width:620px;margin:0 auto;display:grid;gap:12px;justify-items:start;box-shadow:0 14px 34px -22px rgba(16,40,80,.45)}
@@ -571,6 +601,8 @@ dd{margin:0;font-weight:500}
   .rowi{grid-template-columns:40px 1fr;gap:10px}
   .rowi .av{width:40px;height:40px}
   .rowi > .btn{grid-column:2;justify-self:start}
+  .pat-row > .btn{display:none}
+  .pat-row{padding:9px 0}
   .cfg-head .btn{width:100%}
   .addrow .btn{flex:1}
   .toast{bottom:14px}
@@ -606,6 +638,7 @@ dd{margin:0;font-weight:500}
     <div class="tabs" role="tablist" aria-label="Vista">
       <button class="tab" role="tab" aria-selected="true" data-view="book"><span class="full">Reservar turno</span><span class="short">Reservar</span></button>
       <button class="tab" role="tab" aria-selected="false" data-view="panel"><span class="full">Panel del consultorio</span><span class="short">Panel</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-view="pacientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="3.5" width="16" height="18" rx="2.5"/><path d="M9 3.5h6v3H9zM12 10.5v6M9 13.5h6"/></svg>Pacientes</button>
       <button class="tab" role="tab" aria-selected="false" data-view="cuentas" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg>Cuentas</button>
       <button class="tab" role="tab" aria-selected="false" data-view="funciones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2.5" y="7" width="19" height="10" rx="5"/><circle cx="16.5" cy="12" r="3" fill="currentColor"/></svg>Funciones</button>
       <button class="tab" role="tab" aria-selected="false" data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="full">Configuración</span><span class="short">Config.</span></button>
@@ -732,6 +765,14 @@ dd{margin:0;font-weight:500}
   <div class="wrap">
     <div class="ph"><h1>Cuentas de consultorios</h1></div>
     <div class="cfg" id="cuentas"></div>
+  </div>
+</main>
+
+<!-- ===================== PACIENTES ===================== -->
+<main id="view-pacientes" hidden>
+  <div class="wrap">
+    <div class="ph"><h1>Pacientes</h1></div>
+    <div class="cfg" id="patBox"></div>
   </div>
 </main>
 
@@ -1673,6 +1714,7 @@ function openBooking(id){
   openDrawer(p.name + " · " + p.role, b.name, `
     <div><span class="pill ${b.status}">${STATUS[b.status]}</span>${b.items.length > 1 ? ' <span class="tag acc">Turno combinado</span>' : ""}${b.first ? ' <span class="tag">Primera vez</span>' : ""}</div>
     ${avisoAgenda}
+    ${b.name ? `<div class="actions" style="margin:0"><button class="btn btn-soft btn-sm" type="button" data-pat-from="${b.id}">Ficha del paciente${histOn() ? " e historia clínica" : ""}</button></div>` : ""}
     <dl>
       <dt>${hasStudy(b.items) ? "Estudios" : "Motivo"}</dt><dd>${b.items.map(i => esc(i.n)).join("<br>")}</dd>
       <dt>Día</dt><dd>${fmtLong(b.date)}</dd>
@@ -1713,6 +1755,7 @@ async function fillOrderView(){
     : `<a href="${url}" target="_blank" rel="noopener"><img class="order-img" src="${url}" alt="Foto de la orden médica"></a>`;
 }
 function openFree(pid, m){
+  if (!PAT.loaded) patLoad().then(() => { const dl = $("m-patlist"); if (dl) dl.innerHTML = PAT.list.slice().sort(byName).slice(0, 500).map(x => `<option value="${esc(x.name)}">${x.dni ? "DNI " + esc(x.dni) : ""}</option>`).join(""); }).catch(() => {});
   const p = pro(pid), d = PANEL.date, sv = proSvcs(p);
   openDrawer(p.name, `Horario libre ${toT(m)}`, `
     <p style="margin:0" class="muted">${fmtLong(d)} · desde las ${toT(m)}</p>
@@ -1721,7 +1764,9 @@ function openFree(pid, m){
       <fieldset><legend>${sv.some(s => s.kind === "estudio") ? "Consultas o estudios (podés elegir más de uno)" : "Motivo"}</legend>
         <div class="checks">${sv.map((s, i) => `<label class="check" for="m-s-${s.id}"><input type="checkbox" id="m-s-${s.id}" value="${s.id}" ${i===0?"checked":""}> ${esc(s.name)} <span class="muted">· ${s.dur}′</span></label>`).join("")}</div>
       </fieldset>
-      <label for="m-name">Paciente<input id="m-name" placeholder="Nombre y apellido"></label>
+      <label for="m-name">Paciente<input id="m-name" placeholder="Nombre y apellido" list="m-patlist" autocomplete="off"></label>
+      <datalist id="m-patlist">${PAT.list.slice().sort(byName).slice(0, 500).map(x => `<option value="${esc(x.name)}">${x.dni ? "DNI " + esc(x.dni) : ""}</option>`).join("")}</datalist>
+      <p class="muted" id="m-patfound" style="font-size:13px;margin:-4px 0 0" hidden></p>
       <div class="row2"><label for="m-dni">DNI<input id="m-dni" inputmode="numeric"></label>
       <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
       <div class="row2"><label for="m-os">Cobertura<select id="m-os"><option>Particular</option>${S.coverage.filter(c => covers(p, c.n)).map(c => `<option>${esc(c.n)}</option>`).join("")}</select></label>
@@ -1925,6 +1970,8 @@ $("agenda").addEventListener("click", e => {
 $("dBody").addEventListener("submit", e => {
   e.preventDefault();
   if (e.target.id === "manualForm") return submitManual(e.target);
+  if (e.target.id === "patForm") return submitPat(e.target);
+  if (e.target.id === "histForm") return submitHist(e.target);
   if (e.target.id === "proForm") return submitPro(e.target);
   if (e.target.id === "svcForm") return submitSvc(e.target);
   if (e.target.id === "offForm") return submitOff();
@@ -1944,6 +1991,366 @@ function submitManual(f){
   DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado." + (waOn() && b.phone && b._avisar ? " Le enviamos la confirmación por WhatsApp." : "")); sync(b);
 }
 
+/* ================= PACIENTES E HISTORIA CLÍNICA ================= */
+const PAT_KEY = "agenda-pacientes-v1";
+const HIST_DEF = [{id:"peso", label:"Peso", unit:"kg", type:"numero"}, {id:"altura", label:"Altura", unit:"cm", type:"numero"}, {id:"presion", label:"Presión arterial", unit:"mmHg", type:"texto"}];
+const FIELD_TYPES = {texto:"Texto", numero:"Número", fecha:"Fecha", sino:"Sí / No"};
+const PAT_FIXED = ["Nombre y apellido", "DNI", "Celular / WhatsApp", "Fecha de nacimiento", "Obra social", "N° de afiliado", "Mail", "Domicilio", "Observaciones"];
+const histOn = () => S.patHistory !== false;
+const patFields = () => S.patFields || [];
+const histFields = () => S.histFields || HIST_DEF;
+const normTxt = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es", {sensitivity: "base"});
+const fmtDMY = s => s ? parse(s).toLocaleDateString("es-AR", {day:"2-digit", month:"2-digit", year:"numeric"}) : "";
+const numAR = n => Number(n).toLocaleString("es-AR", {maximumFractionDigits: 1});
+let PAT = {list: [], loaded: false}, PATSEL = null, HIST = [], PTURNOS = [], HEDIT = null, PLOADING = false;
+function edad(f){
+  if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return "";
+  const b = parse(f), n = new Date(); let a = n.getFullYear() - b.getFullYear();
+  if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
+  return a >= 0 && a < 130 ? a + (a === 1 ? " año" : " años") : "";
+}
+/* --- guardado: en internet (Cloudflare) o en este navegador (demo) --- */
+function patStore(){
+  let s = null; try { s = JSON.parse(localStorage.getItem(PAT_KEY)); } catch(_){}
+  if (!s || !Array.isArray(s.pacientes)) s = {nextId: 1, nextH: 1, pacientes: [], hist: [], borrados: []};
+  s.hist = s.hist || []; s.borrados = s.borrados || [];
+  return s;
+}
+function patPut(s){ try { localStorage.setItem(PAT_KEY, JSON.stringify(s)); } catch(_){ toast("No hay más espacio en este navegador."); } }
+function demoPatSync(){
+  const s = patStore(); let ch = false;
+  (DB && DB.bookings || []).forEach(b => {
+    const d = digits(b.dni);
+    if (b.status === "bloqueo" || d.length < 6 || !b.name || s.borrados.includes(d) || s.pacientes.some(p => p.dni === d)) return;
+    s.pacientes.push({id: s.nextId++, name: b.name, dni: d, phone: b.phone || "", os: b.os || "", plan: b.plan || "", aff: b.aff || ""}); ch = true;
+  });
+  if (!s.demoHist && s.pacientes.length){
+    const p = s.pacientes[0], pr = (S.pros[0] || {}).id || "";
+    p.birth = p.birth || "1984-06-12";
+    s.hist.push({id: s.nextH++, pid: p.id, fecha: addDays(TODAY(), -120), pro: pr, v: {peso: "78", altura: "172", presion: "130/85"}, nota: "Control anual. Refiere cansancio por la tarde. Se piden análisis de rutina (hemograma, glucemia, perfil lipídico)."});
+    s.hist.push({id: s.nextH++, pid: p.id, fecha: addDays(TODAY(), -30), pro: pr, v: {peso: "75,5", altura: "172", presion: "120/80"}, nota: "Trae análisis: colesterol LDL levemente elevado. Se indica dieta y actividad física. Control en 3 meses."});
+    s.demoHist = true; ch = true;
+  }
+  if (ch) patPut(s);
+  return s;
+}
+const fromRow = r => Object.assign({}, r.datos, {id: r.id});
+async function patLoad(){
+  if (PLOADING) return PLOADING;
+  PLOADING = (async () => {
+    try {
+      PAT.list = CLOUD ? (await api("pacientes")).map(fromRow) : demoPatSync().pacientes.map(p => Object.assign({}, p));
+      PAT.loaded = true; return PAT.list;
+    } finally { PLOADING = false; }
+  })();
+  return PLOADING;
+}
+function patLocal(np){ const i = PAT.list.findIndex(x => x.id === np.id); if (i >= 0) PAT.list[i] = np; else PAT.list.push(np); return np; }
+async function patSave(p){
+  const d = Object.assign({}, p); delete d.id; d.dni = digits(d.dni);
+  if (CLOUD) return patLocal(fromRow(await api(p.id ? "pacientes/" + p.id : "pacientes", {method: p.id ? "PATCH" : "POST", body: {datos: d}})));
+  const s = patStore();
+  if (d.dni && s.pacientes.some(x => x.dni === d.dni && x.id !== p.id)) throw new Error("Ya hay otro paciente con ese DNI.");
+  let np;
+  if (p.id){ np = Object.assign({}, d, {id: p.id}); const i = s.pacientes.findIndex(x => x.id === p.id); if (i >= 0) s.pacientes[i] = np; else s.pacientes.push(np); }
+  else { np = Object.assign({}, d, {id: s.nextId++}); s.pacientes.push(np); }
+  s.borrados = s.borrados.filter(x => x !== d.dni);
+  patPut(s); return patLocal(np);
+}
+async function patDel(p){
+  if (CLOUD) await api("pacientes/" + p.id, {method: "DELETE"});
+  else { const s = patStore(); s.pacientes = s.pacientes.filter(x => x.id !== p.id); s.hist = s.hist.filter(h => h.pid !== p.id); if (p.dni) s.borrados.push(digits(p.dni)); patPut(s); }
+  PAT.list = PAT.list.filter(x => x.id !== p.id);
+}
+async function histLoad(pid){
+  if (CLOUD) return (await api(`pacientes/${pid}/historia`)).map(h => Object.assign({}, h.datos, {id: h.id, fecha: h.fecha}));
+  return patStore().hist.filter(h => h.pid === pid).sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id);
+}
+async function histSave(pid, e){
+  const d = Object.assign({}, e); delete d.id; delete d.fecha; delete d.pid;
+  if (CLOUD){ await api(e.id ? "historia/" + e.id : `pacientes/${pid}/historia`, {method: e.id ? "PATCH" : "POST", body: {fecha: e.fecha, datos: d}}); return; }
+  const s = patStore();
+  if (e.id){ const i = s.hist.findIndex(h => h.id === e.id); if (i >= 0) s.hist[i] = Object.assign({}, e, {pid}); }
+  else s.hist.push(Object.assign({}, e, {id: s.nextH++, pid}));
+  patPut(s);
+}
+async function histDel(id){
+  if (CLOUD) await api("historia/" + id, {method: "DELETE"});
+  else { const s = patStore(); s.hist = s.hist.filter(h => h.id !== id); patPut(s); }
+}
+async function patTurnos(p){
+  const d = digits(p.dni); if (!d) return [];
+  if (CLOUD) return (await api(`pacientes/${p.id}/turnos`)).map(rowToB);
+  return DB.bookings.filter(b => b.status !== "bloqueo" && digits(b.dni) === d).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
+}
+function findPat(q){
+  const d = digits(q.dni);
+  if (d.length >= 6){ const p = PAT.list.find(x => digits(x.dni) === d); if (p) return p; }
+  if (q.name){ const n = normTxt(q.name), ph = digits(q.phone);
+    const m = PAT.list.filter(x => normTxt(x.name) === n && (!ph || !x.phone || digits(x.phone).slice(-8) === ph.slice(-8)) && (!d || !x.dni));
+    if (m.length === 1) return m[0]; }
+  return null;
+}
+
+/* --- lista de pacientes --- */
+async function renderPacientes(){
+  const box = $("patBox");
+  if (!$("patQ")){
+    box.innerHTML = `<section class="card">
+      <div class="pat-tools"><input type="search" id="patQ" placeholder="Buscar por nombre, DNI o celular" aria-label="Buscar paciente" autocomplete="off">
+        <button class="btn btn-primary" type="button" data-pat-new>+ Nuevo paciente</button></div>
+      <p class="muted pat-count" id="patCount"></p>
+      <div class="rows" id="patList"><div class="empty">Cargando pacientes…</div></div>
+    </section>
+    <div class="tut-link"><span>${histOn() ? "El <b>historial del paciente</b> está activado." : "El <b>historial del paciente</b> está apagado."} Los datos de la ficha y del historial se eligen en <b>Funciones</b>.</span><button class="btn btn-soft btn-sm" type="button" data-view-go="funciones">Ir a Funciones</button></div>`;
+  } else paintPatList();
+  try { await patLoad(); } catch(ex){ $("patList").innerHTML = `<div class="empty">No se pudieron cargar los pacientes: ${esc(ex.message)}</div>`; return; }
+  paintPatList();
+}
+function paintPatList(){
+  const el = $("patList"); if (!el) return;
+  const q = normTxt($("patQ").value), qd = digits(q);
+  const all = PAT.list.slice().sort(byName);
+  const L = !q ? all : all.filter(p => normTxt(p.name).includes(q) || (qd.length >= 3 && (digits(p.dni).includes(qd) || digits(p.phone).includes(qd))));
+  $("patCount").textContent = !PAT.loaded ? "" : q ? `${L.length} de ${all.length} pacientes` : `${all.length} paciente${all.length === 1 ? "" : "s"}`;
+  if (!PAT.loaded){ el.innerHTML = `<div class="empty">Cargando pacientes…</div>`; return; }
+  if (!L.length){ el.innerHTML = `<div class="empty">${q ? "No encontramos pacientes con esa búsqueda." : "Todavía no hay pacientes. Se agregan solos cuando reservan con DNI, o tocá «+ Nuevo paciente»."}</div>`; return; }
+  el.innerHTML = L.slice(0, 300).map(p => `<div class="rowi pat-row" data-pat="${p.id}">
+      <span class="av" aria-hidden="true">${esc(initials(p.name || "?"))}</span>
+      <div><b>${esc(p.name)}</b><span class="meta">${[p.dni ? "DNI " + esc(p.dni) : "", esc(p.os || ""), edad(p.birth)].filter(Boolean).join(" · ") || "Sin datos"}</span></div>
+      <button class="btn btn-soft btn-sm" type="button" data-pat="${p.id}">Ver ficha</button></div>`).join("")
+    + (L.length > 300 ? `<p class="muted" style="font-size:13px">Mostrando 300 de ${L.length}. Buscá para encontrar al resto.</p>` : "");
+}
+
+/* --- ficha --- */
+async function openPatient(id){
+  const p = PAT.list.find(x => x.id === id); if (!p) return;
+  PATSEL = id; HEDIT = null; HIST = []; PTURNOS = null;
+  openDrawer("Paciente", p.name, patBody(p), true);
+  try {
+    const [h, t] = await Promise.all([histOn() ? histLoad(id) : Promise.resolve([]), patTurnos(p)]);
+    if (PATSEL !== id) return; HIST = h; PTURNOS = t;
+  } catch(ex){ toast("No se pudo cargar todo: " + ex.message); if (PTURNOS === null) PTURNOS = []; }
+  paintPatient();
+}
+function paintPatient(keepScroll = true){
+  const p = PAT.list.find(x => x.id === PATSEL);
+  if (!p || !$("drawer").classList.contains("show") || !$("dBody").querySelector("[data-patbody]")) return;
+  const sc = $("dBody").scrollTop; $("dTitle").textContent = p.name; $("dBody").innerHTML = patBody(p);
+  if (keepScroll) $("dBody").scrollTop = sc;
+}
+function fieldVal(f, v){
+  if (v === undefined || v === null || v === "") return "";
+  if (f.type === "fecha") return fmtDMY(v);
+  return esc(v) + (f.unit ? " " + esc(f.unit) : "");
+}
+function imc(v){
+  const kg = parseFloat(String(v.peso || "").replace(",", ".")), al = parseFloat(String(v.altura || "").replace(",", "."));
+  if (!(kg > 0) || !(al > 0)) return "";
+  const m = al > 3 ? al / 100 : al, x = kg / (m * m);
+  return x > 5 && x < 100 ? numAR(x) : "";
+}
+function patBody(p){
+  const ext = patFields().map(f => [f.label, fieldVal(f, (p.x || {})[f.id])]);
+  const rows = [["DNI", esc(p.dni)], ["Celular", p.phone ? "+" + esc(normPhone(p.phone)) : ""], ["Nacimiento", p.birth ? fmtDMY(p.birth) + (edad(p.birth) ? ` <span class="muted">(${edad(p.birth)})</span>` : "") : ""],
+    ["Cobertura", esc([p.os, p.plan].filter(Boolean).join(" ")) + (p.aff ? ` <span class="muted">· N° ${esc(p.aff)}</span>` : "")], ["Mail", esc(p.email)], ["Domicilio", esc(p.addr)], ...ext, ["Observaciones", p.notes ? `<span style="white-space:pre-wrap">${esc(p.notes)}</span>` : ""]];
+  const filled = rows.filter(r => r[1]);
+  const T = PTURNOS;
+  return `<div data-patbody="${p.id}" style="display:grid;gap:16px">
+    <div class="actions" style="margin:0"><button class="btn btn-primary btn-sm" type="button" data-pat-edit="${p.id}">Editar datos</button>
+      ${p.phone && waEnabled() ? `<a class="btn btn-wa btn-sm" href="${wa(p.phone, "Hola " + (p.name || "").split(" ")[0] + ", ")}" target="_blank" rel="noopener">${WA_ICON}WhatsApp</a>` : ""}</div>
+    ${filled.length ? `<dl>${filled.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("")}</dl>` : `<p class="muted" style="margin:0">Sin datos cargados. Tocá «Editar datos».</p>`}
+    ${histOn() ? `<section class="hsec">
+      <div class="hsec-h"><h3>Historia clínica</h3>${HEDIT ? "" : `<button class="btn btn-primary btn-sm" type="button" data-h-new>+ Agregar registro</button>`}</div>
+      ${HEDIT ? histForm(HEDIT) : ""}
+      ${T === null ? `<p class="muted" style="margin:0">Cargando…</p>` : HIST.length ? HIST.map(histEntry).join("") : HEDIT ? "" : `<div class="empty">Todavía no hay registros. Tocá «+ Agregar registro» para anotar peso, altura, presión y la evolución de la consulta.</div>`}
+    </section>` : ""}
+    <section class="hsec"><div class="hsec-h"><h3>Turnos</h3></div>
+      ${T === null ? `<p class="muted" style="margin:0">Cargando…</p>` : !p.dni ? `<p class="muted" style="margin:0">Cargá el DNI para ver sus turnos.</p>` : T.length ? `<div>${T.slice(0, 60).map(b => {
+        const pr = pro(b.pro), inDB = DB.bookings.some(x => x.id === b.id);
+        return `<div class="ptur${inDB ? " link" : ""}" ${inDB ? `data-open="${b.id}"` : ""}><div><b>${fmtDMY(b.date)} · ${esc(b.start)} h</b><br><span class="meta">${esc((b.items || []).map(i => i.n).join(" + "))}${pr ? " · " + esc(pr.name) : ""}</span></div><span class="pill ${esc(b.status)}">${esc(STATUS[b.status] || b.status)}</span></div>`; }).join("")}</div>` : `<p class="muted" style="margin:0">Sin turnos todavía.</p>`}
+    </section>
+    <div class="actions" style="margin:0"><button class="btn btn-danger btn-sm" type="button" data-pat-del="${p.id}">Eliminar paciente</button></div>
+  </div>`;
+}
+function histEntry(e){
+  const fs = histFields(), v = e.v || {}, lab = e.l || {};
+  const known = fs.filter(f => v[f.id] !== undefined && v[f.id] !== "").map(f => [f.label, fieldVal(f, v[f.id])]);
+  const old = Object.keys(v).filter(k => v[k] !== "" && !fs.some(f => f.id === k)).map(k => [(lab[k] && lab[k].label) || k, fieldVal(lab[k] || {}, v[k])]);
+  const i = (fs.some(f => f.id === "peso") && fs.some(f => f.id === "altura")) ? imc(v) : "";
+  const vals = [...known, ...old, ...(i ? [["IMC", i]] : [])];
+  const pr = pro(e.pro);
+  return `<article class="hent"><header><b>${fmtDMY(e.fecha)}</b>${pr ? `<span class="muted">· ${esc(pr.name)}</span>` : ""}
+      <span class="hact"><button class="linkbtn" type="button" data-h-edit="${e.id}">Editar</button><button class="linkbtn" type="button" data-h-del="${e.id}">Borrar</button></span></header>
+    ${vals.length ? `<div class="hvals">${vals.map(([k, x]) => `<span class="hv"><small>${esc(k)}</small>${x}</span>`).join("")}</div>` : ""}
+    ${e.nota ? `<p class="hnote">${esc(e.nota)}</p>` : ""}</article>`;
+}
+function fieldInput(f, val, pre){
+  const id = pre + f.id, v = val ?? "";
+  const lb = `<span>${esc(f.label)}${f.unit ? ` <span class="muted">(${esc(f.unit)})</span>` : ""}</span>`;
+  if (f.type === "sino") return `<label for="${id}">${lb}<select id="${id}" data-fid="${esc(f.id)}"><option value="">—</option>${["Sí", "No"].map(o => `<option ${v === o ? "selected" : ""}>${o}</option>`).join("")}</select></label>`;
+  const t = f.type === "fecha" ? "date" : "text";
+  return `<label for="${id}">${lb}<input id="${id}" type="${t}" data-fid="${esc(f.id)}" value="${esc(v)}" ${f.type === "numero" ? 'inputmode="decimal"' : ""}></label>`;
+}
+function histForm(e){
+  return `<form id="histForm" class="hform" novalidate>
+    <p class="sec-t" style="margin:0">${e.id ? "Editar registro" : "Nuevo registro"}</p>
+    <div class="row2"><label for="h-fecha">Fecha<input id="h-fecha" type="date" value="${esc(e.fecha || TODAY())}" max="${addDays(TODAY(), 1)}"></label>
+      <label for="h-pro">Profesional<select id="h-pro"><option value="">—</option>${S.pros.map(x => `<option value="${esc(x.id)}" ${e.pro === x.id ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label></div>
+    ${histFields().length ? `<div class="hgrid">${histFields().map(f => fieldInput(f, (e.v || {})[f.id], "hf-")).join("")}</div>` : ""}
+    <label for="h-nota">Evolución / notas<textarea id="h-nota" placeholder="Motivo, examen, diagnóstico, indicaciones…">${esc(e.nota || "")}</textarea></label>
+    <p class="err" id="h-err" role="alert"></p>
+    <div class="actions" style="margin:0"><button class="btn btn-primary" type="submit">Guardar registro</button><button class="btn btn-soft" type="button" data-h-cancel>Cancelar</button></div>
+  </form>`;
+}
+function openPatForm(p, pre){
+  const x = p || Object.assign({}, pre || {});
+  const ex = x.x || {};
+  const osOpts = ["Particular", ...S.coverage.map(c => c.n)];
+  openDrawer(p ? "Editar paciente" : "Nuevo paciente", p ? p.name : (x.name || "Nuevo paciente"), `
+    <form id="patForm" data-id="${p ? p.id : ""}" novalidate>
+      ${!p && pre ? `<div class="notice">Todavía no tiene ficha. Revisá los datos y guardala.</div>` : ""}
+      <label for="p-name">Nombre y apellido<input id="p-name" value="${esc(x.name || "")}" autocomplete="off"></label>
+      <div class="row2"><label for="p-dni">DNI<input id="p-dni" inputmode="numeric" value="${esc(x.dni || "")}"></label>
+        <label for="p-phone">Celular / WhatsApp<input id="p-phone" type="tel" value="${esc(x.phone || "")}" placeholder="Ej. 11 5555-1234"></label></div>
+      <div class="row2"><label for="p-birth">Fecha de nacimiento<input id="p-birth" type="date" value="${esc(x.birth || "")}" max="${TODAY()}"></label>
+        <label for="p-email">Mail<input id="p-email" type="email" value="${esc(x.email || "")}"></label></div>
+      <div class="row2"><label for="p-os">Obra social o prepaga<input id="p-os" list="p-oslist" value="${esc(x.os || "")}" placeholder="Particular, OSDE…"></label>
+        <label for="p-aff">N° de afiliado<input id="p-aff" value="${esc(x.aff || "")}"></label></div>
+      <datalist id="p-oslist">${osOpts.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
+      <label for="p-addr">Domicilio<input id="p-addr" value="${esc(x.addr || "")}"></label>
+      ${patFields().length ? `<div class="pat-ext">${patFields().map(f => fieldInput(f, ex[f.id], "px-")).join("")}</div>` : ""}
+      <label for="p-notes">Observaciones<textarea id="p-notes" placeholder="Alergias, antecedentes, lo que quieras tener a mano">${esc(x.notes || "")}</textarea></label>
+      <p class="err" id="p-err" role="alert"></p>
+      <div class="actions" style="margin:0"><button class="btn btn-primary" type="submit">${p ? "Guardar cambios" : "Guardar paciente"}</button>
+        ${p ? `<button class="btn btn-soft" type="button" data-pat="${p.id}">Cancelar</button>` : ""}</div>
+      <p class="muted" style="font-size:12.5px;margin:0">¿Te falta un dato? Agregalo en Funciones → Pacientes → Datos de la ficha.</p>
+    </form>`, true);
+  setTimeout(() => $("p-name") && !x.name && $("p-name").focus(), 40);
+}
+async function submitPat(f){
+  const id = Number(f.dataset.id) || null, old = id ? PAT.list.find(p => p.id === id) : null;
+  const val = k => $(k).value.trim();
+  const p = Object.assign({}, old || {}, {name: val("p-name"), dni: digits(val("p-dni")), phone: val("p-phone"), birth: $("p-birth").value, email: val("p-email"),
+    os: val("p-os"), aff: val("p-aff"), addr: val("p-addr"), notes: $("p-notes").value.trim()});
+  const x = Object.assign({}, (old && old.x) || {}); f.querySelectorAll("[data-fid]").forEach(el => { const v = el.value.trim(); if (v) x[el.dataset.fid] = v; else delete x[el.dataset.fid]; });
+  p.x = x; if (id) p.id = id;
+  if (!p.name){ $("p-err").textContent = "Escribí el nombre y apellido."; $("p-name").focus(); return; }
+  if (p.dni && (p.dni.length < 6 || p.dni.length > 9)){ $("p-err").textContent = "Revisá el DNI (entre 6 y 9 números)."; $("p-dni").focus(); return; }
+  const btn = f.querySelector("[type=submit]"); btn.disabled = true;
+  try { const np = await patSave(p); toast(id ? "Datos del paciente guardados." : "Paciente agregado."); paintPatList(); openPatient(np.id); }
+  catch(ex){ $("p-err").textContent = ex.message; btn.disabled = false; }
+}
+async function submitHist(f){
+  const p = PAT.list.find(x => x.id === PATSEL); if (!p || !HEDIT) return;
+  const fecha = $("h-fecha").value;
+  if (!fecha){ $("h-err").textContent = "Elegí la fecha."; return; }
+  const v = {}, l = {};
+  f.querySelectorAll("[data-fid]").forEach(el => { const val = el.value.trim(); if (val){ v[el.dataset.fid] = val; const fd = histFields().find(x => x.id === el.dataset.fid); if (fd) l[fd.id] = {label: fd.label, unit: fd.unit || "", type: fd.type}; } });
+  const nota = $("h-nota").value.trim();
+  if (!nota && !Object.keys(v).length){ $("h-err").textContent = "Anotá al menos un dato o una nota."; return; }
+  const e = {id: HEDIT.id, fecha, pro: $("h-pro").value, v, l, nota};
+  const btn = f.querySelector("[type=submit]"); btn.disabled = true;
+  try { await histSave(p.id, e); HEDIT = null; HIST = await histLoad(p.id); paintPatient(); toast("Registro guardado en la historia clínica."); }
+  catch(ex){ $("h-err").textContent = "No se pudo guardar: " + ex.message; btn.disabled = false; }
+}
+async function patFromBooking(bid){
+  const b = DB.bookings.find(x => x.id === bid); if (!b) return;
+  try { await patLoad(); } catch(ex){ toast("No se pudieron cargar los pacientes: " + ex.message); return; }
+  const p = findPat(b);
+  if (p) return openPatient(p.id);
+  openPatForm(null, {name: b.name, dni: digits(b.dni), phone: b.phone || "", os: b.os || "", aff: b.aff || "", plan: b.plan || ""});
+}
+// Al agendar a mano: si el paciente ya existe, se completan sus datos
+function manualPatLookup(t){
+  if (!PAT.loaded || !$("manualForm")) return;
+  let p = null;
+  if (t.id === "m-dni" && digits(t.value).length >= 7) p = PAT.list.find(x => digits(x.dni) === digits(t.value));
+  if (t.id === "m-name" && t.value.trim()){ const n = normTxt(t.value), m = PAT.list.filter(x => normTxt(x.name) === n); if (m.length === 1) p = m[0]; }
+  const info = $("m-patfound");
+  if (!p){ if (t.id === "m-dni" || t.id === "m-name") info.hidden = true; return; }
+  const set = (id, v) => { const el = $(id); if (el && v && !el.value.trim()) el.value = v; };
+  set("m-name", p.name); set("m-dni", p.dni); set("m-phone", p.phone);
+  const os = $("m-os"); if (os && p.os && [...os.options].some(o => o.value === p.os) && os.value === "Particular"){ os.value = p.os; os.dispatchEvent(new Event("change", {bubbles: true})); }
+  set("m-aff", p.aff);
+  info.hidden = false; info.textContent = "✓ Paciente con ficha: completamos sus datos.";
+}
+
+/* --- Funciones: datos de la ficha y del historial --- */
+function fieldChips(list, kind){
+  return list.length ? list.map(f => `<span class="fld">${esc(f.label)}${f.unit ? ` <span class="muted">(${esc(f.unit)})</span>` : ""}${f.type !== "texto" ? ` <span class="muted">· ${FIELD_TYPES[f.type]}</span>` : ""}<button type="button" data-${kind}-del="${esc(f.id)}" aria-label="Quitar ${esc(f.label)}">×</button></span>`).join("")
+    : `<span class="muted" style="font-size:13.5px">Ninguno todavía.</span>`;
+}
+function patFnCard(){
+  const typeSel = id => `<select id="${id}" aria-label="Tipo de dato">${Object.entries(FIELD_TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>`;
+  return `<section class="card send-card" id="fnPat">
+    <h2 style="margin:0">Pacientes</h2>
+    <p class="hint" style="margin:0">La pestaña <b>Pacientes</b> guarda la ficha de cada paciente. Se crea sola cuando reservan o les agendás un turno con DNI.</p>
+    <div><p class="sec-t" style="margin:4px 0 6px">Datos de la ficha</p>
+      <div class="fldlist">${PAT_FIXED.map(x => `<span class="fld fixed">${x}</span>`).join("")}</div>
+      <p class="muted" style="font-size:13px;margin:10px 0 6px">Tus datos extra (ej. Grupo sanguíneo, Alergias, Médico de cabecera):</p>
+      <div class="fldlist">${fieldChips(patFields(), "pf")}</div>
+      <div class="fldadd" style="margin-top:8px"><input id="pf-label" placeholder="Nombre del dato" aria-label="Nombre del dato nuevo">${typeSel("pf-type")}<button class="btn btn-soft" type="button" data-pf-add>+ Agregar</button></div></div>
+    <label class="switch" for="fn-hist"><input type="checkbox" id="fn-hist" data-fn="patHistory" ${histOn() ? "checked" : ""}><span class="sw"></span><span><b>Historial del paciente</b><small>En la ficha, el profesional agrega registros con fecha: peso, altura, presión y la evolución de cada consulta, como una historia clínica. Apagado, no se muestra (lo cargado no se borra).</small></span></label>
+    <div class="sub-switches" ${histOn() ? "" : "hidden"}>
+      <p class="sec-t" style="margin:0">Datos del historial</p>
+      <p class="muted" style="font-size:13px;margin:0">Lo que se anota en cada registro, además de la evolución / notas. Con peso y altura se calcula el IMC.</p>
+      <div class="fldlist">${fieldChips(histFields(), "hf")}</div>
+      <div class="fldadd"><input id="hf-label" placeholder="Ej. Glucemia" aria-label="Nombre del dato nuevo del historial"><input id="hf-unit" class="unit" placeholder="Unidad" aria-label="Unidad (opcional)">${typeSel("hf-type")}<button class="btn btn-soft" type="button" data-hf-add>+ Agregar</button></div>
+    </div>
+  </section>`;
+}
+$("fnBox").addEventListener("click", e => {
+  const t = e.target.closest("[data-pf-add],[data-hf-add],[data-pf-del],[data-hf-del]"); if (!t) return;
+  const isP = t.matches("[data-pf-add],[data-pf-del]");
+  const list = clone(isP ? patFields() : histFields());
+  if (t.matches("[data-pf-add],[data-hf-add]")){
+    const pre = isP ? "pf" : "hf", label = $(pre + "-label").value.trim();
+    if (!label){ toast("Escribí el nombre del dato."); $(pre + "-label").focus(); return; }
+    if (list.some(f => normTxt(f.label) === normTxt(label))){ toast("Ese dato ya está."); return; }
+    list.push({id: uid("f"), label: label.slice(0, 60), unit: isP ? "" : $("hf-unit").value.trim().slice(0, 15), type: $(pre + "-type").value});
+    toast("«" + label + "» agregado.");
+  } else {
+    const id = t.dataset.pfDel || t.dataset.hfDel, f = list.find(x => x.id === id);
+    list.splice(list.indexOf(f), 1);
+    toast("«" + f.label + "» quitado. Lo que ya estaba cargado no se borra.");
+  }
+  if (isP) S.patFields = list; else S.histFields = list;
+  saveCfg(); renderFunciones();
+  const nx = $(isP ? "pf-label" : "hf-label"); if (nx) nx.focus();
+});
+$("fnBox").addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !e.target.closest(".fldadd")) return;
+  e.preventDefault(); e.target.closest(".fldadd").querySelector("button").click();
+});
+$("patBox").addEventListener("input", e => { if (e.target.id === "patQ") paintPatList(); });
+$("patBox").addEventListener("click", e => {
+  if (e.target.closest("[data-pat-new]")){ openPatForm(null); return; }
+  const r = e.target.closest("[data-pat]"); if (r) openPatient(Number(r.dataset.pat));
+});
+$("dBody").addEventListener("input", e => { if (e.target.id === "m-dni" || e.target.id === "m-name") manualPatLookup(e.target); });
+$("dBody").addEventListener("click", async e => {
+  const pf = e.target.closest("[data-pat-from]"); if (pf){ patFromBooking(Number(pf.dataset.patFrom)); return; }
+  const pe = e.target.closest("[data-pat-edit]"); if (pe){ openPatForm(PAT.list.find(x => x.id === Number(pe.dataset.patEdit))); return; }
+  const pc = e.target.closest("#patForm [data-pat]"); if (pc){ openPatient(Number(pc.dataset.pat)); return; }
+  const pd = e.target.closest("[data-pat-del]");
+  if (pd){
+    const p = PAT.list.find(x => x.id === Number(pd.dataset.patDel)); if (!p) return;
+    if (!confirm(`¿Eliminar a ${p.name}?${histOn() ? " También se borra su historia clínica." : ""} Sus turnos no se borran.`)) return;
+    try { await patDel(p); closeDrawer(); paintPatList(); toast("Paciente eliminado."); } catch(ex){ toast("No se pudo eliminar: " + ex.message); }
+    return;
+  }
+  if (e.target.closest("[data-h-new]")){ HEDIT = {fecha: TODAY(), pro: S.pros.length === 1 ? S.pros[0].id : "", v: {}}; paintPatient(); const f = $("histForm"); if (f) f.scrollIntoView({block: "nearest"}); return; }
+  if (e.target.closest("[data-h-cancel]")){ HEDIT = null; paintPatient(); return; }
+  const he = e.target.closest("[data-h-edit]"); if (he){ HEDIT = clone(HIST.find(h => h.id === Number(he.dataset.hEdit))); paintPatient(); const f = $("histForm"); if (f) f.scrollIntoView({block: "nearest"}); return; }
+  const hd = e.target.closest("[data-h-del]");
+  if (hd){
+    if (!confirm("¿Borrar este registro de la historia clínica?")) return;
+    try { await histDel(Number(hd.dataset.hDel)); HIST = HIST.filter(h => h.id !== Number(hd.dataset.hDel)); paintPatient(); toast("Registro borrado."); } catch(ex){ toast("No se pudo borrar: " + ex.message); }
+  }
+});
+
 /* ================= CONFIGURACIÓN ================= */
 function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]); return l.length ? l.join(", ") : "Sin horarios"; }
 function renderFunciones(){
@@ -1960,6 +2367,7 @@ function renderFunciones(){
     <label class="switch" for="send-rec"><input type="checkbox" id="send-rec" data-send="rec" ${sendOn("rec") ? "checked" : ""}><span class="sw"></span><span><b>Recordatorio el día anterior</b><small>${waOn() ? "Con los botones Confirmo / Necesito cambiarlo." : "Lista «Recordatorios para mañana» en el panel."}</small></span></label>
     </div>
   </section>
+  ${patFnCard()}
   <p class="muted" style="font-size:13.5px;margin:0">Más detalles en el tutorial (botón ⓘ de arriba).</p>`;
 }
 function renderConfig(){
@@ -2309,6 +2717,7 @@ async function onCfgChange(e){
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
   if (t.dataset.fn){
     S[t.dataset.fn] = t.checked; saveCfg(); renderFunciones(); if (!$("view-config").hidden) renderConfig();
+    if (t.dataset.fn === "patHistory"){ toast(t.checked ? "Historial del paciente activado." : "Historial del paciente desactivado (lo cargado no se borra)."); return; }
     if (t.dataset.fn === "askFirst"){ toast(t.checked ? "Ahora se pregunta si es la primera vez en el centro." : "Ya no se pregunta si es la primera vez en el centro."); return; }
     toast(t.dataset.fn === "onlineBooking" ? (t.checked ? "Turnos online activados: los pacientes pueden reservar desde tu link." : "Turnos online desactivados: el link muestra cómo comunicarse.")
       : (t.checked ? "WhatsApp activado." : "WhatsApp desactivado en toda la agenda."));
@@ -2464,9 +2873,9 @@ function scrollToNow(){
 function show(v){
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
   if (v === "book" && ADMIN) v = "cuentas";
-  const needLogin = (!STAFF && (v === "panel" || v === "config" || v === "funciones")) || (!ADMIN && v === "cuentas") || (CLOUD && v === "book" && !SLUG);
+  const needLogin = (!STAFF && (v === "panel" || v === "config" || v === "funciones" || v === "pacientes")) || (!ADMIN && v === "cuentas") || (CLOUD && v === "book" && !SLUG);
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-  ["book","panel","funciones","config","cuentas"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
+  ["book","panel","pacientes","funciones","config","cuentas"].forEach(k => $("view-" + k).hidden = needLogin || k !== v);
   $("view-login").hidden = !needLogin;
   $("loginTop").hidden = STAFF || ADMIN || needLogin;
   if (needLogin){ LOGIN_NEXT = v === "book" ? "panel" : v; try { history.replaceState(null, "", "#" + v); } catch(_){} window.scrollTo(0, 0); setTimeout(() => $("l-email").focus(), 50); return; }
@@ -2474,12 +2883,12 @@ function show(v){
     ensureRange(PANEL.date);
     if (!PANEL.view){ let v = null; try { v = localStorage.getItem("agenda-vista"); } catch(_){} PANEL.view = ["lista","grilla","calendario"].includes(v) ? v : (mobile() ? "lista" : "grilla"); }
     renderPanel(); scrollToNow();
-  } else if (v === "config"){ renderConfig(); } else if (v === "funciones"){ renderFunciones(); } else if (v === "cuentas"){ renderCuentas(); } else { renderBook(); }
+  } else if (v === "config"){ renderConfig(); } else if (v === "pacientes"){ renderPacientes(); } else if (v === "funciones"){ renderFunciones(); } else if (v === "cuentas"){ renderCuentas(); } else { renderBook(); }
   try { history.replaceState(null, "", "#" + (v === "book" ? "reservar" : v)); } catch(_){}
   window.scrollTo(0, 0);
 }
 document.querySelector(".tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (t) show(t.dataset.view); });
-const viewFromHash = () => { const h = location.hash.replace("#", ""); return ["panel","funciones","config","cuentas"].includes(h) ? h : "book"; };
+const viewFromHash = () => { const h = location.hash.replace("#", ""); return ["panel","pacientes","funciones","config","cuentas"].includes(h) ? h : "book"; };
 window.addEventListener("hashchange", () => show(viewFromHash()));
 let LOGIN_NEXT = "panel";
 $("staffLink").addEventListener("click", () => show("panel"));
@@ -2738,7 +3147,7 @@ const HELP = {
     ${H("¿Cómo la instalo en el celular?", installHelp())}` },
 
   consultorio: {label: "Consultorio", html: () => `
-    <p class="hintro">Todo lo que puede hacer el consultorio. Arriba tenés cuatro pestañas: <b>Reservar turno</b> (lo que ven tus pacientes), <b>Panel</b> (tu agenda), <b>Funciones</b> (prender o apagar turnos online y WhatsApp) y <b>Configuración</b>.</p>
+    <p class="hintro">Todo lo que puede hacer el consultorio. Arriba tenés cinco pestañas: <b>Reservar turno</b> (lo que ven tus pacientes), <b>Panel</b> (tu agenda), <b>Pacientes</b> (fichas e historia clínica), <b>Funciones</b> (prender o apagar turnos online y WhatsApp) y <b>Configuración</b>.</p>
     ${H("Primeros pasos (hacelo una vez)", `<ol class="steps-h">
       <li><b>Cambiá tu contraseña:</b> Configuración → <i>Tu contraseña</i>.</li>
       <li><b>Elegí qué funciones usar:</b> la pestaña <i>Funciones</i> (al lado de Configuración): si los pacientes pueden <b>reservar online</b> y si querés usar <b>WhatsApp</b>.</li>
@@ -2774,6 +3183,16 @@ const HELP = {
       <li><b>Asistió / No asistió</b> el día del turno.</li>
       <li><b>Cancelar turno:</b> libera el horario para otro paciente.</li>
       <li>Si el paciente subió la <b>foto de la orden</b>, la ves en la ficha.</li></ul>`)}
+    ${H("Pacientes e historia clínica", `<ul>
+      <li>En la pestaña <b>Pacientes</b> está la lista de todos tus pacientes. Buscalos por <b>nombre, DNI o celular</b>.</li>
+      <li>La ficha se crea <b>sola</b> cuando alguien reserva o le agendás un turno con DNI. También podés cargar uno con <b>+ Nuevo paciente</b>.</li>
+      <li>Ficha: nombre y apellido, DNI, celular, fecha de nacimiento (calcula la edad), obra social, N° de afiliado, mail, domicilio y observaciones.</li>
+      <li><b>¿Necesitás otro dato?</b> En <i>Funciones → Pacientes → Datos de la ficha</i> agregás los tuyos (por ejemplo «Grupo sanguíneo», «Alergias» o «Médico de cabecera»).</li>
+      <li><b>Historial del paciente</b> (se prende o apaga en <i>Funciones</i>): en la ficha tocá <b>+ Agregar registro</b> y anotá la fecha, el profesional, <b>peso, altura y presión</b> (calcula el IMC) y la <b>evolución o notas</b> de la consulta. Queda todo ordenado del más nuevo al más viejo, como una historia clínica.</li>
+      <li>Los datos que se anotan en cada registro también se eligen en <i>Funciones → Datos del historial</i> (por ejemplo «Glucemia», «Perímetro abdominal»).</li>
+      <li>En la ficha ves también <b>todos sus turnos</b>. Desde un turno del Panel, el botón <b>Ficha del paciente</b> te lleva directo.</li>
+      <li>Al agendar a mano, si escribís el nombre o el DNI de un paciente que ya existe, <b>se completan sus datos</b>.</li>
+      <li>Solo lo ve quien entra con la cuenta del consultorio. Si apagás el historial, lo cargado <b>no se borra</b>.</li></ul>`)}
     ${H("Dar un turno a mano o bloquear un horario", `<ul>
       <li>En <i>Lista</i> tocá un horario libre (los botoncitos con la hora). En <i>Grilla</i>, tocá el espacio libre.</li>
       <li>Elegí uno o más estudios o motivos (por ejemplo, <b>dos estudios en el mismo turno</b>: se suman las duraciones), cargá el paciente y su cobertura → <b>Agendar</b>. Los turnos con dos estudios solo los puede dar el consultorio.</li>
@@ -2903,7 +3322,7 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
-const APP_VERSION = "22";
+const APP_VERSION = "23";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   // Si hay una versión nueva, se instala y la página se recarga sola una vez
   let recargada = false;

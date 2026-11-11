@@ -34,7 +34,12 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS wa_mensajes (id INTEGER PRIMARY KEY AUTOINCREMENT, cuenta_id INTEGER NOT NULL, telefono TEXT NOT NULL, nombre TEXT, texto TEXT NOT NULL,
      sentido TEXT NOT NULL, turno_id INTEGER, creado TEXT NOT NULL, leido INTEGER NOT NULL DEFAULT 0)`,
   `CREATE INDEX IF NOT EXISTS wa_mensajes_c ON wa_mensajes (cuenta_id, creado)`,
-  `CREATE INDEX IF NOT EXISTS limites_c ON limites (clave, ts)`
+  `CREATE INDEX IF NOT EXISTS limites_c ON limites (clave, ts)`,
+  `CREATE TABLE IF NOT EXISTS pacientes (id INTEGER PRIMARY KEY AUTOINCREMENT, cuenta_id INTEGER NOT NULL, dni TEXT, datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS pacientes_cd ON pacientes (cuenta_id, dni)`,
+  `CREATE TABLE IF NOT EXISTS historia (id INTEGER PRIMARY KEY AUTOINCREMENT, cuenta_id INTEGER NOT NULL, paciente_id INTEGER NOT NULL, fecha TEXT NOT NULL,
+     datos TEXT NOT NULL, creado TEXT NOT NULL, actualizado TEXT NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS historia_cp ON historia (cuenta_id, paciente_id)`
 ];
 let schemaListo = false;
 
@@ -261,6 +266,28 @@ const waPublico = w => w ? {phone_id: w.phone_id || "", tieneToken: !!w.token, t
   plantilla_conf: w.plantilla_conf, plantilla_rec: w.plantilla_rec, idioma: w.idioma, hora_rec: w.hora_rec, al_reservar: !!w.al_reservar,
   recordatorio: !!w.recordatorio, activo: !!w.activo, ultimo_error: w.ultimo_error || ""} : null;
 
+/* ---------------- pacientes ---------------- */
+const soloDni = v => String(v || "").replace(/\D/g, "").slice(0, 12);
+const MAX_PACIENTE = 20000, MAX_REGISTRO = 20000;
+const parse = t => { try { return JSON.parse(t); } catch(_){ return {}; } };
+const filaPaciente = r => ({id: r.id, datos: parse(r.datos), actualizado: r.actualizado});
+const filaHistoria = r => ({id: r.id, paciente_id: r.paciente_id, fecha: r.fecha, datos: parse(r.datos), actualizado: r.actualizado});
+function limpiarPaciente(d){
+  const x = d && typeof d === "object" ? Object.assign({}, d) : {};
+  x.name = String(x.name || "").trim().slice(0, 120);
+  x.dni = soloDni(x.dni);
+  return x;
+}
+// Si el turno trae DNI y ese paciente no existe todavía, se crea su ficha
+async function altaPacienteDeTurno(db, cuentaId, d){
+  const dni = soloDni(d && d.dni), name = String(d && d.name || "").trim();
+  if (dni.length < 6 || !name) return;
+  if (await db.prepare("SELECT 1 FROM pacientes WHERE cuenta_id = ? AND dni = ?").bind(cuentaId, dni).first()) return;
+  const t = ahoraISO(), datos = {name: name.slice(0, 120), dni, phone: String(d.phone || "").slice(0, 40), os: String(d.os || "").slice(0, 80),
+    plan: String(d.plan || "").slice(0, 80), aff: String(d.aff || "").slice(0, 40)};
+  await db.prepare("INSERT INTO pacientes (cuenta_id, dni, datos, creado, actualizado) VALUES (?, ?, ?, ?, ?)").bind(cuentaId, dni, JSON.stringify(datos), t, t).run();
+}
+
 /* ---------------- reserva pública ---------------- */
 async function reservar(db, cuenta, body, env, ctx){
   const pro = String(body.pro || ""), fecha = body.fecha, inicio = body.inicio, dur = Number(body.dur);
@@ -284,6 +311,7 @@ async function reservar(db, cuenta, body, env, ctx){
   }
   const code = claveNueva().slice(0, 5).toUpperCase();
   delete datos.status; delete datos.id; delete datos.orderThumb;
+  if (datos.dni) datos.dni = soloDni(datos.dni);
   datos = Object.assign(datos, {code, isNew: true, source: "web"});
   const txt = JSON.stringify(datos);
   if (txt.length > 20000) return fallo(413, "datos_muy_grandes");
@@ -296,6 +324,7 @@ async function reservar(db, cuenta, body, env, ctx){
     .bind(cuenta.id, pro, fecha, inicio, ini, dur, txt, t, t, cuenta.id, pro, fecha, ini + dur, ini).run();
   if (!r.meta || !r.meta.changes) return fallo(409, "horario_ocupado");
   const nuevo = r.meta.last_row_id;
+  try { await altaPacienteDeTurno(db, cuenta.id, datos); } catch(_){}
   if (ctx && ctx.waitUntil) ctx.waitUntil(waTurno(env, db, cuenta.id, nuevo, "confirmacion").catch(() => null));
   return json({id: nuevo, code});
 }
@@ -504,12 +533,14 @@ export async function onRequest(ctx){
       }
       if (!b && M === "POST"){
         const x = await leerJSON(req, 30000);
+        if (x.datos && x.datos.dni) x.datos.dni = soloDni(x.datos.dni);
         if (!x.pro || !esFecha(x.fecha) || !esHora(x.inicio) || !Number.isInteger(x.dur) || x.dur < 5 || x.dur > 480 || !ESTADOS.includes(x.estado)) return fallo(400, "datos_invalidos");
         const t = ahoraISO();
         const r = await db.prepare(`INSERT INTO turnos (cuenta_id, pro, fecha, inicio, ini_min, dur, estado, origen, datos, creado, actualizado)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(cta.id, String(x.pro), x.fecha, x.inicio, aMin(x.inicio), x.dur, x.estado,
           String(x.origen || "manual"), JSON.stringify(x.datos || {}), t, t).run();
         const nid = r.meta.last_row_id;
+        if (x.estado !== "bloqueo"){ try { await altaPacienteDeTurno(db, cta.id, x.datos || {}); } catch(_){} }
         if (x.estado !== "bloqueo" && x.avisar !== false && ctx.waitUntil) ctx.waitUntil(waTurno(env, db, cta.id, nid, "confirmacion").catch(() => null));
         const row = await db.prepare("SELECT * FROM turnos WHERE id = ?").bind(nid).first();
         return json(filaTurno(row));
@@ -522,6 +553,7 @@ export async function onRequest(ctx){
           datos: cur.datos};
         if (x.datos !== undefined){
           const viejo = (() => { try { return JSON.parse(cur.datos); } catch(_){ return {}; } })(), nuevo = Object.assign({}, x.datos);
+          if (nuevo.dni) nuevo.dni = soloDni(nuevo.dni);
           SERVER_KEYS.forEach(k => { if (k in viejo) nuevo[k] = viejo[k]; });   // lo que escribe WhatsApp no se pisa
           n.datos = JSON.stringify(nuevo);
         }
@@ -530,6 +562,71 @@ export async function onRequest(ctx){
           .bind(String(n.pro), n.fecha, n.inicio, aMin(n.inicio), n.dur, n.estado, n.datos, ahoraISO(), id, cta.id).run();
         return json(filaTurno(await db.prepare("SELECT * FROM turnos WHERE id = ?").bind(id).first()));
       }
+    }
+    /* ---- pacientes e historia clínica ---- */
+    if (a === "pacientes"){
+      const unico = async (dni, id) => !dni || !(await db.prepare("SELECT 1 FROM pacientes WHERE cuenta_id = ? AND dni = ? AND id <> ?").bind(cta.id, dni, id || 0).first());
+      if (!b && M === "GET"){
+        const r = await db.prepare("SELECT * FROM pacientes WHERE cuenta_id = ? ORDER BY id").bind(cta.id).all();
+        return json((r.results || []).map(filaPaciente));
+      }
+      if (!b && M === "POST"){
+        const d = limpiarPaciente((await leerJSON(req, MAX_PACIENTE + 1000)).datos);
+        if (!d.name) return fallo(400, "falta_nombre", "Escribí el nombre y apellido.");
+        if (!(await unico(d.dni))) return fallo(409, "dni_repetido", "Ya hay un paciente con ese DNI.");
+        const txt = JSON.stringify(d); if (txt.length > MAX_PACIENTE) return fallo(413, "datos_muy_grandes");
+        const t = ahoraISO();
+        const r = await db.prepare("INSERT INTO pacientes (cuenta_id, dni, datos, creado, actualizado) VALUES (?, ?, ?, ?, ?)").bind(cta.id, d.dni || null, txt, t, t).run();
+        return json(filaPaciente(await db.prepare("SELECT * FROM pacientes WHERE id = ?").bind(r.meta.last_row_id).first()));
+      }
+      const pid = Number(b);
+      const pac = await db.prepare("SELECT * FROM pacientes WHERE id = ? AND cuenta_id = ?").bind(pid, cta.id).first();
+      if (!pac) return fallo(404, "no_existe", "No encontramos ese paciente.");
+      if (!c && M === "PATCH"){
+        const d = limpiarPaciente((await leerJSON(req, MAX_PACIENTE + 1000)).datos);
+        if (!d.name) return fallo(400, "falta_nombre", "Escribí el nombre y apellido.");
+        if (!(await unico(d.dni, pid))) return fallo(409, "dni_repetido", "Ya hay otro paciente con ese DNI.");
+        const txt = JSON.stringify(d); if (txt.length > MAX_PACIENTE) return fallo(413, "datos_muy_grandes");
+        await db.prepare("UPDATE pacientes SET dni = ?, datos = ?, actualizado = ? WHERE id = ? AND cuenta_id = ?").bind(d.dni || null, txt, ahoraISO(), pid, cta.id).run();
+        return json(filaPaciente(await db.prepare("SELECT * FROM pacientes WHERE id = ?").bind(pid).first()));
+      }
+      if (!c && M === "DELETE"){
+        await db.batch([db.prepare("DELETE FROM historia WHERE paciente_id = ? AND cuenta_id = ?").bind(pid, cta.id),
+          db.prepare("DELETE FROM pacientes WHERE id = ? AND cuenta_id = ?").bind(pid, cta.id)]);
+        return json({ok: true});
+      }
+      if (c === "turnos" && M === "GET"){
+        const dni = soloDni(parse(pac.datos).dni);
+        if (!dni) return json([]);
+        const r = await db.prepare("SELECT * FROM turnos WHERE cuenta_id = ? AND estado <> 'bloqueo' AND json_extract(datos, '$.dni') = ? ORDER BY fecha DESC, ini_min DESC LIMIT 300")
+          .bind(cta.id, dni).all();
+        return json((r.results || []).map(filaTurno));
+      }
+      if (c === "historia" && M === "GET"){
+        const r = await db.prepare("SELECT * FROM historia WHERE cuenta_id = ? AND paciente_id = ? ORDER BY fecha DESC, id DESC").bind(cta.id, pid).all();
+        return json((r.results || []).map(filaHistoria));
+      }
+      if (c === "historia" && M === "POST"){
+        const x = await leerJSON(req, MAX_REGISTRO + 1000);
+        if (!esFecha(x.fecha)) return fallo(400, "fecha_invalida");
+        const txt = JSON.stringify(x.datos && typeof x.datos === "object" ? x.datos : {}); if (txt.length > MAX_REGISTRO) return fallo(413, "datos_muy_grandes");
+        const t = ahoraISO();
+        const r = await db.prepare("INSERT INTO historia (cuenta_id, paciente_id, fecha, datos, creado, actualizado) VALUES (?, ?, ?, ?, ?, ?)").bind(cta.id, pid, x.fecha, txt, t, t).run();
+        return json(filaHistoria(await db.prepare("SELECT * FROM historia WHERE id = ?").bind(r.meta.last_row_id).first()));
+      }
+    }
+    if (a === "historia" && b){
+      const hid = Number(b);
+      const h = await db.prepare("SELECT * FROM historia WHERE id = ? AND cuenta_id = ?").bind(hid, cta.id).first();
+      if (!h) return fallo(404, "no_existe");
+      if (M === "PATCH"){
+        const x = await leerJSON(req, MAX_REGISTRO + 1000);
+        if (!esFecha(x.fecha)) return fallo(400, "fecha_invalida");
+        const txt = JSON.stringify(x.datos && typeof x.datos === "object" ? x.datos : {}); if (txt.length > MAX_REGISTRO) return fallo(413, "datos_muy_grandes");
+        await db.prepare("UPDATE historia SET fecha = ?, datos = ?, actualizado = ? WHERE id = ? AND cuenta_id = ?").bind(x.fecha, txt, ahoraISO(), hid, cta.id).run();
+        return json(filaHistoria(await db.prepare("SELECT * FROM historia WHERE id = ?").bind(hid).first()));
+      }
+      if (M === "DELETE"){ await db.prepare("DELETE FROM historia WHERE id = ? AND cuenta_id = ?").bind(hid, cta.id).run(); return json({ok: true}); }
     }
     if (a === "whatsapp"){
       let wa = await db.prepare("SELECT * FROM whatsapp WHERE cuenta_id = ?").bind(cta.id).first();

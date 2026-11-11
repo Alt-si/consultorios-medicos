@@ -5,6 +5,7 @@ Sistema de turnos online para consultorios y centros de diagnóstico.
 - **Vista paciente:** elige consulta o estudio, día y horario libre; carga DNI, obra social y número de afiliado; recibe la preparación del estudio y confirma por WhatsApp.
 - **Panel del consultorio:** agenda diaria por médico y por equipo (mamografía, ecografía, densitometría), confirmaciones y recordatorios por WhatsApp, bloqueos de horario y control de órdenes médicas.
 
+- **Pacientes e historia clínica:** ficha de cada paciente (se crea sola al reservar con DNI), datos extra configurables y, si se activa en Funciones, historial con fecha, profesional, peso, altura, presión (con IMC), datos propios y evolución.
 - **Configuración (desde la web):** tipo de agenda (solo turnos o consultas y estudios), profesionales con horarios e intervalos, estudios que realiza cada uno, turnos combinados, valores por obra social con cálculo de la diferencia que abona el paciente, preparación y notas por estudio.
 
 La configuración de ejemplo está en el bloque `DEFAULTS` al inicio del `<script>` de `index.html`.
