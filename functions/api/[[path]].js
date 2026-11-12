@@ -278,11 +278,27 @@ function limpiarPaciente(d){
   x.dni = soloDni(x.dni);
   return x;
 }
-// Si el turno trae DNI y ese paciente no existe todavía, se crea su ficha
+const DATOS_TURNO = ["name", "phone", "os", "plan", "aff"];
+// Si el paciente ya tiene ficha, el turno toma de ahí los datos que falten
+async function completarConFicha(db, cuentaId, d){
+  const dni = soloDni(d && d.dni); if (dni.length < 6) return d;
+  const f = await db.prepare("SELECT datos FROM pacientes WHERE cuenta_id = ? AND dni = ?").bind(cuentaId, dni).first();
+  if (!f) return d;
+  const p = parse(f.datos);
+  DATOS_TURNO.forEach(k => { if (!String(d[k] || "").trim() && p[k]) d[k] = String(p[k]).slice(0, 120); });
+  return d;
+}
+// Si el turno trae DNI y ese paciente no existe todavía, se crea su ficha (si existe, se completan los datos que le falten)
 async function altaPacienteDeTurno(db, cuentaId, d){
   const dni = soloDni(d && d.dni), name = String(d && d.name || "").trim();
   if (dni.length < 6 || !name) return;
-  if (await db.prepare("SELECT 1 FROM pacientes WHERE cuenta_id = ? AND dni = ?").bind(cuentaId, dni).first()) return;
+  const ya = await db.prepare("SELECT id, datos FROM pacientes WHERE cuenta_id = ? AND dni = ?").bind(cuentaId, dni).first();
+  if (ya){
+    const p = parse(ya.datos); let ch = false;
+    DATOS_TURNO.forEach(k => { if (!String(p[k] || "").trim() && String(d[k] || "").trim()){ p[k] = String(d[k]).slice(0, 120); ch = true; } });
+    if (ch) await db.prepare("UPDATE pacientes SET datos = ?, actualizado = ? WHERE id = ?").bind(JSON.stringify(p), ahoraISO(), ya.id).run();
+    return;
+  }
   const t = ahoraISO(), datos = {name: name.slice(0, 120), dni, phone: String(d.phone || "").slice(0, 40), os: String(d.os || "").slice(0, 80),
     plan: String(d.plan || "").slice(0, 80), aff: String(d.aff || "").slice(0, 40)};
   await db.prepare("INSERT INTO pacientes (cuenta_id, dni, datos, creado, actualizado) VALUES (?, ?, ?, ?, ?)").bind(cuentaId, dni, JSON.stringify(datos), t, t).run();
@@ -312,6 +328,7 @@ async function reservar(db, cuenta, body, env, ctx){
   const code = claveNueva().slice(0, 5).toUpperCase();
   delete datos.status; delete datos.id; delete datos.orderThumb;
   if (datos.dni) datos.dni = soloDni(datos.dni);
+  try { await completarConFicha(db, cuenta.id, datos); } catch(_){}
   datos = Object.assign(datos, {code, isNew: true, source: "web"});
   const txt = JSON.stringify(datos);
   if (txt.length > 20000) return fallo(413, "datos_muy_grandes");
@@ -534,6 +551,7 @@ export async function onRequest(ctx){
       if (!b && M === "POST"){
         const x = await leerJSON(req, 30000);
         if (x.datos && x.datos.dni) x.datos.dni = soloDni(x.datos.dni);
+        if (x.datos && x.estado !== "bloqueo"){ try { await completarConFicha(db, cta.id, x.datos); } catch(_){} }
         if (!x.pro || !esFecha(x.fecha) || !esHora(x.inicio) || !Number.isInteger(x.dur) || x.dur < 5 || x.dur > 480 || !ESTADOS.includes(x.estado)) return fallo(400, "datos_invalidos");
         const t = ahoraISO();
         const r = await db.prepare(`INSERT INTO turnos (cuenta_id, pro, fecha, inicio, ini_min, dur, estado, origen, datos, creado, actualizado)

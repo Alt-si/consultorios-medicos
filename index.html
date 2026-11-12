@@ -1507,6 +1507,7 @@ $("formArea").addEventListener("submit", async e => {
     }
     UI.saving = false;
   }
+  if (!CLOUD && b.dni) fillFromPat(b, patStore().pacientes.find(x => x.dni === b.dni));
   if (!DB.bookings.some(x => x.id === b.id)) DB.bookings.push(b);
   saveDB();
   UI.done = b; UI.time = null; renderPick(); renderCal();
@@ -1755,7 +1756,7 @@ async function fillOrderView(){
     : `<a href="${url}" target="_blank" rel="noopener"><img class="order-img" src="${url}" alt="Foto de la orden médica"></a>`;
 }
 function openFree(pid, m){
-  if (!PAT.loaded) patLoad().then(() => { const dl = $("m-patlist"); if (dl) dl.innerHTML = PAT.list.slice().sort(byName).slice(0, 500).map(x => `<option value="${esc(x.name)}">${x.dni ? "DNI " + esc(x.dni) : ""}</option>`).join(""); }).catch(() => {});
+  patLoad().then(() => { const dl = $("m-patlist"); if (dl) dl.innerHTML = PAT.list.slice().sort(byName).slice(0, 500).map(x => `<option value="${esc(x.name)}${x.dni ? " · DNI " + esc(x.dni) : ""}"></option>`).join(""); }).catch(() => {});
   const p = pro(pid), d = PANEL.date, sv = proSvcs(p);
   openDrawer(p.name, `Horario libre ${toT(m)}`, `
     <p style="margin:0" class="muted">${fmtLong(d)} · desde las ${toT(m)}</p>
@@ -1764,8 +1765,8 @@ function openFree(pid, m){
       <fieldset><legend>${sv.some(s => s.kind === "estudio") ? "Consultas o estudios (podés elegir más de uno)" : "Motivo"}</legend>
         <div class="checks">${sv.map((s, i) => `<label class="check" for="m-s-${s.id}"><input type="checkbox" id="m-s-${s.id}" value="${s.id}" ${i===0?"checked":""}> ${esc(s.name)} <span class="muted">· ${s.dur}′</span></label>`).join("")}</div>
       </fieldset>
-      <label for="m-name">Paciente<input id="m-name" placeholder="Nombre y apellido" list="m-patlist" autocomplete="off"></label>
-      <datalist id="m-patlist">${PAT.list.slice().sort(byName).slice(0, 500).map(x => `<option value="${esc(x.name)}">${x.dni ? "DNI " + esc(x.dni) : ""}</option>`).join("")}</datalist>
+      <label for="m-name">Paciente<input id="m-name" placeholder="Nombre, o buscá un paciente con ficha" list="m-patlist" autocomplete="off"></label>
+      <datalist id="m-patlist">${PAT.list.slice().sort(byName).slice(0, 500).map(x => `<option value="${esc(x.name)}${x.dni ? " · DNI " + esc(x.dni) : ""}"></option>`).join("")}</datalist>
       <p class="muted" id="m-patfound" style="font-size:13px;margin:-4px 0 0" hidden></p>
       <div class="row2"><label for="m-dni">DNI<input id="m-dni" inputmode="numeric"></label>
       <label for="m-phone">WhatsApp<input id="m-phone" type="tel" placeholder="Ej. 11 5555-1234"></label></div>
@@ -1985,9 +1986,11 @@ function submitManual(f){
   const items = ids.map(id => ({id, n:svc(id).name})), dur = ids.reduce((a, id) => a + svc(id).dur, 0);
   if (!fits(p, PANEL.date, m, dur)) return err(`No entra: el turno dura ${dur} min y se superpone con otro turno o termina fuera del horario de atención.`);
   const os = $("m-os").value;
+  const fp = f.dataset.pid ? PAT.list.find(x => x.id === Number(f.dataset.pid)) : null;
   const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
-    dni:digits($("m-dni").value), os, plan:"", aff: os === "Particular" || !$("m-aff") ? "" : $("m-aff").value.trim(), order: needsOrder(items) ? $("m-order").checked : false,
+    dni:digits($("m-dni").value), os, plan: fp && fp.os === os ? (fp.plan || "") : "", aff: os === "Particular" ? "" : $("m-aff") ? $("m-aff").value.trim() : (fp && fp.os === os ? (fp.aff || "") : ""), order: needsOrder(items) ? $("m-order").checked : false,
     first:false, note:"", source:"manual", code:code(), reminded:false, _avisar: $("m-avisar") ? $("m-avisar").checked : (waOn() ? false : true), _recien: true};
+  if (PAT.loaded && b.dni) fillFromPat(b, PAT.list.find(x => digits(x.dni) === b.dni));
   DB.bookings.push(b); saveDB(); renderPanel(); openBooking(b.id); toast("Turno agendado." + (waOn() && b.phone && b._avisar ? " Le enviamos la confirmación por WhatsApp." : "")); sync(b);
 }
 
@@ -2262,19 +2265,40 @@ async function patFromBooking(bid){
   if (p) return openPatient(p.id);
   openPatForm(null, {name: b.name, dni: digits(b.dni), phone: b.phone || "", os: b.os || "", aff: b.aff || "", plan: b.plan || ""});
 }
-// Al agendar a mano: si el paciente ya existe, se completan sus datos
+// El turno toma de la ficha los datos que falten
+function fillFromPat(b, p){
+  if (!p) return b;
+  ["name", "phone", "os", "plan", "aff"].forEach(k => { if (!String(b[k] || "").trim() && p[k]) b[k] = p[k]; });
+  return b;
+}
+// Al agendar a mano: si el paciente ya tiene ficha, se completan todos sus datos
 function manualPatLookup(t){
-  if (!PAT.loaded || !$("manualForm")) return;
+  const f = $("manualForm"); if (!PAT.loaded || !f) return;
   let p = null;
-  if (t.id === "m-dni" && digits(t.value).length >= 7) p = PAT.list.find(x => digits(x.dni) === digits(t.value));
-  if (t.id === "m-name" && t.value.trim()){ const n = normTxt(t.value), m = PAT.list.filter(x => normTxt(x.name) === n); if (m.length === 1) p = m[0]; }
+  const v = t.value.trim(), d = digits(v);
+  if (t.id === "m-dni" && d.length >= 7) p = PAT.list.find(x => digits(x.dni) === d);
+  if (t.id === "m-phone" && d.length >= 8){ const m = PAT.list.filter(x => digits(x.phone).length >= 8 && digits(x.phone).slice(-8) === d.slice(-8)); if (m.length === 1) p = m[0]; }
+  if (t.id === "m-name" && v){
+    const dm = v.match(/DNI\s*(\d{6,9})/i);
+    if (dm) p = PAT.list.find(x => digits(x.dni) === dm[1]);
+    else { const n = normTxt(v), m = PAT.list.filter(x => normTxt(x.name) === n); if (m.length === 1) p = m[0]; }
+  }
   const info = $("m-patfound");
-  if (!p){ if (t.id === "m-dni" || t.id === "m-name") info.hidden = true; return; }
-  const set = (id, v) => { const el = $(id); if (el && v && !el.value.trim()) el.value = v; };
-  set("m-name", p.name); set("m-dni", p.dni); set("m-phone", p.phone);
-  const os = $("m-os"); if (os && p.os && [...os.options].some(o => o.value === p.os) && os.value === "Particular"){ os.value = p.os; os.dispatchEvent(new Event("change", {bubbles: true})); }
+  if (!p){ if (f.dataset.pid && t.id === "m-dni" && d !== digits((PAT.list.find(x => x.id === Number(f.dataset.pid)) || {}).dni)){ delete f.dataset.pid; info.hidden = true; } return; }
+  if (f.dataset.pid === String(p.id) && t.id !== "m-name") return;
+  f.dataset.pid = p.id;
+  const set = (id, val) => { const el = $(id); if (el && val !== undefined && el !== t) el.value = val || ""; };
+  set("m-name", p.name); if (t.id === "m-name") t.value = p.name;
+  set("m-dni", p.dni); set("m-phone", p.phone);
+  const os = $("m-os"), want = p.os || "Particular";
+  if (os){
+    let opt = [...os.options].find(o => normTxt(o.value) === normTxt(want));
+    if (!opt){ opt = new Option(want + " (no la atiende este profesional)", want); os.add(opt); }
+    os.value = opt.value; os.dispatchEvent(new Event("change", {bubbles: true}));
+  }
   set("m-aff", p.aff);
-  info.hidden = false; info.textContent = "✓ Paciente con ficha: completamos sus datos.";
+  info.hidden = false;
+  info.innerHTML = `✓ <b>${esc(p.name)}</b> tiene ficha: completamos DNI, WhatsApp, cobertura${p.aff ? " y N° de afiliado" : ""}.`;
 }
 
 /* --- Funciones: datos de la ficha y del historial --- */
@@ -2329,7 +2353,8 @@ $("patBox").addEventListener("click", e => {
   if (e.target.closest("[data-pat-new]")){ openPatForm(null); return; }
   const r = e.target.closest("[data-pat]"); if (r) openPatient(Number(r.dataset.pat));
 });
-$("dBody").addEventListener("input", e => { if (e.target.id === "m-dni" || e.target.id === "m-name") manualPatLookup(e.target); });
+$("dBody").addEventListener("input", e => { if (["m-dni", "m-name", "m-phone"].includes(e.target.id)) manualPatLookup(e.target); });
+$("dBody").addEventListener("change", e => { if (["m-dni", "m-name", "m-phone"].includes(e.target.id)) manualPatLookup(e.target); });
 $("dBody").addEventListener("click", async e => {
   const pf = e.target.closest("[data-pat-from]"); if (pf){ patFromBooking(Number(pf.dataset.patFrom)); return; }
   const pe = e.target.closest("[data-pat-edit]"); if (pe){ openPatForm(PAT.list.find(x => x.id === Number(pe.dataset.patEdit))); return; }
@@ -3191,7 +3216,8 @@ const HELP = {
       <li><b>Historial del paciente</b> (se prende o apaga en <i>Funciones</i>): en la ficha tocá <b>+ Agregar registro</b> y anotá la fecha, el profesional, <b>peso, altura y presión</b> (calcula el IMC) y la <b>evolución o notas</b> de la consulta. Queda todo ordenado del más nuevo al más viejo, como una historia clínica.</li>
       <li>Los datos que se anotan en cada registro también se eligen en <i>Funciones → Datos del historial</i> (por ejemplo «Glucemia», «Perímetro abdominal»).</li>
       <li>En la ficha ves también <b>todos sus turnos</b>. Desde un turno del Panel, el botón <b>Ficha del paciente</b> te lleva directo.</li>
-      <li>Al agendar a mano, si escribís el nombre o el DNI de un paciente que ya existe, <b>se completan sus datos</b>.</li>
+      <li>Al agendar a mano, escribí el <b>nombre, DNI o celular</b> de un paciente con ficha (o elegilo de la lista que aparece) y <b>se completan solos</b> todos sus datos: DNI, WhatsApp, cobertura y N° de afiliado.</li>
+      <li>Si un paciente con ficha reserva desde el link, el turno también toma de la ficha los datos que no haya cargado.</li>
       <li>Solo lo ve quien entra con la cuenta del consultorio. Si apagás el historial, lo cargado <b>no se borra</b>.</li></ul>`)}
     ${H("Dar un turno a mano o bloquear un horario", `<ul>
       <li>En <i>Lista</i> tocá un horario libre (los botoncitos con la hora). En <i>Grilla</i>, tocá el espacio libre.</li>
@@ -3322,7 +3348,7 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
-const APP_VERSION = "23";
+const APP_VERSION = "24";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   // Si hay una versión nueva, se instala y la página se recarga sola una vez
   let recargada = false;
