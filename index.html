@@ -484,6 +484,15 @@ legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:6px}
 .ptur.link{cursor:pointer}
 .ptur.link:hover b{color:var(--accent)}
 .pat-ext{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px}
+.hrow .pcell{display:grid;gap:4px;min-width:0}
+.hrow .hloc{padding:5px 6px;font-size:13px;min-width:0;width:100%}
+.hrow.off .hloc{display:none}
+.lsede{display:flex;align-items:center;gap:6px;margin:12px 0 2px;font-size:12.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.03em}
+.lsede span{font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted)}
+.slot small{display:block;font-size:10.5px;font-weight:500;opacity:.8;line-height:1.1;margin-top:1px;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sede-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:8px;align-items:center}
+.sede-row.main{font-size:14px;padding:6px 0}
+@media (max-width:700px){.sede-row{grid-template-columns:1fr auto}.sede-row input:nth-child(2){grid-column:1}.sede-row button{grid-row:1;grid-column:2}}
 .sub-switches{display:grid;gap:10px;margin-left:18px;padding-left:14px;border-left:3px solid var(--line)}
 .closed-box{padding-bottom:40px;position:relative;margin-top:-44px}
 .closed-card{max-width:620px;margin:0 auto;display:grid;gap:12px;justify-items:start;box-shadow:0 14px 34px -22px rgba(16,40,80,.45)}
@@ -1122,27 +1131,42 @@ const onDay = (pid, date) => DB.bookings.filter(b => b.pro === pid && b.date ===
 
 /* ---------- disponibilidad ---------- */
 function offInfo(pid, date){ return (S.daysOff || []).find(o => o.d === date && (!o.pro || o.pro === pid)) || null; }
-function ranges(p, date){ if (offInfo(p.id, date)) return []; return (p.hours[parse(date).getDay()] || []).map(([a,b]) => [toMin(a), toMin(b)]); }
+/* ---------- centros (sedes): el mismo profesional, la misma agenda, otro lugar ---------- */
+const sedesOn = () => S.multiSede === true && (S.sedes || []).length > 0;
+const mainSede = () => ({id: "", name: C().name, address: C().address || "", main: true});
+const allSedes = () => [mainSede(), ...(S.sedes || [])];
+const sedeOf = id => (id && sedesOn() && S.sedes.find(x => x.id === id)) || mainSede();
+const sedeOk = id => !!(id && sedesOn() && S.sedes.some(x => x.id === id));
+function locAt(p, date, m){ if (!p || !sedesOn()) return ""; const r = ranges(p, date).find(([a, b]) => m >= a && m < b); return r ? r[2] : ""; }
+const bSede = b => sedeOf(b.loc !== undefined ? b.loc : locAt(pro(b.pro), b.date, toMin(b.start)));
+const sedeAddr = s => s.main ? (C().address || "") : [s.name, s.address].filter(Boolean).join(" – ");
+function sedesFor(pids){ // centros donde atienden estos profesionales
+  if (!sedesOn()) return [];
+  const set = new Set();
+  pids.forEach(id => { const p = pro(id); if (p) Object.values(p.hours || {}).forEach(rs => rs.forEach(r => set.add(sedeOk(r[2]) ? r[2] : ""))); });
+  return allSedes().filter(x => set.has(x.id));
+}
+function ranges(p, date){ if (offInfo(p.id, date)) return []; return (p.hours[parse(date).getDay()] || []).map(([a,b,l]) => [toMin(a), toMin(b), sedeOk(l) ? l : ""]); }
 function fits(p, date, m, dur, ignoreId){
   if (!ranges(p, date).some(([a,b]) => m >= a && m + dur <= b)) return false;
   return !onDay(p.id, date).some(b => { if (b.id === ignoreId) return false; const s = toMin(b.start); return s < m + dur && m < s + b.dur; });
 }
-function starts(p, date, dur){
+function starts(p, date, dur, loc){
   const out = [];
-  ranges(p, date).forEach(([a,b]) => { for (let m = a; m + dur <= b; m += p.step) out.push(m); });
+  ranges(p, date).filter(r => loc == null || r[2] === loc).forEach(([a,b]) => { for (let m = a; m + dur <= b; m += p.step) out.push(m); });
   return out;
 }
-function availability(pids, date, dur){
+function availability(pids, date, dur, loc){
   const t = TODAY(), cut = nowMin() + Number(C().leadMinutes || 0), map = new Map();
   if (date < t) return [];
   pids.forEach(id => {
     const p = pro(id); if (!p) return;
-    starts(p, date, dur).forEach(m => {
+    starts(p, date, dur, loc).forEach(m => {
       const ok = date > t || m >= cut;
       const f = ok && fits(p, date, m, dur);
       const cur = map.get(m);
-      if (!cur) map.set(m, {m, free:f, pro: f ? id : null});
-      else if (!cur.free && f){ cur.free = true; cur.pro = id; }
+      if (!cur) map.set(m, {m, free:f, pro: f ? id : null, loc: f ? locAt(p, date, m) : ""});
+      else if (!cur.free && f){ cur.free = true; cur.pro = id; cur.loc = locAt(p, date, m); }
     });
   });
   return [...map.values()].sort((a,b) => a.m - b.m);
@@ -1209,7 +1233,7 @@ function loadDB(){
 }
 
 /* ================= VISTA PACIENTE ================= */
-const UI = {tab:"consultas", pro:null, svc:null, who:"any", motivo:null, extra:[], date:null, time:null, slotPro:null, done:null};
+const UI = {tab:"consultas", pro:null, svc:null, who:"any", motivo:null, extra:[], date:null, time:null, slotPro:null, done:null, loc:null};
 function resetPick(){ Object.assign(UI, {date:null, time:null, slotPro:null, done:null}); }
 function consultPros(){ return S.pros.filter(p => isStudyMode() ? proSvcs(p, "consulta").length : proSvcs(p).length); }
 function consultList(p){ return isStudyMode() ? proSvcs(p, "consulta") : proSvcs(p); }
@@ -1296,19 +1320,27 @@ function renderOpts(){
 function renderCal(){
   const area = $("calArea"), sel = selection();
   if (!sel){ area.innerHTML = `<div class="empty">${UI.tab === "estudios" ? "Elegí un estudio" : UI.pro && pro(UI.pro) ? "Elegí el motivo de consulta" : "Elegí un profesional"} para ver los días y horarios disponibles.</div>`; $("formArea").innerHTML = ""; return; }
+  const locs = sedesFor(sel.pids);
+  if (UI.loc != null && !locs.some(x => x.id === UI.loc)) UI.loc = null;
+  const L = locs.length > 1 ? UI.loc : null;
   const days = [];
   for (let i = 0; i < C().daysAhead; i++){
-    const d = addDays(TODAY(), i), av = availability(sel.pids, d, sel.dur);
+    const d = addDays(TODAY(), i), av = availability(sel.pids, d, sel.dur, L);
     days.push({d, i, free: av.filter(s => s.free).length, works: av.length > 0});
   }
   if (!UI.date || !days.find(x => x.d === UI.date && x.free)){ const f = days.find(x => x.free); UI.date = f ? f.d : null; UI.time = null; }
-  let h = `<div class="days" role="group" aria-label="Días">` + days.map(x =>
+  let h = locs.length > 1 ? `<div style="margin-bottom:12px"><p class="sec-t" style="margin-bottom:6px">¿Dónde te queda mejor?</p><div class="chips" style="margin:0">
+      <button class="chip" type="button" data-loc="*" aria-pressed="${UI.loc == null}">Cualquiera</button>
+      ${locs.map(x => `<button class="chip" type="button" data-loc="${esc(x.id)}" aria-pressed="${UI.loc === x.id}" title="${esc(x.address)}">${esc(x.name)}</button>`).join("")}</div>
+      ${UI.loc != null && sedeOf(UI.loc).address ? `<p class="muted" style="font-size:13px;margin:6px 0 0">📍 ${esc(sedeOf(UI.loc).address)}</p>` : ""}</div>` : "";
+  h += `<div class="days" role="group" aria-label="Días">` + days.map(x =>
     `<button class="day" type="button" data-d="${x.d}" ${x.free?"":"disabled"} aria-pressed="${UI.date===x.d}" aria-label="${fmtLong(x.d)}, ${x.free} horarios libres">
       ${x.i === 0 || parse(x.d).getDate() === 1 ? `<em>${parse(x.d).toLocaleDateString("es", {month:"short"}).replace(".", "")}</em>` : ""}<small>${fmtDow(x.d)}</small><b>${parse(x.d).getDate()}</b><span>${x.free ? x.free + " libres" : (x.works ? "Completo" : "—")}</span></button>`).join("") + `</div>`;
   if (UI.date){
-    const av = availability(sel.pids, UI.date, sel.dur);
+    const av = availability(sel.pids, UI.date, sel.dur, L);
+    const mix = L == null && new Set(av.filter(x => x.free).map(x => x.loc)).size > 1;
     const grp = (t, arr) => arr.length ? `<div class="slot-group"><h3>${t}</h3><div class="slots">` + arr.map(s =>
-      `<button class="slot" type="button" data-t="${s.m}" data-p="${s.pro || ""}" ${s.free?"":"disabled"} aria-pressed="${UI.time===s.m}" aria-label="${toT(s.m)}${s.free?"":" ocupado"}">${toT(s.m)}</button>`).join("") + `</div></div>` : "";
+      `<button class="slot" type="button" data-t="${s.m}" data-p="${s.pro || ""}" ${s.free?"":"disabled"} aria-pressed="${UI.time===s.m}" aria-label="${toT(s.m)}${s.free?"":" ocupado"}${mix && s.free ? " en " + esc(sedeOf(s.loc).name) : ""}">${toT(s.m)}${mix && s.free ? `<small>${esc(sedeOf(s.loc).name)}</small>` : ""}</button>`).join("") + `</div></div>` : "";
     h += `<p style="margin:14px 0 0;font-weight:600">${fmtLong(UI.date)}</p>`;
     h += grp("Mañana", av.filter(s => s.m < 13*60)) + grp("Tarde", av.filter(s => s.m >= 13*60));
     h += `<div class="legend"><span><i style="border:1px solid var(--accent)"></i>Disponible</span><span><i style="background:var(--sunk);border:1px solid var(--line)"></i>Ocupado</span></div>`;
@@ -1329,7 +1361,8 @@ function renderForm(){
   fa.innerHTML = `<div class="form-wrap">
     <div class="step-h"><span class="step-n">3</span><h2>Tus datos</h2></div>
     <div class="sel-sum"><span class="av" style="background:${esc(p.color)};width:38px;height:38px;font-size:12px">${esc(initials(p.name))}</span>
-      <div><b>${esc(itemsName(items))}</b><span>${esc(p.name)} · ${fmtLong(UI.date)} · <span class="num">${toT(UI.time)} h</span> · ${sel.dur} min</span></div></div>
+      <div><b>${esc(itemsName(items))}</b><span>${esc(p.name)} · ${fmtLong(UI.date)} · <span class="num">${toT(UI.time)} h</span> · ${sel.dur} min</span>
+      ${sedesOn() ? (() => { const x = sedeOf(locAt(p, UI.date, UI.time)); return `<span>📍 <b style="display:inline;font-size:inherit">${esc(x.name)}</b>${x.address ? " · " + esc(x.address) : ""}</span>`; })() : ""}</div></div>
     ${prep ? `<div class="notice"><b>Preparación</b>${esc(prep)}</div>` : ""}
     ${needsText(items) ? `<div class="notice"><b>Para este ${hasStudy(items) ? "estudio" : "turno"} necesitás</b>${esc(needsText(items))}</div>` : ""}
     <form id="bookForm" novalidate>
@@ -1393,6 +1426,7 @@ function doneHtml(b){
     <div class="tick"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
     <h2>Turno reservado</h2>
     <p style="margin:0">Tu horario quedó apartado. ${waEnabled() ? "Enviá este mensaje por WhatsApp y el consultorio te lo confirma." : "El consultorio te va a confirmar el turno."} Código <span class="code">${b.code}</span></p>
+    ${sedesOn() ? (() => { const x = bSede(b); return `<div class="notice"><b>Dónde</b>${esc(x.name)}${x.address ? " · " + esc(x.address) : ""}</div>`; })() : ""}
     ${prep ? `<div class="notice"><b>Cómo prepararte</b>${esc(prep)}</div>` : ""}
     ${needsText(b.items) ? `<div class="notice"><b>Para este estudio necesitás</b>${esc(needsText(b.items))}</div>` : ""}
     <div class="notice warn"><b>El día del turno traé</b>${esc(bringLine(b))}.${payLine(b) ? "\n" + esc(payLine(b)) + ". " + esc(payText()) : ""}${payLine(b) && aliasLine() ? "\n" + esc(aliasLine()) : ""}</div>
@@ -1425,7 +1459,7 @@ function renderBook(){
       <p>${esc(C().name)} no toma turnos online por el momento. Para pedir un turno comunicate con el consultorio${STAFF ? " (los turnos se cargan desde el <b>Panel</b>)" : ""}.</p>
       ${tel && waEnabled() ? `<a class="btn btn-wa" href="${wa(C().whatsapp, "Hola, quería pedir un turno.")}" target="_blank" rel="noopener">${WA_ICON}Escribir por WhatsApp</a>` : ""}
       ${tel ? `<p class="muted" style="margin:0">Teléfono: ${esc(tel)}</p>` : ""}
-      ${C().address ? `<p class="muted" style="margin:0">Dirección: ${esc(C().address)}</p>` : ""}
+      ${sedesOn() ? allSedes().filter(x => x.address).map(x => `<p class="muted" style="margin:0">${esc(x.name)}: ${esc(x.address)}</p>`).join("") : C().address ? `<p class="muted" style="margin:0">Dirección: ${esc(C().address)}</p>` : ""}
     </section>`;
     $("heroSub").textContent = "";
     return;
@@ -1448,6 +1482,7 @@ $("optsArea").addEventListener("click", e => {
 });
 $("calArea").addEventListener("click", e => {
   const d = e.target.closest(".day"); if (d && !d.disabled){ UI.date = d.dataset.d; UI.time = null; UI.done = null; renderCal(); return; }
+  const lc = e.target.closest("[data-loc]"); if (lc){ UI.loc = lc.dataset.loc === "*" ? null : lc.dataset.loc; UI.time = null; UI.date = null; renderCal(); return; }
   const s = e.target.closest(".slot"); if (s && !s.disabled){ UI.time = Number(s.dataset.t); UI.slotPro = s.dataset.p; UI.done = null; renderCal(); if (mobile()) goTo($("formArea")); else if ($("b-name")) $("b-name").focus({preventScroll:true}); }
 });
 $("formArea").addEventListener("change", async e => {
@@ -1486,6 +1521,7 @@ $("formArea").addEventListener("submit", async e => {
     plan: os === "Particular" || !S.askAffiliate ? "" : $("b-plan").value.trim(), aff: os === "Particular" || !S.askAffiliate ? "" : aff, order: needsOrder(items) ? (photoMode ? true : $("b-order").checked) : false,
     orderSent: photoMode && !!UI.orderFile, orderThumb: photoMode && UI.orderFile ? UI.orderThumb : null, orderName: photoMode && UI.orderFile ? UI.orderFile.name : "",
     items, first: $("b-first") ? $("b-first").checked : false, note:$("b-note").value.trim(), source:"web", code:code(), reminded:false, isNew:true};
+  if (sedesOn()) b.loc = locAt(p, UI.date, UI.time);
   if (CLOUD){
     const btn = e.target.querySelector('button[type="submit"]');
     UI.saving = true; btn.disabled = true; btn.textContent = "Guardando turno…";
@@ -1576,7 +1612,8 @@ function renderAgenda(){
   g.style.gridTemplateColumns = `${mobile() ? 46 : 58}px repeat(${list.length}, minmax(${mobile() && list.length > 1 ? 140 : 160}px, 1fr))`;
   let h = `<div class="corner"></div>` + list.map(p => {
     const n = onDay(p.id, d).filter(b => b.status !== "bloqueo").length, works = ranges(p, d).length;
-    return `<div class="ahead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos · " + esc(p.role) : offInfo(p.id, d) ? "Día anulado · " + esc(offInfo(p.id, d).m || "") : "No atiende este día"}</small></div></div>`;
+    const sds = works && sedesOn() ? [...new Set(ranges(p, d).map(r => r[2]))].map(id => sedeOf(id).name).join(" y ") : "";
+    return `<div class="ahead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div style="min-width:0"><b>${esc(p.name)}</b><small>${works ? n + " turnos · " + (sds ? "📍 " + esc(sds) : esc(p.role)) : offInfo(p.id, d) ? "Día anulado · " + esc(offInfo(p.id, d).m || "") : "No atiende este día"}</small></div></div>`;
   }).join("");
   h += `<div class="tcol" style="height:${H}px">` + Array.from({length:rows}, (_, i) => i % 2 === 0 && i ? `<div style="top:${i*PX}px">${toT(DAY0 + i*ROW)}</div>` : "").join("") + `</div>`;
   const now = nowMin(), showNow = d === TODAY() && now > DAY0 && now < DAY1, past = d < TODAY();
@@ -1627,11 +1664,11 @@ const MSG_DEF = {
   rec: "Hola {nombre}, te recordamos tu turno de mañana a las {hora} h: {que} con {profesional}, en {direccion}.\n\nAcordate:\n{preparacion}\n\nNecesitás:\n{necesitas}\n\nTraé {traer}.\n{monto}.\n\nRespondé 1 para confirmar o 2 si necesitás cambiar el turno."
 };
 const MSG_VARS = [["nombre","Nombre"],["paciente","Nombre y apellido"],["consultorio","Consultorio"],["fecha","Fecha"],["hora","Hora"],["profesional","Profesional"],["que","Consulta o estudio"],
-  ["direccion","Dirección"],["cobertura","Cobertura"],["monto","Monto a abonar"],["mediospago","Medios de pago"],["alias","Alias"],["preparacion","Preparación"],["necesitas","Necesitás"],["traer","Qué traer"],["codigo","Código"]];
+  ["direccion","Dirección"],["centro","Centro"],["cobertura","Cobertura"],["monto","Monto a abonar"],["mediospago","Medios de pago"],["alias","Alias"],["preparacion","Preparación"],["necesitas","Necesitás"],["traer","Qué traer"],["codigo","Código"]];
 function msgVars(b){
   const p = pro(b.pro) || {name: ""}, pl = payLine(b), cobra = pl && pl !== "Sin monto a abonar";
   return {nombre: (b.name || "").split(" ")[0], paciente: b.name || "", consultorio: C().name, fecha: fmtLong(b.date), hora: b.start, profesional: p.name,
-    que: itemsName(b.items), direccion: C().address || "", cobertura: covLine(b), monto: pl || "", mediospago: cobra ? payText() : "",
+    que: itemsName(b.items), direccion: sedeAddr(bSede(b)), centro: bSede(b).name, cobertura: covLine(b), monto: pl || "", mediospago: cobra ? payText() : "",
     alias: cobra ? aliasLine() : "", preparacion: prepText(b.items), necesitas: needsText(b.items), traer: bringLine(b), codigo: b.code || ""};
 }
 // Reemplaza los {datos}; si un dato no corresponde a este turno, se quita la línea entera.
@@ -1646,22 +1683,31 @@ function fillMsg(tpl, b){
   const res = out.filter((x, i) => x.conDato || !(/:\s*$/.test(x.l) && (i === out.length - 1 || !out[i + 1].l.trim()))).map(x => x.l);
   return res.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
-const msgTpl = k => (S.msgs && S.msgs[k]) || MSG_DEF[k];
-function agendaMsg(b){ return fillMsg(msgTpl("agen"), b); }
-function confirmMsg(b){ return fillMsg(msgTpl("conf"), b); }
-function reminderMsg(b){ return fillMsg(msgTpl("rec"), b); }
+const baseTpl = k => (S.msgs && S.msgs[k]) || MSG_DEF[k];
+// Si el turno es en otro centro y ese centro tiene su propio mensaje, se usa ese
+function msgTpl(k, b){
+  if (b && sedesOn()){ const x = bSede(b); if (!x.main && x.msgs && x.msgs[k]) return x.msgs[k]; }
+  return baseTpl(k);
+}
+let MSGSEDE = "";                       // centro cuyos mensajes se están editando ("" = principal)
+const edSede = () => (MSGSEDE && sedesOn() && S.sedes.find(x => x.id === MSGSEDE)) || null;
+const edTpl = k => { const x = edSede(); return (x && x.msgs && x.msgs[k]) || baseTpl(k); };
+function agendaMsg(b){ return fillMsg(msgTpl("agen", b), b); }
+function confirmMsg(b){ return fillMsg(msgTpl("conf", b), b); }
+function reminderMsg(b){ return fillMsg(msgTpl("rec", b), b); }
 function sampleBooking(){
   const st = S.services.find(x => x.kind === "estudio" && x.prep) || S.services[0], p = S.pros.find(x => st && x.services.includes(st.id)) || S.pros[0];
   return {pro: p ? p.id : "", date: addDays(TODAY(), 1), start: "10:00", dur: 20, name: "Laura Gómez", phone: "", os: (S.coverage[0] || {}).n || "Particular",
-    items: st ? [{id: st.id, n: st.name}] : [], order: true, code: "K7Q2M"};
+    items: st ? [{id: st.id, n: st.name}] : [], order: true, code: "K7Q2M", loc: edSede() ? edSede().id : ""};
 }
 function msgEditor(k, title, hint){
+  const x = edSede(), own = x && x.msgs && x.msgs[k];
   return `<div class="msg-ed" data-msgk="${k}">
-    <div class="cfg-head"><div><b>${title}</b><p class="muted" style="margin:2px 0 0;font-size:13px">${hint}</p></div>
-      <button class="linkbtn" type="button" data-msgreset="${k}">Volver al texto original</button></div>
-    <div class="msg-cols"><div><textarea id="msg-${k}" rows="12" aria-label="${title}">${esc(msgTpl(k))}</textarea>
+    <div class="cfg-head"><div><b>${title}</b>${x ? ` <span class="tag ${own ? "acc" : ""}">${own ? "Propio de " + esc(x.name) : "Igual al principal"}</span>` : ""}<p class="muted" style="margin:2px 0 0;font-size:13px">${hint}</p></div>
+      <button class="linkbtn" type="button" data-msgreset="${k}">${x ? "Usar el mismo que el principal" : "Volver al texto original"}</button></div>
+    <div class="msg-cols"><div><textarea id="msg-${k}" rows="12" aria-label="${title}${x ? " en " + esc(x.name) : ""}">${esc(edTpl(k))}</textarea>
       <div class="vchips">${MSG_VARS.map(([v, l]) => `<button type="button" class="vchip" data-ins="${v}" data-for="msg-${k}">${l}</button>`).join("")}</div></div>
-      <div><p class="sec-t" style="margin-bottom:6px">Así le llega (ejemplo)</p><div class="bubble" id="prev-${k}">${esc(fillMsg(msgTpl(k), sampleBooking()))}</div></div></div>
+      <div><p class="sec-t" style="margin-bottom:6px">Así le llega (ejemplo)</p><div class="bubble" id="prev-${k}">${esc(fillMsg(edTpl(k), sampleBooking()))}</div></div></div>
   </div>`;
 }
 function renderPanel(){ renderKpis(); renderAgenda(); renderSide(); renderWaCard(); }
@@ -1720,6 +1766,7 @@ function openBooking(id){
       <dt>${hasStudy(b.items) ? "Estudios" : "Motivo"}</dt><dd>${b.items.map(i => esc(i.n)).join("<br>")}</dd>
       <dt>Día</dt><dd>${fmtLong(b.date)}</dd>
       <dt>Horario</dt><dd class="num">${b.start} – ${toT(toMin(b.start)+b.dur)} (${b.dur} min)</dd>
+      ${sedesOn() ? (() => { const x = bSede(b); return `<dt>Lugar</dt><dd>${esc(x.name)}${x.address ? `<br><span class="muted">${esc(x.address)}</span>` : ""}</dd>`; })() : ""}
       <dt>DNI</dt><dd class="num">${esc(b.dni || "—")}</dd>
       <dt>WhatsApp</dt><dd class="num">${b.phone ? "+" + esc(normPhone(b.phone)) : "—"}</dd>
       <dt>Cobertura</dt><dd>${esc(covLine(b))}</dd>
@@ -1915,18 +1962,24 @@ function renderList(list){
     if (list.length > 1 && !rs.length && !bs.length) return;
     h += `<section class="lgroup">`;
     if (list.length > 1) h += `<header class="lhead"><span class="av" style="background:${esc(p.color)}">${esc(initials(p.name))}</span><div><b>${esc(p.name)}</b><small>${esc(p.role)} · ${n} turno${n === 1 ? "" : "s"}</small></div></header>`;
+    let flush;
     if (!rs.length && !bs.length){ const o = offInfo(p.id, d); h += `<div class="empty">${o ? "Día anulado" + (o.m ? " · " + esc(o.m) : "") : esc(p.name) + " no atiende este día."}</div></section>`; return; }
     if (offInfo(p.id, d)) h += `<div class="notice warn" style="margin-top:6px"><b>Día anulado${offInfo(p.id, d).m ? " · " + esc(offInfo(p.id, d).m) : ""}</b>Estos turnos ya estaban dados: avisales a los pacientes.</div>`;
     const entries = bs.map(b => ({m: toMin(b.start), b}));
     if (!past) starts(p, d, p.step).forEach(m => { if (d === TODAY() && m + p.step <= now) return; if (fits(p, d, m, p.step)) entries.push({m, free:true}); });
     entries.sort((a, b) => a.m - b.m || (a.free ? 1 : -1));
-    let run = [];
-    const flush = () => {
+    const multi = sedesOn() && new Set(rs.map(r => r[2]).concat(bs.filter(b => b.status !== "bloqueo").map(b => bSede(b).id))).size > 1;
+    const oneSede = sedesOn() && !multi && rs.length ? sedeOf(rs[0][2]) : null;
+    if (oneSede && !oneSede.main) h += `<div class="lsede">📍 ${esc(oneSede.name)}${oneSede.address ? ` <span>· ${esc(oneSede.address)}</span>` : ""}</div>`;
+    let run = [], curLoc = null;
+    const sedeHead = loc => { if (!multi || loc === curLoc) return; flush(); curLoc = loc; const x = sedeOf(loc); h += `<div class="lsede">📍 ${esc(x.name)}${x.address ? ` <span>· ${esc(x.address)}</span>` : ""}</div>`; };
+    flush = () => {
       if (!run.length) return;
       h += `<div class="lfree"><span class="lt">Libre${run.length > 1 ? "s" : ""}</span><div class="fchips">${run.map(m => `<button class="fchip" type="button" data-pro="${p.id}" data-m="${m}" aria-label="Agendar ${toT(m)} con ${esc(p.name)}">${toT(m)}</button>`).join("")}</div></div>`;
       run = [];
     };
     entries.forEach(e => {
+      sedeHead(e.free ? locAt(p, d, e.m) : e.b.status === "bloqueo" ? (curLoc ?? locAt(p, d, e.m)) : bSede(e.b).id);
       if (e.free){ run.push(e.m); return; }
       flush();
       const b = e.b, blk = b.status === "bloqueo";
@@ -1987,7 +2040,7 @@ function submitManual(f){
   if (!fits(p, PANEL.date, m, dur)) return err(`No entra: el turno dura ${dur} min y se superpone con otro turno o termina fuera del horario de atención.`);
   const os = $("m-os").value;
   const fp = f.dataset.pid ? PAT.list.find(x => x.id === Number(f.dataset.pid)) : null;
-  const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, status:"confirmado", name, phone:$("m-phone").value.trim(), items,
+  const b = {id:newId(), _new:true, pro:p.id, date:PANEL.date, start:toT(m), dur, ...(sedesOn() ? {loc: locAt(p, PANEL.date, m)} : {}), status:"confirmado", name, phone:$("m-phone").value.trim(), items,
     dni:digits($("m-dni").value), os, plan: fp && fp.os === os ? (fp.plan || "") : "", aff: os === "Particular" ? "" : $("m-aff") ? $("m-aff").value.trim() : (fp && fp.os === os ? (fp.aff || "") : ""), order: needsOrder(items) ? $("m-order").checked : false,
     first:false, note:"", source:"manual", code:code(), reminded:false, _avisar: $("m-avisar") ? $("m-avisar").checked : (waOn() ? false : true), _recien: true};
   if (PAT.loaded && b.dni) fillFromPat(b, PAT.list.find(x => digits(x.dni) === b.dni));
@@ -2301,6 +2354,47 @@ function manualPatLookup(t){
   info.innerHTML = `✓ <b>${esc(p.name)}</b> tiene ficha: completamos DNI, WhatsApp, cobertura${p.aff ? " y N° de afiliado" : ""}.`;
 }
 
+/* --- Funciones: otros centros donde atiende --- */
+function sedeFnCard(){
+  const on = S.multiSede === true, L = S.sedes || [];
+  return `<section class="card send-card" id="fnSede">
+    <h2 style="margin:0">Centros donde atiende</h2>
+    <label class="switch" for="fn-sede"><input type="checkbox" id="fn-sede" data-fn="multiSede" ${on ? "checked" : ""}><span class="sw"></span><span><b>El profesional atiende también en otro centro</b><small>Por ejemplo, a la mañana en tu consultorio y a la tarde en una clínica. Usa la <b>misma agenda</b>: los turnos de un lugar y del otro nunca se superponen. El paciente elige dónde y el mensaje de WhatsApp lleva la dirección correcta.</small></span></label>
+    <div class="sub-switches" ${on ? "" : "hidden"}>
+      <p class="sec-t" style="margin:0">Centros</p>
+      <div class="sede-row main"><span><b>📍 ${esc(C().name)}</b> <span class="muted">· principal</span></span><span class="muted">${esc(C().address || "Sin dirección")}</span><span class="muted" style="font-size:12px">Se edita en Configuración</span></div>
+      ${L.map(x => `<div class="sede-row"><input data-sede-f="name" data-id="${esc(x.id)}" value="${esc(x.name)}" aria-label="Nombre del centro"><input data-sede-f="address" data-id="${esc(x.id)}" value="${esc(x.address || "")}" placeholder="Dirección" aria-label="Dirección de ${esc(x.name)}"><button class="btn btn-soft btn-sm" type="button" data-sede-del="${esc(x.id)}">Quitar</button></div>`).join("")}
+      <div class="sede-row fldadd"><input id="sd-name" placeholder="Nombre (ej. Clínica del Sol)" aria-label="Nombre del nuevo centro"><input id="sd-addr" placeholder="Dirección (ej. San Martín 450)" aria-label="Dirección del nuevo centro"><button class="btn btn-soft" type="button" data-sede-add>+ Agregar</button></div>
+      <p class="muted" style="font-size:13px;margin:0">${L.length ? "Ahora, en <b>Configuración → Profesionales → Editar</b>, debajo de cada día y horario elegí en qué centro atiende." : "Agregá el otro centro y después, en Configuración, elegí en qué días y horarios atiende ahí cada profesional."}</p>
+    </div>
+  </section>`;
+}
+$("fnBox").addEventListener("click", e => {
+  if (e.target.closest("[data-sede-add]")){
+    const name = $("sd-name").value.trim(), address = $("sd-addr").value.trim();
+    if (!name){ toast("Escribí el nombre del centro."); $("sd-name").focus(); return; }
+    if (allSedes().some(x => normTxt(x.name) === normTxt(name))){ toast("Ya hay un centro con ese nombre."); return; }
+    S.sedes = (S.sedes || []).concat({id: uid("sd"), name: name.slice(0, 80), address: address.slice(0, 160)});
+    saveCfg(); renderFunciones(); refreshAll(); toast("«" + name + "» agregado. Ahora elegí sus horarios en Configuración → Profesionales.");
+    return;
+  }
+  const del = e.target.closest("[data-sede-del]"); if (!del) return;
+  const id = del.dataset.sedeDel, x = (S.sedes || []).find(v => v.id === id); if (!x) return;
+  const fut = DB.bookings.filter(b => b.loc === id && b.date >= TODAY() && live(b) && b.status !== "bloqueo").length;
+  if (!confirm(`¿Quitar «${x.name}»?${fut ? ` Hay ${fut} turno${fut === 1 ? "" : "s"} a futuro ahí: van a figurar en el consultorio principal, avisales a los pacientes.` : ""} Los horarios de ese centro pasan al consultorio principal.`)) return;
+  S.sedes = S.sedes.filter(v => v.id !== id);
+  S.pros.forEach(p => Object.values(p.hours || {}).forEach(rs => rs.forEach(r => { if (r[2] === id) r.length = 2; })));
+  saveCfg(); renderFunciones(); refreshAll(); toast("Centro quitado.");
+});
+$("fnBox").addEventListener("change", e => {
+  const t = e.target.closest("[data-sede-f]"); if (!t) return;
+  const x = (S.sedes || []).find(v => v.id === t.dataset.id); if (!x) return;
+  const v = t.value.trim();
+  if (t.dataset.sedeF === "name" && !v){ t.value = x.name; toast("El centro necesita un nombre."); return; }
+  x[t.dataset.sedeF] = v.slice(0, t.dataset.sedeF === "name" ? 80 : 160);
+  saveCfg(); refreshAll(); toast("Centro guardado.");
+});
+
 /* --- Funciones: datos de la ficha y del historial --- */
 function fieldChips(list, kind){
   return list.length ? list.map(f => `<span class="fld">${esc(f.label)}${f.unit ? ` <span class="muted">(${esc(f.unit)})</span>` : ""}${f.type !== "texto" ? ` <span class="muted">· ${FIELD_TYPES[f.type]}</span>` : ""}<button type="button" data-${kind}-del="${esc(f.id)}" aria-label="Quitar ${esc(f.label)}">×</button></span>`).join("")
@@ -2377,7 +2471,11 @@ $("dBody").addEventListener("click", async e => {
 });
 
 /* ================= CONFIGURACIÓN ================= */
-function daysLabel(p){ const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]); return l.length ? l.join(", ") : "Sin horarios"; }
+function daysLabel(p){
+  const l = DOWS.filter(([d]) => (p.hours[d] || []).length).map(x => x[1]);
+  const sd = sedesFor([p.id]);
+  return (l.length ? l.join(", ") : "Sin horarios") + (sd.length > 1 ? " · " + sd.map(x => x.name).join(" y ") : sd.length === 1 && !sd[0].main ? " · " + sd[0].name : "");
+}
 function renderFunciones(){
   $("fnBox").innerHTML = `
   <section class="card send-card">
@@ -2392,6 +2490,7 @@ function renderFunciones(){
     <label class="switch" for="send-rec"><input type="checkbox" id="send-rec" data-send="rec" ${sendOn("rec") ? "checked" : ""}><span class="sw"></span><span><b>Recordatorio el día anterior</b><small>${waOn() ? "Con los botones Confirmo / Necesito cambiarlo." : "Lista «Recordatorios para mañana» en el panel."}</small></span></label>
     </div>
   </section>
+  ${sedeFnCard()}
   ${patFnCard()}
   <p class="muted" style="font-size:13.5px;margin:0">Más detalles en el tutorial (botón ⓘ de arriba).</p>`;
 }
@@ -2454,6 +2553,9 @@ function renderConfig(){
   <section class="card" ${waEnabled() ? "" : "hidden"}>
     <h2>Mensajes de WhatsApp</h2>
     <p class="hint">Editá el texto que se le manda al paciente con los botones de WhatsApp. Tocá un dato para insertarlo donde está el cursor. Si un dato no corresponde a ese turno (por ejemplo la preparación en una consulta), esa línea se quita sola.</p>
+    ${sedesOn() ? `<div style="margin:4px 0 10px"><p class="sec-t" style="margin-bottom:6px">Mensajes para los turnos en</p><div class="chips" style="margin:0">
+      ${allSedes().map(x => `<button class="chip" type="button" data-msgsede="${esc(x.id)}" aria-pressed="${(edSede() ? edSede().id : "") === x.id}">📍 ${esc(x.name)}${!x.main && x.msgs && Object.values(x.msgs).some(Boolean) ? " ✎" : ""}</button>`).join("")}</div>
+      <p class="muted" style="font-size:13px;margin:6px 0 0">${edSede() ? `Estos textos se usan solo para los turnos en <b>${esc(edSede().name)}</b>. Mientras no los cambies, son iguales a los del principal.` : "Estos textos se usan en el consultorio principal y en los centros que no tengan mensajes propios."}</p></div>` : ""}
     ${msgEditor("conf", "Confirmación del turno", "Se envía al confirmar un turno.")}
     ${msgEditor("agen", "Turno agendado por el consultorio", "Se ofrece al cargar un turno a mano desde el panel.")}
     ${msgEditor("rec", "Recordatorio", "Se envía el día anterior desde «Recordatorios para mañana».")}
@@ -2566,12 +2668,14 @@ document.addEventListener("click", async e => {
 function hoursEditor(p){
   return `<div class="hours-ed">` + DOWS.map(([d, l]) => {
     const r = (p.hours[d] || []), on = r.length > 0, a = r[0] || ["",""], b = r[1] || ["",""];
+    const ms = S.multiSede === true && (S.sedes || []).length > 0;
+    const locSel = (k, cur, lab) => ms ? `<select class="hloc" id="h-l${k}-${d}" aria-label="${lab}">${allSedes().map(x => `<option value="${esc(x.id)}" ${(sedeOk(cur) ? cur : "") === x.id ? "selected" : ""}>📍 ${esc(x.name)}</option>`).join("")}</select>` : "";
     return `<div class="hrow ${on?"":"off"}" data-dow="${d}">
       <label class="check" for="h-on-${d}"><input type="checkbox" id="h-on-${d}" ${on?"checked":""}> ${l}</label>
-      <span class="pair"><input type="time" id="h-a1-${d}" value="${a[0]}" aria-label="${l} desde"> a <input type="time" id="h-b1-${d}" value="${a[1]}" aria-label="${l} hasta"></span>
-      <span class="pair"><input type="time" id="h-a2-${d}" value="${b[0]}" aria-label="${l} segundo turno desde"> a <input type="time" id="h-b2-${d}" value="${b[1]}" aria-label="${l} segundo turno hasta"></span>
+      <span class="pcell"><span class="pair"><input type="time" id="h-a1-${d}" value="${a[0]}" aria-label="${l} desde"> a <input type="time" id="h-b1-${d}" value="${a[1]}" aria-label="${l} hasta"></span>${locSel(1, a[2], l + ": dónde atiende")}</span>
+      <span class="pcell"><span class="pair"><input type="time" id="h-a2-${d}" value="${b[0]}" aria-label="${l} segundo turno desde"> a <input type="time" id="h-b2-${d}" value="${b[1]}" aria-label="${l} segundo turno hasta"></span>${locSel(2, b[2], l + ", segunda franja: dónde atiende")}</span>
     </div>`;
-  }).join("") + `<p class="muted" style="font-size:12.5px;margin:2px 0 0">Segunda franja opcional, para horario partido (ej. 9 a 13 y 16 a 20).</p></div>`;
+  }).join("") + `<p class="muted" style="font-size:12.5px;margin:2px 0 0">Segunda franja opcional, para horario partido (ej. 9 a 13 y 16 a 20).${S.multiSede === true && (S.sedes || []).length ? " Debajo de cada franja elegís en qué centro atiende: es la misma agenda, así que los turnos de un centro y del otro nunca se superponen." : ""}</p></div>`;
 }
 const DURS = [10,15,20,25,30,40,45,60,90];
 function svcRows(k, checked){
@@ -2635,7 +2739,9 @@ function submitPro(f){
       const a = $(`h-a${k}-${d}`).value, b = $(`h-b${k}-${d}`).value;
       if (!a && !b) continue;
       if (!a || !b || toMin(a) >= toMin(b)) return err(`Revisá el horario del ${l}: la hora de inicio tiene que ser anterior a la de fin.`);
-      rs.push([a, b]);
+      const old = f.dataset.id && pro(f.dataset.id) ? ((pro(f.dataset.id).hours[d] || [])[k - 1] || [])[2] : "";
+      const lc = $(`h-l${k}-${d}`) ? $(`h-l${k}-${d}`).value : (old || "");
+      rs.push(lc ? [a, b, lc] : [a, b]);
     }
     if (!rs.length) return err(`Marcaste ${l} pero no cargaste horario.`);
     if (rs.length === 2 && toMin(rs[1][0]) < toMin(rs[0][1])) return err(`En ${l} la segunda franja tiene que empezar después de que termine la primera.`);
@@ -2742,6 +2848,7 @@ async function onCfgChange(e){
   if (t.dataset.payalias){ S.payments.alias = t.value.trim(); saveCfg(); toast("Alias guardado."); return; }
   if (t.dataset.fn){
     S[t.dataset.fn] = t.checked; saveCfg(); renderFunciones(); if (!$("view-config").hidden) renderConfig();
+    if (t.dataset.fn === "multiSede"){ refreshAll(); toast(t.checked ? "Ahora podés cargar otros centros donde atiende el profesional." : "Varios centros desactivado: todo figura en el consultorio principal."); return; }
     if (t.dataset.fn === "patHistory"){ toast(t.checked ? "Historial del paciente activado." : "Historial del paciente desactivado (lo cargado no se borra)."); return; }
     if (t.dataset.fn === "askFirst"){ toast(t.checked ? "Ahora se pregunta si es la primera vez en el centro." : "Ya no se pregunta si es la primera vez en el centro."); return; }
     toast(t.dataset.fn === "onlineBooking" ? (t.checked ? "Turnos online activados: los pacientes pueden reservar desde tu link." : "Turnos online desactivados: el link muestra cómo comunicarse.")
@@ -3208,6 +3315,13 @@ const HELP = {
       <li><b>Asistió / No asistió</b> el día del turno.</li>
       <li><b>Cancelar turno:</b> libera el horario para otro paciente.</li>
       <li>Si el paciente subió la <b>foto de la orden</b>, la ves en la ficha.</li></ul>`)}
+    ${H("Atender en otro centro (misma agenda)", `<ul>
+      <li>Si un profesional atiende también en otra clínica o consultorio, prendé <i>Funciones → Centros donde atiende</i> y agregá el centro con su <b>dirección</b>.</li>
+      <li>En <i>Configuración → Profesionales → Editar</i>, debajo de cada día y horario elegí <b>📍 en qué centro</b> atiende. Ej.: lunes de 9 a 13 en el consultorio y de 16 a 20 en la clínica.</li>
+      <li>Es <b>la misma agenda</b>: un turno en un centro ocupa ese horario y no se puede dar otro en el otro centro.</li>
+      <li>El paciente, al reservar, puede elegir <b>dónde le queda mejor</b>; cada horario muestra el centro. El turno, la confirmación y el recordatorio por WhatsApp llevan la dirección de ese centro.</li>
+      <li>En el Panel, la lista del día separa los turnos por centro (📍) y la ficha del turno dice el lugar.</li>
+      <li><b>Mensajes distintos por centro:</b> en <i>Configuración → Mensajes de WhatsApp</i> tocá el centro arriba y cambiá la confirmación, el aviso de turno agendado o el recordatorio solo para ese lugar (por ejemplo «Ingresá por la guardia» o «Pedí en recepción de la clínica»). El dato <b>Centro</b> inserta el nombre del lugar.</li></ul>`)}
     ${H("Pacientes e historia clínica", `<ul>
       <li>En la pestaña <b>Pacientes</b> está la lista de todos tus pacientes. Buscalos por <b>nombre, DNI o celular</b>.</li>
       <li>La ficha se crea <b>sola</b> cuando alguien reserva o le agendás un turno con DNI. También podés cargar uno con <b>+ Nuevo paciente</b>.</li>
@@ -3323,8 +3437,12 @@ try { if (localStorage.getItem("ayuda-vista") !== "1") $("helpBtn").classList.ad
 let msgTimer = null;
 document.addEventListener("input", e => {
   const t = e.target; if (!t.id || !t.id.startsWith("msg-")) return;
-  const k = t.id.slice(4); S.msgs = S.msgs || {};
-  S.msgs[k] = t.value === MSG_DEF[k] ? null : t.value;
+  const k = t.id.slice(4), x = edSede();
+  if (x){
+    x.msgs = x.msgs || {}; x.msgs[k] = t.value === baseTpl(k) ? null : t.value;
+    const tg = t.closest(".msg-ed").querySelector(".cfg-head .tag");
+    if (tg){ tg.textContent = x.msgs[k] ? "Propio de " + x.name : "Igual al principal"; tg.classList.toggle("acc", !!x.msgs[k]); }
+  } else { S.msgs = S.msgs || {}; S.msgs[k] = t.value === MSG_DEF[k] ? null : t.value; }
   $("prev-" + k).textContent = fillMsg(t.value, sampleBooking());
   clearTimeout(msgTimer); msgTimer = setTimeout(() => saveCfg(), 600);
 });
@@ -3333,7 +3451,9 @@ document.addEventListener("click", e => {
   if (ins){ const ta = $(ins.dataset.for), tok = "{" + ins.dataset.ins + "}", a = ta.selectionStart ?? ta.value.length, z = ta.selectionEnd ?? a;
     ta.value = ta.value.slice(0, a) + tok + ta.value.slice(z); ta.focus(); ta.selectionStart = ta.selectionEnd = a + tok.length; ta.dispatchEvent(new Event("input", {bubbles: true})); return; }
   const rs = e.target.closest("[data-msgreset]");
-  if (rs){ const k = rs.dataset.msgreset, ta = $("msg-" + k); ta.value = MSG_DEF[k]; ta.dispatchEvent(new Event("input", {bubbles: true})); toast("Se restauró el texto original."); }
+  if (rs){ const k = rs.dataset.msgreset, ta = $("msg-" + k), x = edSede(); ta.value = x ? baseTpl(k) : MSG_DEF[k]; ta.dispatchEvent(new Event("input", {bubbles: true})); toast(x ? x.name + " vuelve a usar el mensaje del principal." : "Se restauró el texto original."); return; }
+  const ms = e.target.closest("[data-msgsede]");
+  if (ms){ MSGSEDE = ms.dataset.msgsede; const y = window.scrollY; renderConfig(); window.scrollTo(0, y); }
 });
 
 /* ---------- app instalable ---------- */
@@ -3348,7 +3468,7 @@ $("installBtn").addEventListener("click", async () => { if (!installEvt) return;
   if (ios && !standalone && !seen) $("iosTip").hidden = false;
   $("iosTipClose").addEventListener("click", () => { $("iosTip").hidden = true; try { localStorage.setItem("ios-tip-visto", "1"); } catch(_){} });
 })();
-const APP_VERSION = "24";
+const APP_VERSION = "25";
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   // Si hay una versión nueva, se instala y la página se recarga sola una vez
   let recargada = false;

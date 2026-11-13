@@ -140,6 +140,8 @@ function fechaLarga(f){
 // Arma los 7 datos que van en las plantillas de WhatsApp
 function datosMensaje(cfg, cuentaNombre, t){
   const d = t.datos || {}, cl = cfg.clinic || {};
+  const sede = cfg.multiSede === true && d.loc ? (cfg.sedes || []).find(x => x.id === d.loc) : null;
+  const direccion = sede ? [sede.name, sede.address].filter(Boolean).join(" – ") : (cl.address || "-");
   const items = Array.isArray(d.items) ? d.items : [];
   const svcs = items.map(i => (cfg.services || []).find(s => s.id === i.id) || {name: i.n, price: 0});
   const pro = (cfg.pros || []).find(p => p.id === t.pro);
@@ -161,7 +163,7 @@ function datosMensaje(cfg, cuentaNombre, t){
   ind.push("Traé DNI" + (os !== "Particular" ? ", credencial de " + os : "") + (orden ? " y la orden médica" + (auth ? " autorizada" : "") : ""));
   const inc = cfg.waIncl || {}, no = k => inc[k] === false;
   const que2 = no("profesional") ? (svcs.map(s => s.name).join(" + ") || "Turno") : que;
-  return [nombre, cl.name || cuentaNombre, fechaLarga(t.fecha) + ", " + t.inicio + " h", que2, no("direccion") ? "—" : (cl.address || "-"),
+  return [nombre, cl.name || cuentaNombre, fechaLarga(t.fecha) + ", " + t.inicio + " h", que2, no("direccion") ? "—" : direccion,
     no("monto") ? "—" : pago, no("indicaciones") ? "—" : ind.join(" · ")].map(x => limpio(x));
 }
 async function waEnviar(env, wa, cuerpo){
@@ -320,7 +322,8 @@ async function reservar(db, cuenta, body, env, ctx){
   if ((cfg.daysOff || []).some(o => o.d === fecha && (!o.pro || o.pro === pro))) return fallo(409, "dia_anulado");
   const franjas = (p.hours && p.hours[String(diaSemana(fecha))]) || [];
   const ini = aMin(inicio);
-  if (!franjas.some(([a, b]) => ini >= aMin(a) && ini + dur <= aMin(b))) return fallo(409, "fuera_de_horario");
+  const franja = franjas.find(([a, b]) => ini >= aMin(a) && ini + dur <= aMin(b));
+  if (!franja) return fallo(409, "fuera_de_horario");
   if (fecha === h){
     const ahora = new Date(Date.now() + ZONA_HORAS * 3600e3), min = ahora.getUTCHours() * 60 + ahora.getUTCMinutes();
     if (ini < min) return fallo(409, "fuera_de_horario");
@@ -330,6 +333,9 @@ async function reservar(db, cuenta, body, env, ctx){
   if (datos.dni) datos.dni = soloDni(datos.dni);
   try { await completarConFicha(db, cuenta.id, datos); } catch(_){}
   datos = Object.assign(datos, {code, isNew: true, source: "web"});
+  // Centro donde atiende en esa franja (misma agenda, otro lugar)
+  delete datos.loc;
+  if (cfg.multiSede === true && franja[2] && (cfg.sedes || []).some(x => x.id === franja[2])) datos.loc = franja[2];
   const txt = JSON.stringify(datos);
   if (txt.length > 20000) return fallo(413, "datos_muy_grandes");
   const t = ahoraISO();
